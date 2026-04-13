@@ -100,6 +100,8 @@ pnpm prisma:validate
 - Runbook secrets/runtime nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.
 - Runbook deploy hiện tại trên máy cá nhân nằm tại `documents/07_backend-personal-machine-deploy-runbook.md`.
 - Runbook domain/reverse proxy trên máy cá nhân nằm tại `documents/08_backend-personal-machine-domain-runbook.md`.
+- Runbook domain thật cho `buicojourney.com` nằm tại `documents/09_buicojourney-domain-setup.md`.
+- Runbook `Cloudflare Tunnel` cho máy cá nhân nằm tại `documents/10_cloudflare-tunnel-personal-machine-runbook.md`.
 
 ## Test Strategy
 

@@ -140,6 +140,9 @@ Status: `In Progress`
 - `2026-04-13`: Bổ sung bộ script host runtime (`start`, `stop`, `restart`, `health`) để bước kế tiếp có thể đổi từ `echo "Deploy completed"` sang chạy backend thật sau deploy mà không cần thêm dependency mới.
 - `2026-04-13`: Xác minh Windows đang có sẵn Apache/XAMPP chạy local, backend host runtime reachable từ Windows qua `localhost:3001`, đồng thời ghi nhận blocker mạng hiện tại là public `80` trả `nginx` chứ chưa đi vào Apache local.
 - `2026-04-13`: Tạo template Apache reverse proxy và runbook riêng cho bước đưa backend trên máy cá nhân ra domain thật.
+- `2026-04-13`: Điền sẵn cấu hình và runbook riêng cho domain thật `buicojourney.com`, chốt subdomain backend là `api.buicojourney.com`, đồng thời xác minh DNS hiện chưa trỏ và public `80` vẫn chưa vào đúng máy Windows.
+- `2026-04-13`: Chốt hướng ingress phù hợp hơn cho máy cá nhân + Cloudflare là `Cloudflare Tunnel`, nhằm bỏ phụ thuộc vào router/NAT và tránh phải public dịch vụ mạng nội bộ trực tiếp ra Internet.
+- `2026-04-13`: Login `cloudflared`, tạo tunnel `journey-backend`, route DNS `api.buicojourney.com`, ghi config local cho `localhost:3001`, và xác minh public health endpoint qua `https://api.buicojourney.com/api/v1/health` trả `200`.
 
 ### Verification
 
@@ -175,6 +178,9 @@ Status: `In Progress`
 - `backend/scripts/check-production-health.sh`
 - `backend/deploy/apache/api-backend-vhost.conf.example`
 - `backend/documents/08_backend-personal-machine-domain-runbook.md`
+- `backend/deploy/apache/api-buicojourney.com.conf`
+- `backend/documents/09_buicojourney-domain-setup.md`
+- `backend/documents/10_cloudflare-tunnel-personal-machine-runbook.md`
 
 ### Ghi chú
 
