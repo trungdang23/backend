@@ -138,6 +138,8 @@ Status: `In Progress`
 - `2026-04-13`: Ghi nhận và xử lý các lỗi vận hành thực tế gồm SSH key formatting, secret scan false positive, PostgreSQL chưa chạy, tunnel Pinggy hết hạn, và `RUNTIME_ENV_PATH` trỏ sai vào thư mục.
 - `2026-04-13`: Viết runbook riêng cho manual deploy trên máy cá nhân để chuẩn hóa lại toàn bộ bước deploy đã xác minh thành công.
 - `2026-04-13`: Bổ sung bộ script host runtime (`start`, `stop`, `restart`, `health`) để bước kế tiếp có thể đổi từ `echo "Deploy completed"` sang chạy backend thật sau deploy mà không cần thêm dependency mới.
+- `2026-04-13`: Xác minh Windows đang có sẵn Apache/XAMPP chạy local, backend host runtime reachable từ Windows qua `localhost:3001`, đồng thời ghi nhận blocker mạng hiện tại là public `80` trả `nginx` chứ chưa đi vào Apache local.
+- `2026-04-13`: Tạo template Apache reverse proxy và runbook riêng cho bước đưa backend trên máy cá nhân ra domain thật.
 
 ### Verification
 
@@ -171,6 +173,8 @@ Status: `In Progress`
 - `backend/scripts/stop-production.sh`
 - `backend/scripts/restart-production.sh`
 - `backend/scripts/check-production-health.sh`
+- `backend/deploy/apache/api-backend-vhost.conf.example`
+- `backend/documents/08_backend-personal-machine-domain-runbook.md`
 
 ### Ghi chú
 

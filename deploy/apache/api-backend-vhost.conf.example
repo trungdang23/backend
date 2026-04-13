@@ -1,0 +1,41 @@
+# Copy and adapt this file into your Windows Apache/XAMPP vhosts config.
+# Replace `api.example.com` with your real backend domain.
+# Requires `mod_proxy`, `mod_proxy_http`, `mod_headers`, `mod_rewrite`, and `mod_ssl`.
+
+<VirtualHost *:80>
+    ServerName api.example.com
+
+    ProxyPreserveHost On
+    ProxyRequests Off
+
+    RequestHeader set X-Forwarded-Proto "http"
+    RequestHeader set X-Forwarded-Port "80"
+
+    ProxyPass        / http://127.0.0.1:3001/
+    ProxyPassReverse / http://127.0.0.1:3001/
+
+    ErrorLog  "logs/api.example.com-error.log"
+    CustomLog "logs/api.example.com-access.log" combined
+</VirtualHost>
+
+# Add HTTPS only after port 443 reaches this machine and you have a valid certificate.
+#
+# <VirtualHost *:443>
+#     ServerName api.example.com
+#
+#     SSLEngine on
+#     SSLCertificateFile "C:/path/to/fullchain.pem"
+#     SSLCertificateKeyFile "C:/path/to/privkey.pem"
+#
+#     ProxyPreserveHost On
+#     ProxyRequests Off
+#
+#     RequestHeader set X-Forwarded-Proto "https"
+#     RequestHeader set X-Forwarded-Port "443"
+#
+#     ProxyPass        / http://127.0.0.1:3001/
+#     ProxyPassReverse / http://127.0.0.1:3001/
+#
+#     ErrorLog  "logs/api.example.com-ssl-error.log"
+#     CustomLog "logs/api.example.com-ssl-access.log" combined
+# </VirtualHost>

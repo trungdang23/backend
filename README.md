@@ -99,6 +99,7 @@ pnpm prisma:validate
 - Với setup máy cá nhân hiện tại, giá trị phù hợp cho `SERVICE_RESTART_COMMAND` là `bash ./scripts/restart-production.sh`.
 - Runbook secrets/runtime nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.
 - Runbook deploy hiện tại trên máy cá nhân nằm tại `documents/07_backend-personal-machine-deploy-runbook.md`.
+- Runbook domain/reverse proxy trên máy cá nhân nằm tại `documents/08_backend-personal-machine-domain-runbook.md`.
 
 ## Test Strategy
 
