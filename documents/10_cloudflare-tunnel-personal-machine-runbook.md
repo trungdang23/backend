@@ -117,20 +117,53 @@ ingress:
 
 ## Bước còn thiếu để ổn định lâu dài
 
-Hiện tại tunnel đang chạy bằng process nền thủ công. Nó hoạt động được ngay, nhưng chưa bền sau reboot máy.
+Hiện tại backend public đang hoạt động ổn qua `Cloudflare Tunnel`.
 
-Để ổn định lâu dài, bạn cần mở `PowerShell` bằng quyền `Administrator` và chạy:
+Service `cloudflared` trên máy này từng được cài nhưng đang chưa phải đường ổn định cuối cùng để vận hành cùng backend WSL. Vì vậy hướng đang được dùng là:
 
-```powershell
-$token = & 'C:\Cloudflared\bin\cloudflared.exe' tunnel token journey-backend
-& 'C:\Cloudflared\bin\cloudflared.exe' service uninstall
-& 'C:\Cloudflared\bin\cloudflared.exe' service install $token
-Restart-Service cloudflared
+- `cloudflared` process đúng cấu hình
+- script Windows tự chạy lại sau khi user đăng nhập
+
+## Tự khởi động lại sau khi đăng nhập Windows
+
+Repo có script:
+
+- `scripts/windows/start-personal-server.ps1`
+
+Script này sẽ tự:
+
+- mở `Docker Desktop` nếu cần
+- `docker compose up -d postgres`
+- restart backend runtime trong WSL
+- đảm bảo có `cloudflared` process đúng cấu hình
+- chờ tới khi `https://api.buicojourney.com/api/v1/health` trả `200`
+
+Repo cũng có script:
+
+- `scripts/windows/register-personal-server-startup-task.ps1`
+
+Script này sẽ thử tạo `Scheduled Task`. Nếu Windows không cho quyền tạo task, nó sẽ tự fallback sang `Startup folder` của user hiện tại.
+
+Hiện tại máy này đã có launcher tại:
+
+```text
+C:\Users\dangv\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\JourneyPersonalServerStartup.cmd
 ```
 
-Sau khi service cài xong, nên dừng process `cloudflared` đang chạy thủ công để tránh trùng process.
+Điều đó có nghĩa là sau khi bạn **khởi động lại máy rồi đăng nhập vào Windows**, launcher sẽ tự gọi:
 
-Nếu trước đó đã từng chạy `service install` không kèm token, service có thể `Running` nhưng public endpoint trả `502`. Cài lại service theo đúng chuỗi lệnh ở trên sẽ sửa trạng thái đó.
+```powershell
+C:\TrungDang\journey\backend\scripts\windows\start-personal-server.ps1
+```
+
+## Ý nghĩa của `reboot`
+
+`Reboot` ở đây nghĩa là:
+
+- tắt máy rồi bật lại
+- hoặc chọn `Restart` trong Windows
+
+Với cấu hình hiện tại, sau `reboot` bạn không cần gõ tay các lệnh start server nữa. Chỉ cần đăng nhập lại vào Windows để launcher trong `Startup` chạy.
 
 ## Ghi chú về HTTPS
 
