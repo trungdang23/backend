@@ -125,6 +125,10 @@ jobs:
           ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
             "set -euo pipefail && \
             test -f '${RUNTIME_ENV_PATH}' && \
+            export NVM_DIR=\"\$HOME/.nvm\" && \
+            test -s \"\$NVM_DIR/nvm.sh\" && \
+            . \"\$NVM_DIR/nvm.sh\" && \
+            (nvm use 20.20.2 >/dev/null || nvm use default >/dev/null) && \
             cd '${DEPLOY_PATH}' && \
             git fetch --all --prune && \
             git checkout '${DEPLOY_REF}' && \
