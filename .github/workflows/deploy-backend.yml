@@ -118,6 +118,13 @@ jobs:
           test -n "${RUNTIME_JWT_ISSUER}"
           test -n "${RUNTIME_JWT_ACCESS_TOKEN_TTL}"
           test -n "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
+          case "${RUNTIME_ENV_PATH}" in
+            */.env|*/.env.*) ;;
+            *)
+              echo "RUNTIME_ENV_PATH must point to a file such as /path/to/.env.production." >&2
+              exit 1
+              ;;
+          esac
           if [ -z "${SSH_PORT}" ]; then
             echo "SSH_PORT is not set. Falling back to port 22."
           fi
@@ -189,9 +196,10 @@ jobs:
           RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
         run: |
           runtime_env_dir="$(dirname "${RUNTIME_ENV_PATH}")"
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "install -m 700 -d '${runtime_env_dir}'"
-          scp -P "${SSH_PORT:-22}" .deploy-runtime.env "${SSH_USER}@${SSH_HOST}:${RUNTIME_ENV_PATH}"
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "chmod 600 '${RUNTIME_ENV_PATH}'"
+          runtime_env_tmp="${RUNTIME_ENV_PATH}.tmp"
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "install -m 700 -d '${runtime_env_dir}' && if [ -d '${RUNTIME_ENV_PATH}' ]; then echo 'RUNTIME_ENV_PATH points to a directory, expected a file path.' >&2; exit 1; fi"
+          scp -P "${SSH_PORT:-22}" .deploy-runtime.env "${SSH_USER}@${SSH_HOST}:${runtime_env_tmp}"
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "mv '${runtime_env_tmp}' '${RUNTIME_ENV_PATH}' && chmod 600 '${RUNTIME_ENV_PATH}'"
 
       - name: Deploy on VPS
         env:
