@@ -128,14 +128,23 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s' "${SSH_PRIVATE_KEY}" \
-            | perl -0pe 's/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' \
-            > ~/.ssh/id_ed25519
+          private_key_source="$(mktemp)"
+          printf '%s' "${SSH_PRIVATE_KEY}" > "${private_key_source}"
+          perl -0pi -e 's/^\s*```(?:\w+)?\r?\n//; s/\r?\n```\s*$//; s/\A"(.*)"\z/$1/s; s/\A\x27(.*)\x27\z/$1/s; s/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' "${private_key_source}"
+          if grep -q '^-----BEGIN OPENSSH PRIVATE KEY-----$' "${private_key_source}"; then
+            cp "${private_key_source}" ~/.ssh/id_ed25519
+          else
+            tr -d '\r\n\t ' < "${private_key_source}" | base64 --decode > ~/.ssh/id_ed25519
+          fi
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          if ! ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null 2>&1; then
+            echo "SSH_PRIVATE_KEY is malformed. Paste the exact private key contents or a base64-encoded version into GitHub Secrets." >&2
+            exit 1
+          fi
           printf '%s' "${SSH_KNOWN_HOSTS}" \
             | perl -0pe 's/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' \
             > ~/.ssh/known_hosts
+          rm -f "${private_key_source}"
 
       - name: Render runtime env file from GitHub configuration
         env:
