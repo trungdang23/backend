@@ -61,8 +61,13 @@ pnpm prisma:validate
 - Structured logging đã có redaction cho dữ liệu nhạy cảm như `authorization`, `cookie`, `password`, `token`, và các trường chứa `secret`.
 - Repo `backend` có workflow CI riêng tại `.github/workflows/backend-ci.yml`; merge vào repo backend sẽ chạy `pnpm prisma:generate`, `pnpm lint`, `pnpm test`, `pnpm build`, và `pnpm prisma:validate`.
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
-- Repo `backend` có workflow deploy thủ công tại `.github/workflows/deploy-backend.yml`; workflow này chỉ chạy khi bạn bấm `Run workflow` và yêu cầu cấu hình secrets/variables cho SSH và lệnh restart service trên VPS.
+- Repo `backend` có workflow deploy thủ công tại `.github/workflows/deploy-backend.yml`; workflow này chỉ chạy khi bạn bấm `Run workflow`, render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
 - Nền tảng auth đã có `AuthModule`, `AccessTokenAuthGuard`, `@Public()`, và `@CurrentUser()`. JWT verification adapter thực tế sẽ được hoàn thiện ở Phase 03.
+- Repo đã có bộ script runtime trên host:
+  - `scripts/start-production.sh`
+  - `scripts/stop-production.sh`
+  - `scripts/restart-production.sh`
+  - `scripts/check-production-health.sh`
 
 ## Deployment Workflow
 
@@ -75,13 +80,25 @@ pnpm prisma:validate
   - `SSH_USER`
   - `SSH_PRIVATE_KEY`
   - `SSH_KNOWN_HOSTS`
+  - `RUNTIME_DATABASE_URL`
+  - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
+  - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
 - Repo backend cũng cần các GitHub variables:
   - `DEPLOY_PATH`
   - `RUNTIME_ENV_PATH`
   - `SERVICE_RESTART_COMMAND`
-- `RUNTIME_ENV_PATH` là path của file env production thật trên VPS, ví dụ `/var/www/journey-backend/.env.production`.
+  - `RUNTIME_APP_NAME`
+  - `RUNTIME_APP_PORT`
+  - `RUNTIME_GLOBAL_PREFIX`
+  - `RUNTIME_SWAGGER_ENABLED`
+  - `RUNTIME_JWT_ISSUER`
+  - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
+  - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
+- `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.
-- Runbook chi tiết nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.
+- Với setup máy cá nhân hiện tại, giá trị phù hợp cho `SERVICE_RESTART_COMMAND` là `bash ./scripts/restart-production.sh`.
+- Runbook secrets/runtime nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.
+- Runbook deploy hiện tại trên máy cá nhân nằm tại `documents/07_backend-personal-machine-deploy-runbook.md`.
 
 ## Test Strategy
 

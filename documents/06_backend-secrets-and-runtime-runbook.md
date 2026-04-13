@@ -15,7 +15,7 @@
 ## Mô hình bảo mật hiện tại
 
 - GitHub giữ secret để workflow deploy truy cập được VPS.
-- VPS giữ runtime env để backend chạy production.
+- GitHub cũng giữ runtime secrets/variables để workflow render file env production khi deploy.
 - Repo chỉ chứa `.env.*.example`, workflow, và tài liệu; không chứa env thật.
 
 ## Nhóm bí mật và cấu hình
@@ -27,14 +27,24 @@
 - `SSH_USER`
 - `SSH_PRIVATE_KEY`
 - `SSH_KNOWN_HOSTS`
+- `RUNTIME_DATABASE_URL`
+- `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
+- `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
 
 ### GitHub Variables cho repo backend
 
 - `DEPLOY_PATH`
 - `RUNTIME_ENV_PATH`
 - `SERVICE_RESTART_COMMAND`
+- `RUNTIME_APP_NAME`
+- `RUNTIME_APP_PORT`
+- `RUNTIME_GLOBAL_PREFIX`
+- `RUNTIME_SWAGGER_ENABLED`
+- `RUNTIME_JWT_ISSUER`
+- `RUNTIME_JWT_ACCESS_TOKEN_TTL`
+- `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 
-### Runtime env hiện đang cần trên VPS
+### Runtime env workflow sẽ render ra máy đích
 
 - `NODE_ENV`
 - `APP_NAME`
@@ -45,11 +55,6 @@
 - `JWT_ISSUER`
 - `JWT_ACCESS_TOKEN_TTL`
 - `JWT_REFRESH_TOKEN_TTL`
-
-### Runtime secret sẽ cần thêm khi hoàn thiện auth signing
-
-- `JWT_ACCESS_TOKEN_SECRET`
-- `JWT_REFRESH_TOKEN_SECRET`
 
 ## Những gì đang được bảo vệ ở mức workflow
 
@@ -63,7 +68,7 @@
   - OpenAI API key
   - Slack token
 - Workflow deploy chỉ đọc SSH key từ GitHub Secrets.
-- Workflow deploy kiểm tra `RUNTIME_ENV_PATH` và source file env trên VPS trước khi chạy `prisma:migrate:deploy`.
+- Workflow deploy render `.env.production` từ GitHub configuration, copy lên máy đích, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
 
 ## Thiết lập trên GitHub
 
@@ -75,34 +80,45 @@
    - `SSH_USER`
    - `SSH_PRIVATE_KEY`
    - `SSH_KNOWN_HOSTS`
+   - `RUNTIME_DATABASE_URL`
+   - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
+   - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
 4. Thêm các variables:
    - `DEPLOY_PATH`
    - `RUNTIME_ENV_PATH`
    - `SERVICE_RESTART_COMMAND`
+   - `RUNTIME_APP_NAME`
+   - `RUNTIME_APP_PORT`
+   - `RUNTIME_GLOBAL_PREFIX`
+   - `RUNTIME_SWAGGER_ENABLED`
+   - `RUNTIME_JWT_ISSUER`
+   - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
+   - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 
 ## Thiết lập trên VPS
 
 1. Tạo thư mục deploy, ví dụ `/var/www/journey-backend`.
-2. Đặt file runtime env thật tại path sẽ map vào `RUNTIME_ENV_PATH`, ví dụ `/var/www/journey-backend/.env.production`.
-3. Phân quyền chặt cho file env:
-   - owner là user deploy
-   - mode đề xuất: `chmod 600 .env.production`
-4. Không commit file env này lên git.
-5. Đảm bảo service restart command của bạn thực sự dùng file env đó.
+2. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
+3. Đảm bảo user deploy có quyền ghi vào thư mục chứa `RUNTIME_ENV_PATH`.
+4. Đảm bảo service restart command của bạn thực sự dùng file env đó.
 
-## Mẫu cấu hình biến trên VPS
+## Mẫu mapping GitHub configuration
 
-```env
-NODE_ENV=production
-APP_NAME=journey-backend
-APP_PORT=3001
-GLOBAL_PREFIX=api/v1
-SWAGGER_ENABLED=true
-DATABASE_URL=postgresql://journey:strong-password@db:5432/journey?schema=public
-JWT_ISSUER=api.tenmiencuaban.com
-JWT_ACCESS_TOKEN_TTL=15m
-JWT_REFRESH_TOKEN_TTL=7d
-```
+### Secrets
+
+- `RUNTIME_DATABASE_URL=postgresql://journey:strong-password@db:5432/journey?schema=public`
+- `RUNTIME_JWT_ACCESS_TOKEN_SECRET=64-plus-random-characters`
+- `RUNTIME_JWT_REFRESH_TOKEN_SECRET=another-64-plus-random-characters`
+
+### Variables
+
+- `RUNTIME_APP_NAME=journey-backend`
+- `RUNTIME_APP_PORT=3001`
+- `RUNTIME_GLOBAL_PREFIX=api/v1`
+- `RUNTIME_SWAGGER_ENABLED=true`
+- `RUNTIME_JWT_ISSUER=api.tenmiencuaban.com`
+- `RUNTIME_JWT_ACCESS_TOKEN_TTL=15m`
+- `RUNTIME_JWT_REFRESH_TOKEN_TTL=7d`
 
 ## Quy trình deploy an toàn
 
@@ -111,7 +127,8 @@ JWT_REFRESH_TOKEN_TTL=7d
 3. Vào GitHub Actions của repo backend.
 4. Chạy `deploy-backend.yml` bằng `Run workflow`.
 5. Workflow dùng SSH key từ GitHub để vào VPS.
-6. Workflow source env từ `RUNTIME_ENV_PATH` trên VPS rồi mới chạy migration và restart service.
+6. Workflow render `.env.production` từ GitHub Secrets/Variables và copy file đó vào `RUNTIME_ENV_PATH`.
+7. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
 
 ## Kiểm tra sau deploy
 
@@ -123,5 +140,5 @@ JWT_REFRESH_TOKEN_TTL=7d
 ## Kết luận vận hành
 
 - Merge `main` hiện tại không làm lộ secret production nếu bạn chỉ commit source hiện có.
-- GitHub không giữ runtime secret của app; runtime secret vẫn nằm trên VPS.
-- GitHub chỉ giữ deploy secret để vào VPS.
+- GitHub giữ cả deploy secrets lẫn runtime secrets/variables của app.
+- Repo backend chỉ giữ file example; giá trị thật đi qua GitHub Actions vào máy đích lúc deploy.

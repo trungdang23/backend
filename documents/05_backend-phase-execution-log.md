@@ -133,6 +133,11 @@ Status: `In Progress`
 - `2026-04-13`: Xác minh migration SQL trên PostgreSQL thật bằng database tạm `journey_verify`, kiểm tra bảng `users` và index `users_email_key`, rồi dùng Prisma introspect lại schema.
 - `2026-04-13`: Chuyển GitHub Actions về đúng repo `backend`, đồng thời thêm workflow deploy thủ công riêng cho backend để tách vòng đời deploy khỏi frontend.
 - `2026-04-13`: Bổ sung secret scan cho repo backend bằng script nội bộ, đồng thời viết runbook tách rõ GitHub deploy secrets với runtime env trên VPS.
+- `2026-04-13`: Chuyển deploy workflow sang mô hình GitHub giữ runtime secrets/variables, render `.env.production` trên runner, rồi copy sang máy đích trước khi migrate và restart service.
+- `2026-04-13`: Hoàn tất manual deploy đầu tiên vào máy cá nhân qua GitHub Actions, dùng deploy clone riêng tại `/home/trungdang/apps/journey-backend` thay vì deploy thẳng vào thư mục dev.
+- `2026-04-13`: Ghi nhận và xử lý các lỗi vận hành thực tế gồm SSH key formatting, secret scan false positive, PostgreSQL chưa chạy, tunnel Pinggy hết hạn, và `RUNTIME_ENV_PATH` trỏ sai vào thư mục.
+- `2026-04-13`: Viết runbook riêng cho manual deploy trên máy cá nhân để chuẩn hóa lại toàn bộ bước deploy đã xác minh thành công.
+- `2026-04-13`: Bổ sung bộ script host runtime (`start`, `stop`, `restart`, `health`) để bước kế tiếp có thể đổi từ `echo "Deploy completed"` sang chạy backend thật sau deploy mà không cần thêm dependency mới.
 
 ### Verification
 
@@ -159,8 +164,16 @@ Status: `In Progress`
 - `backend/documents/06_backend-secrets-and-runtime-runbook.md`
 - `.github/workflows/backend-ci.yml`
 - `.github/workflows/deploy-backend.yml`
+- `backend/.env.production.example`
+- `backend/documents/07_backend-personal-machine-deploy-runbook.md`
+- `backend/scripts/common-production.sh`
+- `backend/scripts/start-production.sh`
+- `backend/scripts/stop-production.sh`
+- `backend/scripts/restart-production.sh`
+- `backend/scripts/check-production-health.sh`
 
 ### Ghi chú
 
 - Reality-based verification của migration đang được thực hiện bằng PostgreSQL thật + SQL apply + Prisma introspection trên database tạm, thay vì chỉ dựa vào file review.
 - Trên máy hiện tại, local runtime ổn định hơn khi chạy verify bằng Node `20.20.2`; CI vẫn giữ Node `22`, là runtime mục tiêu của pipeline.
+- Từ mốc này, file env production thật không còn là prerequisite trên máy đích; nguồn sự thật của runtime config được chuyển sang GitHub Secrets/Variables.
