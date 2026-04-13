@@ -7,8 +7,8 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v rg >/dev/null 2>&1; then
-  echo "rg is required for secret scanning." >&2
+if ! command -v grep >/dev/null 2>&1; then
+  echo "grep is required for secret scanning." >&2
   exit 1
 fi
 
@@ -26,8 +26,8 @@ report_tracked_env_files() {
 
   tracked_env_files="$(
     printf '%s\n' "${tracked_files[@]}" \
-      | rg '(^|/)\.env($|(\.[^.]+)+$)' \
-      | rg -v '\.example$' \
+      | grep -E '(^|/)\.env($|(\.[^.]+)+$)' \
+      | grep -Ev '\.example$' \
       || true
   )"
 
@@ -45,7 +45,7 @@ scan_pattern() {
 
   output_file="$(mktemp)"
 
-  if rg -n --color never -e "${pattern}" -- "${tracked_files[@]}" >"${output_file}" 2>/dev/null; then
+  if grep -nE -H --binary-files=without-match -- "${pattern}" "${tracked_files[@]}" >"${output_file}" 2>/dev/null; then
     echo "Potential ${label} detected:" >&2
     cat "${output_file}" >&2
     failures=1
