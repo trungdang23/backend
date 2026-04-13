@@ -87,17 +87,37 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          RUNTIME_DATABASE_URL: ${{ secrets.RUNTIME_DATABASE_URL }}
+          RUNTIME_JWT_ACCESS_TOKEN_SECRET: ${{ secrets.RUNTIME_JWT_ACCESS_TOKEN_SECRET }}
+          RUNTIME_JWT_REFRESH_TOKEN_SECRET: ${{ secrets.RUNTIME_JWT_REFRESH_TOKEN_SECRET }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
           SERVICE_RESTART_COMMAND: ${{ vars.SERVICE_RESTART_COMMAND }}
+          RUNTIME_APP_NAME: ${{ vars.RUNTIME_APP_NAME }}
+          RUNTIME_APP_PORT: ${{ vars.RUNTIME_APP_PORT }}
+          RUNTIME_GLOBAL_PREFIX: ${{ vars.RUNTIME_GLOBAL_PREFIX }}
+          RUNTIME_SWAGGER_ENABLED: ${{ vars.RUNTIME_SWAGGER_ENABLED }}
+          RUNTIME_JWT_ISSUER: ${{ vars.RUNTIME_JWT_ISSUER }}
+          RUNTIME_JWT_ACCESS_TOKEN_TTL: ${{ vars.RUNTIME_JWT_ACCESS_TOKEN_TTL }}
+          RUNTIME_JWT_REFRESH_TOKEN_TTL: ${{ vars.RUNTIME_JWT_REFRESH_TOKEN_TTL }}
         run: |
           test -n "${SSH_HOST}"
           test -n "${SSH_USER}"
           test -n "${SSH_PRIVATE_KEY}"
           test -n "${SSH_KNOWN_HOSTS}"
+          test -n "${RUNTIME_DATABASE_URL}"
+          test -n "${RUNTIME_JWT_ACCESS_TOKEN_SECRET}"
+          test -n "${RUNTIME_JWT_REFRESH_TOKEN_SECRET}"
           test -n "${DEPLOY_PATH}"
           test -n "${RUNTIME_ENV_PATH}"
           test -n "${SERVICE_RESTART_COMMAND}"
+          test -n "${RUNTIME_APP_NAME}"
+          test -n "${RUNTIME_APP_PORT}"
+          test -n "${RUNTIME_GLOBAL_PREFIX}"
+          test -n "${RUNTIME_SWAGGER_ENABLED}"
+          test -n "${RUNTIME_JWT_ISSUER}"
+          test -n "${RUNTIME_JWT_ACCESS_TOKEN_TTL}"
+          test -n "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
           if [ -z "${SSH_PORT}" ]; then
             echo "SSH_PORT is not set. Falling back to port 22."
           fi
@@ -108,9 +128,54 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          printf '%s' "${SSH_PRIVATE_KEY}" \
+            | perl -0pe 's/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' \
+            > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/id_ed25519 >/dev/null
+          printf '%s' "${SSH_KNOWN_HOSTS}" \
+            | perl -0pe 's/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' \
+            > ~/.ssh/known_hosts
+
+      - name: Render runtime env file from GitHub configuration
+        env:
+          RUNTIME_DATABASE_URL: ${{ secrets.RUNTIME_DATABASE_URL }}
+          RUNTIME_JWT_ACCESS_TOKEN_SECRET: ${{ secrets.RUNTIME_JWT_ACCESS_TOKEN_SECRET }}
+          RUNTIME_JWT_REFRESH_TOKEN_SECRET: ${{ secrets.RUNTIME_JWT_REFRESH_TOKEN_SECRET }}
+          RUNTIME_APP_NAME: ${{ vars.RUNTIME_APP_NAME }}
+          RUNTIME_APP_PORT: ${{ vars.RUNTIME_APP_PORT }}
+          RUNTIME_GLOBAL_PREFIX: ${{ vars.RUNTIME_GLOBAL_PREFIX }}
+          RUNTIME_SWAGGER_ENABLED: ${{ vars.RUNTIME_SWAGGER_ENABLED }}
+          RUNTIME_JWT_ISSUER: ${{ vars.RUNTIME_JWT_ISSUER }}
+          RUNTIME_JWT_ACCESS_TOKEN_TTL: ${{ vars.RUNTIME_JWT_ACCESS_TOKEN_TTL }}
+          RUNTIME_JWT_REFRESH_TOKEN_TTL: ${{ vars.RUNTIME_JWT_REFRESH_TOKEN_TTL }}
+        run: |
+          {
+            printf 'NODE_ENV=production\n'
+            printf 'APP_NAME=%s\n' "${RUNTIME_APP_NAME}"
+            printf 'APP_PORT=%s\n' "${RUNTIME_APP_PORT}"
+            printf 'GLOBAL_PREFIX=%s\n' "${RUNTIME_GLOBAL_PREFIX}"
+            printf 'SWAGGER_ENABLED=%s\n' "${RUNTIME_SWAGGER_ENABLED}"
+            printf 'DATABASE_URL=%s\n' "${RUNTIME_DATABASE_URL}"
+            printf 'JWT_ISSUER=%s\n' "${RUNTIME_JWT_ISSUER}"
+            printf 'JWT_ACCESS_TOKEN_TTL=%s\n' "${RUNTIME_JWT_ACCESS_TOKEN_TTL}"
+            printf 'JWT_REFRESH_TOKEN_TTL=%s\n' "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
+            printf 'JWT_ACCESS_TOKEN_SECRET=%s\n' "${RUNTIME_JWT_ACCESS_TOKEN_SECRET}"
+            printf 'JWT_REFRESH_TOKEN_SECRET=%s\n' "${RUNTIME_JWT_REFRESH_TOKEN_SECRET}"
+          } > .deploy-runtime.env
+          chmod 600 .deploy-runtime.env
+
+      - name: Upload runtime env file
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
+        run: |
+          runtime_env_dir="$(dirname "${RUNTIME_ENV_PATH}")"
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "install -m 700 -d '${runtime_env_dir}'"
+          scp -P "${SSH_PORT:-22}" .deploy-runtime.env "${SSH_USER}@${SSH_HOST}:${RUNTIME_ENV_PATH}"
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "chmod 600 '${RUNTIME_ENV_PATH}'"
 
       - name: Deploy on VPS
         env:
@@ -124,7 +189,6 @@ jobs:
         run: |
           ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
             "set -euo pipefail && \
-            test -f '${RUNTIME_ENV_PATH}' && \
             export NVM_DIR=\"\$HOME/.nvm\" && \
             test -s \"\$NVM_DIR/nvm.sh\" && \
             . \"\$NVM_DIR/nvm.sh\" && \
