@@ -35,3 +35,21 @@ running_pid() {
     cat "${PID_FILE}"
   fi
 }
+
+ensure_node_runtime() {
+  if command -v node >/dev/null 2>&1; then
+    return
+  fi
+
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+  if [ -s "${NVM_DIR}/nvm.sh" ]; then
+    . "${NVM_DIR}/nvm.sh"
+    nvm use 20.20.2 >/dev/null 2>&1 || nvm use default >/dev/null 2>&1 || true
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    echo "node was not found in PATH. Ensure nvm or Node.js runtime is available on the deploy machine." >&2
+    exit 1
+  fi
+}

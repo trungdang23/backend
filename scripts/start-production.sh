@@ -5,6 +5,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common-production.sh"
 
 load_runtime_env
+ensure_node_runtime
 ensure_state_dir
 
 if [ ! -f "${APP_DIR}/dist/main.js" ]; then
