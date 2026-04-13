@@ -20,7 +20,7 @@ if [ -n "${existing_pid}" ] && kill -0 "${existing_pid}" >/dev/null 2>&1; then
 fi
 
 cd "${APP_DIR}"
-nohup node dist/main.js >>"${LOG_FILE}" 2>&1 &
+nohup setsid node dist/main.js </dev/null >>"${LOG_FILE}" 2>&1 &
 pid="$!"
 echo "${pid}" >"${PID_FILE}"
 
