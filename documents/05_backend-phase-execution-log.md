@@ -131,6 +131,8 @@ Status: `In Progress`
 - `2026-04-13`: Thêm init script cho PostgreSQL local để tạo thêm `journey_test` và `journey_ci` trên fresh volume.
 - `2026-04-13`: Tạo migration đầu tiên cho `users` tại `db/migrations/20260413114500_create_users/migration.sql`.
 - `2026-04-13`: Xác minh migration SQL trên PostgreSQL thật bằng database tạm `journey_verify`, kiểm tra bảng `users` và index `users_email_key`, rồi dùng Prisma introspect lại schema.
+- `2026-04-13`: Chuyển GitHub Actions về đúng repo `backend`, đồng thời thêm workflow deploy thủ công riêng cho backend để tách vòng đời deploy khỏi frontend.
+- `2026-04-13`: Bổ sung secret scan cho repo backend bằng script nội bộ, đồng thời viết runbook tách rõ GitHub deploy secrets với runtime env trên VPS.
 
 ### Verification
 
@@ -153,7 +155,10 @@ Status: `In Progress`
 - `backend/db/migrations/20260413114500_create_users/migration.sql`
 - `backend/test/unit/modules/health/application/health.service.spec.ts`
 - `backend/test/integration/health.integration.spec.ts`
+- `backend/scripts/check-secrets.sh`
+- `backend/documents/06_backend-secrets-and-runtime-runbook.md`
 - `.github/workflows/backend-ci.yml`
+- `.github/workflows/deploy-backend.yml`
 
 ### Ghi chú
 

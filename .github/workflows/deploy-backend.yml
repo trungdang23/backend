@@ -1,0 +1,139 @@
+name: deploy-backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to deploy
+        required: true
+        default: main
+
+concurrency:
+  group: backend-production
+  cancel-in-progress: false
+
+jobs:
+  verify-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: journey
+          POSTGRES_PASSWORD: journey
+          POSTGRES_DB: journey_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U journey -d journey_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://journey:journey@localhost:5432/journey_ci?schema=public
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Scan tracked files for secrets
+        run: bash ./scripts/check-secrets.sh
+
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Validate Prisma schema
+        run: pnpm prisma:validate
+
+  deploy-backend:
+    needs: verify-backend
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Validate deploy secrets and variables
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
+          SERVICE_RESTART_COMMAND: ${{ vars.SERVICE_RESTART_COMMAND }}
+        run: |
+          test -n "${SSH_HOST}"
+          test -n "${SSH_USER}"
+          test -n "${SSH_PRIVATE_KEY}"
+          test -n "${SSH_KNOWN_HOSTS}"
+          test -n "${DEPLOY_PATH}"
+          test -n "${RUNTIME_ENV_PATH}"
+          test -n "${SERVICE_RESTART_COMMAND}"
+          if [ -z "${SSH_PORT}" ]; then
+            echo "SSH_PORT is not set. Falling back to port 22."
+          fi
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${SSH_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+      - name: Deploy on VPS
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
+          SERVICE_RESTART_COMMAND: ${{ vars.SERVICE_RESTART_COMMAND }}
+          DEPLOY_REF: ${{ inputs.ref }}
+        run: |
+          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
+            "set -euo pipefail && \
+            test -f '${RUNTIME_ENV_PATH}' && \
+            cd '${DEPLOY_PATH}' && \
+            git fetch --all --prune && \
+            git checkout '${DEPLOY_REF}' && \
+            git pull origin '${DEPLOY_REF}' && \
+            pnpm install --frozen-lockfile && \
+            pnpm prisma:generate && \
+            pnpm build && \
+            set -a && \
+            . '${RUNTIME_ENV_PATH}' && \
+            set +a && \
+            pnpm prisma:migrate:deploy && \
+            ${SERVICE_RESTART_COMMAND}"
