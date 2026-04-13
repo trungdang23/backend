@@ -1,0 +1,11 @@
+import type { Config } from 'jest';
+
+const config: Config = {
+  rootDir: '..',
+  projects: [
+    '<rootDir>/test/jest.unit.config.ts',
+    '<rootDir>/test/jest.integration.config.ts',
+  ],
+};
+
+export default config;

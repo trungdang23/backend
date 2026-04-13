@@ -1,0 +1,161 @@
+# Backend Phase Execution Log
+
+## Phase 00
+
+Status: `Completed`
+
+### Tóm tắt
+
+- Đã chốt mục tiêu backend, nguyên tắc SOLID, stack, convention, config strategy, secrets strategy, workflow, và definition of done.
+
+### Artifact
+
+- `00_backend-foundation.md`
+- `01_backend-phase-checklist.md`
+- `02_backend-stack-decision.md`
+- `03_backend-conventions-and-ops-decision.md`
+- `04_backend-definition-of-done.md`
+
+### Verification
+
+- File review
+
+## Phase 01
+
+Status: `Completed`
+
+### Mục tiêu
+
+- Scaffold backend theo `NestJS`
+- Chuẩn hóa cấu trúc thư mục
+- Thiết lập config, response envelope, error filter, logging, test layout, Prisma baseline, Docker Compose, và README
+
+### Nhật ký
+
+- `2026-04-13`: Khởi tạo cây thư mục source, test, db, và documents
+- `2026-04-13`: Bắt đầu thêm package manifest, config files, source bootstrap, health module, unit test, integration test, và README
+- `2026-04-13`: Cài dependencies bằng `pnpm`, generate Prisma client, và xác minh build/test thật
+- `2026-04-13`: Điều chỉnh integration test để chạy qua Express/Nest wiring thực mà không cần bind port, do sandbox không cho listen socket
+
+### Verification
+
+- `pnpm lint` pass
+- `pnpm test` pass
+- `pnpm build` pass
+- `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey?schema=public pnpm prisma:validate` pass
+
+### Artifact
+
+- `backend/package.json`
+- `backend/tsconfig.json`
+- `backend/tsconfig.build.json`
+- `backend/nest-cli.json`
+- `backend/eslint.config.mjs`
+- `backend/.prettierrc`
+- `backend/.gitignore`
+- `backend/.env.development.example`
+- `backend/.env.test.example`
+- `backend/.env.production.example`
+- `backend/docker-compose.yml`
+- `backend/db/schema.prisma`
+- `backend/src/**`
+- `backend/test/**`
+- `backend/README.md`
+
+### Ghi chú
+
+- Unit test đang đóng vai trò mock-based verification cho phase scaffold.
+- Integration test đang chạy qua Express instance của Nest để giữ wiring thực trong điều kiện sandbox hiện tại không cho bind cổng mạng.
+
+## Phase 02
+
+Status: `Completed`
+
+### Mục tiêu
+
+- Hoàn thiện technical foundation để các phase nghiệp vụ không phải quay lại cắm tracing, logging, auth guard, và CI ở giữa chừng.
+- Đảm bảo mỗi bước đều có mock-based verification và reality-based verification theo nguyên tắc đã chốt.
+
+### Nhật ký
+
+- `2026-04-13`: Loại bỏ `baseUrl` và `types` tường minh khỏi `tsconfig.json`, đồng thời bỏ `moduleResolution` deprecated để tránh cảnh báo TS 6 trong editor.
+- `2026-04-13`: Thêm request context foundation gồm correlation id resolver, middleware, context service, và module dùng chung toàn app.
+- `2026-04-13`: Chuẩn hóa structured logging với metadata theo request, đồng thời redaction các trường nhạy cảm như `authorization`, `cookie`, `password`, `token`, và `secret`.
+- `2026-04-13`: Bổ sung auth foundation ở mức technical scaffold gồm `AuthModule`, `Public` decorator, `CurrentUser` decorator, access token guard, và access token verifier port với implementation mặc định dạng unconfigured.
+- `2026-04-13`: Thêm backend CI workflow để chạy `prisma:generate`, `lint`, `test`, `build`, và `prisma:validate` khi backend thay đổi.
+- `2026-04-13`: Bổ sung unit test và integration test cho request context, auth guard, và logging policy; cập nhật health integration để xác nhận propagation của `X-Correlation-Id`.
+
+### Verification
+
+- `pnpm lint` pass
+- `pnpm exec tsc -p tsconfig.json --noEmit` pass
+- `pnpm test` pass (`11` suites, `21` tests)
+- `pnpm build` pass
+- `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey?schema=public pnpm prisma:validate` pass
+
+### Artifact
+
+- `backend/src/app/request-context/**`
+- `backend/src/app/logging/sanitize-log-data.ts`
+- `backend/src/app/logging/build-http-request-log-metadata.ts`
+- `backend/src/modules/auth/**`
+- `backend/test/support/dispatch-request.ts`
+- `backend/test/unit/app/logging/sanitize-log-data.spec.ts`
+- `backend/test/unit/app/request-context/*.spec.ts`
+- `backend/test/unit/modules/auth/presentation/guards/access-token-auth.guard.spec.ts`
+- `backend/test/integration/auth/access-token-auth.guard.integration.spec.ts`
+- `backend/test/integration/logging/logging-policy.integration.spec.ts`
+- `.github/workflows/backend-ci.yml`
+
+### Ghi chú
+
+- Mock-based verification của phase này đến từ unit tests cho middleware, request context service, sanitize logging, và auth guard.
+- Reality-based verification đến từ integration tests boot app Nest thật, đi qua middleware, guard, filter, interceptor, và HTTP contract thật mà không mock controller.
+- `AccessTokenVerifierPort` hiện mới dừng ở port và implementation mặc định dạng unconfigured; JWT adapter thực tế sẽ được hoàn thiện trong Phase 03.
+
+## Phase 03
+
+Status: `In Progress`
+
+### Mục tiêu
+
+- Bắt đầu phase `auth` và `users` theo hướng vertical slice, nhưng đi từ nền tảng persistence và observability để các use case sau có chỗ bám rõ ràng.
+- Nâng health endpoint từ app liveness lên DB-backed health check để biết backend đã chạm được PostgreSQL thật hay chưa.
+
+### Nhật ký
+
+- `2026-04-13`: Thêm `PrismaModule` dạng global để các module nghiệp vụ có thể inject `PrismaService` mà không phải khai báo lặp provider.
+- `2026-04-13`: Tạo `UsersModule` skeleton và import vào `AppModule` để bắt đầu slice `users`.
+- `2026-04-13`: Nâng `HealthService` sang async DB-backed health check bằng `PrismaService.$queryRaw`, trả `database: up` khi kết nối được PostgreSQL.
+- `2026-04-13`: Mở rộng unit test cho `HealthService` với cả success path và failure path; cập nhật integration test để xác nhận `/api/v1/health` trả database status thật.
+- `2026-04-13`: Thêm init script cho PostgreSQL local để tạo thêm `journey_test` và `journey_ci` trên fresh volume.
+- `2026-04-13`: Tạo migration đầu tiên cho `users` tại `db/migrations/20260413114500_create_users/migration.sql`.
+- `2026-04-13`: Xác minh migration SQL trên PostgreSQL thật bằng database tạm `journey_verify`, kiểm tra bảng `users` và index `users_email_key`, rồi dùng Prisma introspect lại schema.
+
+### Verification
+
+- `node ./node_modules/jest/bin/jest.js --config ./test/jest.config.ts --runInBand` pass (`11` suites, `22` tests) với `PATH` trỏ Node `20.20.2`
+- `node ./node_modules/eslint/bin/eslint.js "{src,test}/**/*.ts" --max-warnings=0` pass
+- `node ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` pass
+- `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey?schema=public node ./node_modules/prisma/build/index.js validate --schema db/schema.prisma` pass
+- Apply `db/migrations/20260413114500_create_users/migration.sql` trên PostgreSQL thật vào database tạm `journey_verify` pass
+- `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey_verify?schema=public node ./node_modules/prisma/build/index.js db pull --print --schema db/schema.prisma` pass
+
+### Artifact
+
+- `backend/src/shared/infrastructure/prisma/prisma.module.ts`
+- `backend/src/modules/users/users.module.ts`
+- `backend/src/modules/health/**`
+- `backend/docker/postgres/init/00-create-databases.sql`
+- `backend/docker-compose.yml`
+- `backend/db/schema.prisma`
+- `backend/db/migrations/migration_lock.toml`
+- `backend/db/migrations/20260413114500_create_users/migration.sql`
+- `backend/test/unit/modules/health/application/health.service.spec.ts`
+- `backend/test/integration/health.integration.spec.ts`
+- `.github/workflows/backend-ci.yml`
+
+### Ghi chú
+
+- Reality-based verification của migration đang được thực hiện bằng PostgreSQL thật + SQL apply + Prisma introspection trên database tạm, thay vì chỉ dựa vào file review.
+- Trên máy hiện tại, local runtime ổn định hơn khi chạy verify bằng Node `20.20.2`; CI vẫn giữ Node `22`, là runtime mục tiêu của pipeline.
