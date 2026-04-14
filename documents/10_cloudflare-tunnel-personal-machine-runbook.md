@@ -158,6 +158,14 @@ Kiểm tra trạng thái nhanh:
 pnpm status
 ```
 
+Các alias ngắn hơn:
+
+```powershell
+pnpm u
+pnpm d
+pnpm s
+```
+
 ## Ý nghĩa của `reboot`
 
 `Reboot` ở đây nghĩa là:

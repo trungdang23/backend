@@ -113,6 +113,9 @@ pnpm prisma:validate
 pnpm up
 pnpm down
 pnpm status
+pnpm u
+pnpm d
+pnpm s
 ```
 
 ## Test Strategy
