@@ -63,6 +63,7 @@ pnpm prisma:validate
 - Repo `backend` có workflow CI riêng tại `.github/workflows/backend-ci.yml`; merge vào repo backend sẽ chạy `pnpm prisma:generate`, `pnpm lint`, `pnpm test`, `pnpm build`, và `pnpm prisma:validate`.
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
 - Repo `backend` có workflow deploy thủ công tại `.github/workflows/deploy-backend.yml`; workflow này chỉ chạy khi bạn bấm `Run workflow`, render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
+- `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
 - Workflow deploy hiện đi qua `Cloudflare Tunnel` + `cloudflared access ssh`, nên không còn phụ thuộc vào reverse SSH tunnel tạm cho bước deploy.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, và JWT access/refresh token flow thật.
 - Repo đã có bộ script runtime trên host:

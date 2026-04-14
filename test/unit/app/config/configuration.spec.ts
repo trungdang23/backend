@@ -47,4 +47,12 @@ describe('configuration', () => {
       },
     });
   });
+
+  it('throws when required runtime env is missing', () => {
+    delete process.env.DATABASE_URL;
+
+    expect(() => configuration()).toThrow(
+      'Missing required environment variable: DATABASE_URL',
+    );
+  });
 });
