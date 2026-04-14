@@ -161,9 +161,9 @@ pnpm status
 Các alias ngắn hơn:
 
 ```powershell
-pnpm u
-pnpm d
-pnpm s
+pnpm run u
+pnpm run d
+pnpm run s
 ```
 
 ## Ý nghĩa của `reboot`
