@@ -143,7 +143,7 @@ Status: `In Progress`
 - `2026-04-13`: Điền sẵn cấu hình và runbook riêng cho domain thật `buicojourney.com`, chốt subdomain backend là `api.buicojourney.com`, đồng thời xác minh DNS hiện chưa trỏ và public `80` vẫn chưa vào đúng máy Windows.
 - `2026-04-13`: Chốt hướng ingress phù hợp hơn cho máy cá nhân + Cloudflare là `Cloudflare Tunnel`, nhằm bỏ phụ thuộc vào router/NAT và tránh phải public dịch vụ mạng nội bộ trực tiếp ra Internet.
 - `2026-04-13`: Login `cloudflared`, tạo tunnel `journey-backend`, route DNS `api.buicojourney.com`, ghi config local cho `localhost:3001`, và xác minh public health endpoint qua `https://api.buicojourney.com/api/v1/health` trả `200`.
-- `2026-04-13`: Thêm bộ script Windows để sau khi đăng nhập lại máy, Docker Desktop, PostgreSQL container, backend runtime trong WSL, và Cloudflare Tunnel đúng cấu hình có thể tự khởi động lại mà không cần gõ tay.
+- `2026-04-13`: Thêm bộ script Windows để khởi động lại toàn bộ stack bằng một lệnh duy nhất, thay vì cần chạy nhiều lệnh thủ công.
 
 ### Verification
 

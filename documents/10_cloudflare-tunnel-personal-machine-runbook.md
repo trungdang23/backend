@@ -124,37 +124,26 @@ Service `cloudflared` trên máy này từng được cài nhưng đang chưa ph
 - `cloudflared` process đúng cấu hình
 - script Windows tự chạy lại sau khi user đăng nhập
 
-## Tự khởi động lại sau khi đăng nhập Windows
+## Chạy thủ công bằng một lệnh
 
 Repo có script:
 
 - `scripts/windows/start-personal-server.ps1`
+- `scripts/windows/run-personal-server.ps1`
 
-Script này sẽ tự:
+Chỉ cần chạy một lệnh:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\TrungDang\journey\backend\scripts\windows\run-personal-server.ps1"
+```
+
+Script sẽ tự:
 
 - mở `Docker Desktop` nếu cần
 - `docker compose up -d postgres`
 - restart backend runtime trong WSL
 - đảm bảo có `cloudflared` process đúng cấu hình
 - chờ tới khi `https://api.buicojourney.com/api/v1/health` trả `200`
-
-Repo cũng có script:
-
-- `scripts/windows/register-personal-server-startup-task.ps1`
-
-Script này sẽ thử tạo `Scheduled Task`. Nếu Windows không cho quyền tạo task, nó sẽ tự fallback sang `Startup folder` của user hiện tại.
-
-Hiện tại máy này đã có launcher tại:
-
-```text
-C:\Users\dangv\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\JourneyPersonalServerStartup.cmd
-```
-
-Điều đó có nghĩa là sau khi bạn **khởi động lại máy rồi đăng nhập vào Windows**, launcher sẽ tự gọi:
-
-```powershell
-C:\TrungDang\journey\backend\scripts\windows\start-personal-server.ps1
-```
 
 ## Ý nghĩa của `reboot`
 
@@ -163,7 +152,7 @@ C:\TrungDang\journey\backend\scripts\windows\start-personal-server.ps1
 - tắt máy rồi bật lại
 - hoặc chọn `Restart` trong Windows
 
-Với cấu hình hiện tại, sau `reboot` bạn không cần gõ tay các lệnh start server nữa. Chỉ cần đăng nhập lại vào Windows để launcher trong `Startup` chạy.
+Với cấu hình hiện tại, sau `reboot` bạn chỉ cần chạy **một lệnh** ở trên để server lên lại.
 
 ## Ghi chú về HTTPS
 

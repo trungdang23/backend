@@ -68,9 +68,9 @@ pnpm prisma:validate
   - `scripts/stop-production.sh`
   - `scripts/restart-production.sh`
   - `scripts/check-production-health.sh`
-- Repo đã có bộ script Windows để tự dựng lại personal-machine server sau khi đăng nhập:
+- Repo đã có bộ script Windows để start personal-machine server bằng một lệnh:
+  - `scripts/windows/run-personal-server.ps1`
   - `scripts/windows/start-personal-server.ps1`
-  - `scripts/windows/register-personal-server-startup-task.ps1`
 
 ## Deployment Workflow
 
