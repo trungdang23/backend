@@ -48,7 +48,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       } else {
         const rawMessage = exceptionResponse.message ?? exception.message;
 
-        message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+        message = Array.isArray(rawMessage)
+          ? rawMessage.join(', ')
+          : rawMessage;
         code = exceptionResponse.code ?? this.resolveErrorCode(statusCode);
         details = exceptionResponse.errors ?? exceptionResponse.message;
       }
@@ -74,16 +76,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       HttpExceptionFilter.name,
     );
 
-    response
-      .status(statusCode)
-      .json(
-        buildErrorResponse({
-          code,
-          details,
-          message,
-          path: request.url,
-        }),
-      );
+    response.status(statusCode).json(
+      buildErrorResponse({
+        code,
+        details,
+        message,
+        path: request.url,
+      }),
+    );
   }
 
   private resolveErrorCode(statusCode: HttpStatus): string {

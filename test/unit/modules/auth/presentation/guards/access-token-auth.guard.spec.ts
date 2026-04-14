@@ -3,9 +3,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 
 import { RequestContextService } from '../../../../../../src/app/request-context/request-context.service';
-import {
-  type AccessTokenVerifier,
-} from '../../../../../../src/modules/auth/application/ports/access-token-verifier.port';
+import { type AccessTokenVerifier } from '../../../../../../src/modules/auth/application/ports/access-token-verifier.port';
 import { AccessTokenAuthGuard } from '../../../../../../src/modules/auth/presentation/guards/access-token-auth.guard';
 
 describe('AccessTokenAuthGuard', () => {

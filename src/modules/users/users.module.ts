@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../shared/infrastructure/prisma/prisma.module';
+import { GetUserProfileService } from './application/services/get-user-profile.service';
 import { RegisterUserService } from './application/services/register-user.service';
 import { PASSWORD_HASHER } from './application/ports/password-hasher.port';
 import { USER_REPOSITORY } from './application/ports/user-repository.port';
@@ -10,6 +11,7 @@ import { PrismaUserRepository } from './infrastructure/prisma/prisma-user.reposi
 @Module({
   imports: [PrismaModule],
   providers: [
+    GetUserProfileService,
     RegisterUserService,
     {
       provide: USER_REPOSITORY,
@@ -20,6 +22,11 @@ import { PrismaUserRepository } from './infrastructure/prisma/prisma-user.reposi
       useClass: Pbkdf2PasswordHasherService,
     },
   ],
-  exports: [RegisterUserService, USER_REPOSITORY, PASSWORD_HASHER],
+  exports: [
+    GetUserProfileService,
+    RegisterUserService,
+    USER_REPOSITORY,
+    PASSWORD_HASHER,
+  ],
 })
 export class UsersModule {}

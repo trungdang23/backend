@@ -36,9 +36,7 @@ export function buildSuccessResponse<T>(
   };
 }
 
-export function buildErrorResponse(
-  payload: ApiErrorPayload,
-): ApiErrorResponse {
+export function buildErrorResponse(payload: ApiErrorPayload): ApiErrorResponse {
   return {
     success: false,
     error: {

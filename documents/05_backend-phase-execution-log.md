@@ -115,7 +115,7 @@ Status: `Completed`
 
 ## Phase 03
 
-Status: `In Progress`
+Status: `Completed`
 
 ### Mục tiêu
 
@@ -148,13 +148,17 @@ Status: `In Progress`
 - `2026-04-14`: Thêm lệnh `pnpm status` để kiểm tra nhanh Docker, backend WSL, tunnel và public health.
 - `2026-04-14`: Chuyển deploy SSH từ tunnel tạm sang hostname ổn định `ssh.buicojourney.com` qua `Cloudflare Tunnel` + `Service Auth`, đồng thời cập nhật workflow deploy, runbook secrets/deploy, template `cloudflared` config, và status script để kiểm tra route SSH.
 - `2026-04-14`: Bắt đầu phase auth/users: thêm User repository + password hasher, use case register, endpoint `POST /api/v1/auth/register`, unit tests và integration tests.
+- `2026-04-14`: Hoàn thiện auth/users bằng JWT service thật với `access token + refresh token`, login flow, refresh flow, endpoint `GET /api/v1/auth/me`, DTO response riêng cho auth/user profile, và E2E test chạy qua HTTP thật với `supertest`.
+- `2026-04-14`: Chuẩn hóa auth token bằng claim `jti` để mỗi lần issue token là duy nhất, tránh va chạm token khi refresh xảy ra trong cùng giây.
 - `2026-04-14`: Ghi rõ yêu cầu deploy thủ công trước khi test trên domain thật.
 
 ### Verification
 
-- `node ./node_modules/jest/bin/jest.js --config ./test/jest.config.ts --runInBand` pass (`11` suites, `22` tests) với `PATH` trỏ Node `20.20.2`
-- `node ./node_modules/eslint/bin/eslint.js "{src,test}/**/*.ts" --max-warnings=0` pass
-- `node ./node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` pass
+- `pnpm test:unit` pass (`14` suites, `28` tests)
+- `pnpm test:integration` pass (`4` suites, `15` tests)
+- `pnpm test:e2e` pass (`1` suite, `1` test)
+- `pnpm lint` pass
+- `pnpm build` pass
 - `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey?schema=public node ./node_modules/prisma/build/index.js validate --schema db/schema.prisma` pass
 - Apply `db/migrations/20260413114500_create_users/migration.sql` trên PostgreSQL thật vào database tạm `journey_verify` pass
 - `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey_verify?schema=public node ./node_modules/prisma/build/index.js db pull --print --schema db/schema.prisma` pass
@@ -191,9 +195,25 @@ Status: `In Progress`
 - `backend/scripts/windows/start-personal-server.ps1`
 - `backend/scripts/windows/status-personal-server.ps1`
 - `backend/scripts/windows/register-personal-server-startup-task.ps1`
+- `backend/src/modules/auth/application/auth-session.ts`
+- `backend/src/modules/auth/application/auth-tokens.ts`
+- `backend/src/modules/auth/application/build-authenticated-user.ts`
+- `backend/src/modules/auth/application/ports/auth-token-service.port.ts`
+- `backend/src/modules/auth/application/services/login-user.service.ts`
+- `backend/src/modules/auth/application/services/refresh-auth-session.service.ts`
+- `backend/src/modules/auth/application/services/register-auth-session.service.ts`
+- `backend/src/modules/auth/infrastructure/security/jwt-auth-token.service.ts`
+- `backend/src/modules/auth/presentation/dto/*.ts`
+- `backend/src/modules/users/application/services/get-user-profile.service.ts`
+- `backend/src/modules/users/application/user-profile.ts`
+- `backend/test/support/in-memory-user-repository.ts`
+- `backend/test/integration/auth/auth-session.integration.spec.ts`
+- `backend/test/e2e/auth/auth-session.e2e.spec.ts`
+- `backend/test/jest.e2e.config.ts`
 
 ### Ghi chú
 
 - Reality-based verification của migration đang được thực hiện bằng PostgreSQL thật + SQL apply + Prisma introspection trên database tạm, thay vì chỉ dựa vào file review.
 - Trên máy hiện tại, local runtime ổn định hơn khi chạy verify bằng Node `20.20.2`; CI vẫn giữ Node `22`, là runtime mục tiêu của pipeline.
 - Từ mốc này, file env production thật không còn là prerequisite trên máy đích; nguồn sự thật của runtime config được chuyển sang GitHub Secrets/Variables.
+- Auth flow hiện dùng JWT stateless với `jti` để đảm bảo token mới được issue khác token cũ ngay cả khi refresh diễn ra trong cùng giây; chiến lược revoke/blacklist vẫn là phạm vi cho phase hardening sau.

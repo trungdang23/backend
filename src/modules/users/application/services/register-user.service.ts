@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 
 import type { UseCase } from '../../../../shared/application/use-case';
+import { toUserProfile, type UserProfile } from '../user-profile';
 import {
   PASSWORD_HASHER,
   type PasswordHasherPort,
@@ -16,18 +17,11 @@ export interface RegisterUserInput {
   displayName?: string | null;
 }
 
-export interface RegisteredUser {
-  id: string;
-  email: string;
-  displayName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 @Injectable()
-export class RegisterUserService
-  implements UseCase<RegisterUserInput, RegisteredUser>
-{
+export class RegisterUserService implements UseCase<
+  RegisterUserInput,
+  UserProfile
+> {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: UserRepositoryPort,
@@ -35,7 +29,7 @@ export class RegisterUserService
     private readonly passwordHasher: PasswordHasherPort,
   ) {}
 
-  async execute(input: RegisterUserInput): Promise<RegisteredUser> {
+  async execute(input: RegisterUserInput): Promise<UserProfile> {
     const normalizedEmail = input.email.trim().toLowerCase();
     const existingUser = await this.userRepository.findByEmail(normalizedEmail);
 
@@ -50,12 +44,6 @@ export class RegisterUserService
       displayName: input.displayName ?? null,
     });
 
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return toUserProfile(user);
   }
 }
