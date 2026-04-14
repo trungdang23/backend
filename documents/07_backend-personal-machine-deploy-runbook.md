@@ -2,15 +2,15 @@
 
 ## Trạng thái
 
-- Date: `2026-04-13`
+- Date: `2026-04-14`
 - Status: `Accepted`
-- Scope: deploy thủ công repo `backend` từ GitHub Actions vào máy cá nhân thông qua SSH tunnel tạm thời
+- Scope: deploy thủ công repo `backend` từ GitHub Actions vào máy cá nhân qua SSH endpoint ổn định bằng `Cloudflare Tunnel`
 
 ## Mục tiêu
 
 - Tách thư mục làm việc hằng ngày với thư mục deploy.
-- Cho phép GitHub Actions pull code mới nhất từ `main`, render runtime env, chạy migration, và chuẩn bị restart app.
-- Ghi lại đầy đủ các bước đã dùng cho máy cá nhân hiện tại để có thể lặp lại mà không cần dò lại log cũ.
+- Giữ workflow deploy hiện tại của GitHub Actions.
+- Loại bỏ phụ thuộc vào reverse SSH tunnel tạm vốn đổi host hoặc port sau reboot.
 
 ## Kiến trúc deploy hiện tại
 
@@ -27,20 +27,23 @@
 - Kiểu deploy:
   - manual qua workflow `deploy-backend.yml`
 - Kiểu SSH hiện tại:
-  - reverse tunnel tạm thời qua Pinggy
+  - `Cloudflare Tunnel` published SSH app tại `ssh.buicojourney.com`
+- Kiểu xác thực Access cho GitHub Actions:
+  - `Service Auth` bằng Cloudflare service token
 
 ## Những gì workflow đang làm
 
 1. Verify repo bằng `lint`, `test`, `build`, `prisma:validate`.
-2. Đọc SSH secrets và runtime config từ GitHub.
-3. Render file env tạm trên GitHub runner.
-4. Copy file env đó lên máy đích tại `RUNTIME_ENV_PATH`.
-5. SSH vào máy đích.
-6. `git fetch`, `git checkout`, `git pull` trong `DEPLOY_PATH`.
-7. `pnpm install`, `pnpm prisma:generate`, `pnpm build`.
-8. Source runtime env vừa copy lên.
-9. Chạy `pnpm prisma:migrate:deploy`.
-10. Chạy `SERVICE_RESTART_COMMAND`.
+2. Cài `cloudflared` client trên GitHub runner.
+3. Đọc Cloudflare Access secrets, SSH secrets, và runtime config từ GitHub.
+4. Render file env tạm trên GitHub runner.
+5. SSH qua `cloudflared access ssh` vào `ssh.buicojourney.com`.
+6. Copy file env đó lên máy đích tại `RUNTIME_ENV_PATH`.
+7. `git fetch`, `git checkout`, `git pull` trong `DEPLOY_PATH`.
+8. `pnpm install`, `pnpm prisma:generate`, `pnpm build`.
+9. Source runtime env vừa copy lên.
+10. Chạy `pnpm prisma:migrate:deploy`.
+11. Chạy `SERVICE_RESTART_COMMAND`.
 
 ## Runtime script hiện có trong repo
 
@@ -60,27 +63,16 @@ Các script này:
 - Không deploy vào chính thư mục đang code.
 - Không commit `.env.production`.
 - `RUNTIME_ENV_PATH` phải là file path, không phải directory path.
-- Với tunnel Pinggy, `SSH_HOST`, `SSH_PORT`, và `SSH_KNOWN_HOSTS` sẽ đổi khi tunnel đổi.
+- `SSH_HOST` phải là hostname Access cố định, không phải hostname tunnel tạm.
+- `SSH_PORT` nên để `22` trong mô hình Cloudflare SSH hiện tại.
 - Merge `main` không tự deploy; bạn vẫn phải bấm `Run workflow`.
-
-## Thư mục deploy riêng
-
-Đã tạo:
-
-```text
-/home/trungdang/apps/journey-backend
-```
-
-Lý do:
-
-- tránh làm dirty working tree ở source dev
-- tránh build và runtime artifact chen vào thư mục đang code
-- để workflow có working copy riêng chỉ phục vụ deploy
 
 ## GitHub configuration hiện cần
 
 ### Secrets
 
+- `CLOUDFLARE_ACCESS_CLIENT_ID`
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
 - `SSH_HOST`
 - `SSH_PORT`
 - `SSH_USER`
@@ -103,7 +95,15 @@ Lý do:
 - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
 - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 
-## Giá trị path đã chốt cho máy hiện tại
+## Giá trị path và host đã chốt cho máy hiện tại
+
+### Secrets
+
+```text
+SSH_HOST=ssh.buicojourney.com
+SSH_PORT=22
+SSH_USER=trungdang
+```
 
 ### Variables
 
@@ -112,12 +112,45 @@ DEPLOY_PATH=/home/trungdang/apps/journey-backend
 RUNTIME_ENV_PATH=/home/trungdang/apps/journey-backend/.env.production
 ```
 
-`SERVICE_RESTART_COMMAND` hiện tại mới chỉ dùng để xác minh deploy flow. Nó chưa chạy backend như một service production thật.
-
-Giá trị nên dùng cho bước tiếp theo:
+`SERVICE_RESTART_COMMAND` nên dùng:
 
 ```text
 bash ./scripts/restart-production.sh
+```
+
+## Cấu hình Cloudflare cần có
+
+### Published application routes
+
+- `ssh.buicojourney.com -> ssh://localhost:22`
+- `api.buicojourney.com -> http://localhost:3001`
+
+Template tham chiếu đã có trong repo:
+
+```text
+deploy/cloudflare/journey-backend-config.yml.example
+```
+
+### Access policy cho SSH hostname
+
+Tại Access app của `ssh.buicojourney.com`:
+
+- thêm policy `Service Auth`
+- cho phép service token mà GitHub Actions dùng
+- giữ thêm policy user-based riêng nếu bạn còn muốn SSH thủ công từ máy cá nhân
+
+### Host key secret
+
+GitHub secret `SSH_KNOWN_HOSTS` nên dùng host key thật của Windows OpenSSH server với hostname ổn định:
+
+```text
+ssh.buicojourney.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
+```
+
+Lấy public host key trên Windows:
+
+```powershell
+Get-Content 'C:\ProgramData\ssh\ssh_host_ed25519_key.pub'
 ```
 
 ## Database local cho deploy
@@ -142,22 +175,19 @@ docker compose -f /mnt/c/TrungDang/journey/backend/docker-compose.yml up -d post
    - `/mnt/c/TrungDang/journey/backend`
 2. Commit và push lên `main`.
 3. Chờ `backend-ci.yml` pass.
-4. Kiểm tra tunnel SSH tạm còn sống.
-5. Nếu tunnel đã đổi, cập nhật lại:
-   - `SSH_HOST`
-   - `SSH_PORT`
-   - `SSH_KNOWN_HOSTS`
-6. Kiểm tra PostgreSQL local đang chạy.
-7. Bấm `Run workflow` cho `deploy-backend`.
-
-Khi đã đổi `SERVICE_RESTART_COMMAND` sang `bash ./scripts/restart-production.sh`, workflow sẽ không chỉ build và migrate mà còn khởi động backend thật và chờ health check pass.
+4. Chạy `pnpm status` trên máy cá nhân để xác nhận:
+   - Docker đang chạy
+   - backend runtime healthy
+   - `cloudflared` process có mặt
+   - route SSH ổn định đã có trong config
+5. Bấm `Run workflow` cho `deploy-backend`.
 
 ## Lệnh kiểm tra nhanh trước deploy
 
-Kiểm tra PostgreSQL local:
+Kiểm tra local stack:
 
 ```bash
-timeout 3 bash -lc 'cat < /dev/null > /dev/tcp/127.0.0.1/5432' && echo open || echo closed
+pnpm status
 ```
 
 Kiểm tra deploy path:
@@ -166,49 +196,68 @@ Kiểm tra deploy path:
 git -C /home/trungdang/apps/journey-backend status --short --branch
 ```
 
-Kiểm tra SSH tunnel hiện tại:
+Kiểm tra SSH hostname ổn định từ client có `cloudflared`:
 
 ```bash
-ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i /home/trungdang/.ssh/id_ed25519_github_actions_deploy -p <SSH_PORT> trungdang@<SSH_HOST> 'echo tunnel_ok'
+TUNNEL_SERVICE_TOKEN_ID='<client-id>' \
+TUNNEL_SERVICE_TOKEN_SECRET='<client-secret>' \
+ssh -o ProxyCommand="cloudflared access ssh --hostname %h" trungdang@ssh.buicojourney.com 'echo tunnel_ok'
 ```
 
-## Các lỗi đã gặp và cách xử lý
+## Các lỗi có thể gặp và cách xử lý
 
-### `SSH_PRIVATE_KEY is malformed`
+### `ssh: connect to host ... port ...: Connection timed out`
 
-Nguyên nhân:
+Nguyên nhân thường gặp:
 
-- secret bị paste sai format
+- `cloudflared` trên máy đích chưa chạy
+- config tunnel chưa có route `ssh://localhost:22`
+- `SSH_HOST` trong GitHub secret vẫn trỏ sai hostname cũ
 
 Khắc phục:
 
-```powershell
-wsl base64 -w 0 /home/trungdang/.ssh/id_ed25519_github_actions_deploy | clip.exe
-```
+- chạy lại `pnpm up`
+- kiểm tra `pnpm status`
+- xác nhận `SSH_HOST=ssh.buicojourney.com`
 
-Paste chuỗi đó vào `SSH_PRIVATE_KEY`.
-
-### `Potential private key material detected`
+### `Permission denied (publickey)`
 
 Nguyên nhân:
 
-- secret scan bắt nhầm pattern trong workflow
+- `SSH_PRIVATE_KEY` không khớp với authorized key trên máy đích
+- `SSH_USER` sai
 
 Khắc phục:
 
-- workflow đã được sửa để không chứa nguyên văn pattern gây false positive
+- kiểm tra lại private key deploy
+- kiểm tra `authorized_keys` của user deploy
+- kiểm tra `SSH_USER`
 
-### `P1001: Can't reach database server at localhost:5432`
+### `Host key verification failed`
 
 Nguyên nhân:
 
-- PostgreSQL local chưa chạy
+- `SSH_KNOWN_HOSTS` chưa được cập nhật theo hostname ổn định
+- secret đang chứa line cho host tạm cũ
 
 Khắc phục:
 
-```powershell
-& 'C:\Program Files\Docker\Docker\resources\bin\docker.exe' compose -f 'C:\TrungDang\journey\backend\docker-compose.yml' up -d postgres
-```
+- lấy lại host key từ `C:\ProgramData\ssh\ssh_host_ed25519_key.pub`
+- cập nhật `SSH_KNOWN_HOSTS` theo format `ssh.buicojourney.com <key>`
+
+### `403` hoặc bị Access chặn trước khi vào SSH
+
+Nguyên nhân:
+
+- service token sai
+- Access app của `ssh.buicojourney.com` chưa có policy `Service Auth`
+
+Khắc phục:
+
+- tạo mới service token nếu cần
+- cập nhật lại `CLOUDFLARE_ACCESS_CLIENT_ID`
+- cập nhật lại `CLOUDFLARE_ACCESS_CLIENT_SECRET`
+- kiểm tra policy của Access app
 
 ### `RUNTIME_ENV_PATH points to a directory`
 
@@ -222,53 +271,16 @@ Giá trị đúng:
 /home/trungdang/apps/journey-backend/.env.production
 ```
 
-### `Permission denied` khi `cd /home/trungdang/apps/journey-backend`
-
-Nguyên nhân:
-
-- trước đó workflow đã `chmod 600` nhầm lên thư mục repo do `RUNTIME_ENV_PATH` sai
-
-Khắc phục:
-
-```bash
-chmod 755 /home/trungdang/apps/journey-backend
-```
-
-### `git status` ở deploy clone bị dirty vì `.deploy-runtime.env`
-
-Nguyên nhân:
-
-- trước đó `RUNTIME_ENV_PATH` trỏ sai, khiến file env tạm bị copy nhầm vào thư mục repo
-
-Khắc phục:
-
-```bash
-rm -f /home/trungdang/apps/journey-backend/.deploy-runtime.env
-```
-
-### `ssh: Could not resolve hostname ...`
-
-Nguyên nhân:
-
-- host tunnel Pinggy đã hết hạn
-
-Khắc phục:
-
-- mở lại tunnel mới
-- cập nhật lại `SSH_HOST`, `SSH_PORT`, `SSH_KNOWN_HOSTS`
-
 ## Giới hạn của setup hiện tại
 
 - Chưa phải production-ready.
-- Chưa có reverse proxy và SSL.
-- Chưa có domain thật trỏ vào backend runtime.
 - Chưa có process manager hoặc container runtime cho chính app backend.
-- `SERVICE_RESTART_COMMAND` chưa chạy backend như service thật.
-- SSH đang phụ thuộc tunnel tạm, không phù hợp cho auto deploy lâu dài.
+- Máy cá nhân vẫn phải online để nhận traffic và nhận deploy.
+- Service token Cloudflare có hạn dùng, nên cần theo dõi ngày hết hạn.
 
 ## Bước tiếp theo được khuyến nghị
 
-1. Cho backend chạy thật bằng `Docker Compose` hoặc `pm2`.
-2. Đổi `SERVICE_RESTART_COMMAND` từ `echo "Deploy completed"` sang lệnh restart thật.
-3. Thêm health check sau deploy.
-4. Sau khi ổn định, cân nhắc chuyển từ máy cá nhân sang VPS hoặc SSH endpoint ổn định.
+1. Cho `cloudflared` chạy như Windows service ổn định thay vì chỉ dựa vào process khởi động lại sau login.
+2. Đưa backend runtime sang process manager hoặc container runtime thật.
+3. Thêm health check riêng cho SSH deploy path nếu cần tự động hóa sâu hơn.
+4. Sau khi ổn định, cân nhắc chuyển từ máy cá nhân sang VPS hoặc máy luôn-on.

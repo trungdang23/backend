@@ -146,6 +146,7 @@ Status: `In Progress`
 - `2026-04-13`: Thêm bộ script Windows để khởi động lại toàn bộ stack bằng một lệnh duy nhất, thay vì cần chạy nhiều lệnh thủ công.
 - `2026-04-14`: Bổ sung script dừng toàn bộ stack bằng một lệnh và thêm shortcut `pnpm up` / `pnpm down`.
 - `2026-04-14`: Thêm lệnh `pnpm status` để kiểm tra nhanh Docker, backend WSL, tunnel và public health.
+- `2026-04-14`: Chuyển deploy SSH từ tunnel tạm sang hostname ổn định `ssh.buicojourney.com` qua `Cloudflare Tunnel` + `Service Auth`, đồng thời cập nhật workflow deploy, runbook secrets/deploy, template `cloudflared` config, và status script để kiểm tra route SSH.
 - `2026-04-14`: Bắt đầu phase auth/users: thêm User repository + password hasher, use case register, endpoint `POST /api/v1/auth/register`, unit tests và integration tests.
 - `2026-04-14`: Ghi rõ yêu cầu deploy thủ công trước khi test trên domain thật.
 
@@ -186,7 +187,9 @@ Status: `In Progress`
 - `backend/deploy/apache/api-buicojourney.com.conf`
 - `backend/documents/09_buicojourney-domain-setup.md`
 - `backend/documents/10_cloudflare-tunnel-personal-machine-runbook.md`
+- `backend/deploy/cloudflare/journey-backend-config.yml.example`
 - `backend/scripts/windows/start-personal-server.ps1`
+- `backend/scripts/windows/status-personal-server.ps1`
 - `backend/scripts/windows/register-personal-server-startup-task.ps1`
 
 ### Ghi chú

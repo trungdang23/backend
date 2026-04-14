@@ -82,6 +82,8 @@ jobs:
 
       - name: Validate deploy secrets and variables
         env:
+          CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
@@ -101,6 +103,8 @@ jobs:
           RUNTIME_JWT_ACCESS_TOKEN_TTL: ${{ vars.RUNTIME_JWT_ACCESS_TOKEN_TTL }}
           RUNTIME_JWT_REFRESH_TOKEN_TTL: ${{ vars.RUNTIME_JWT_REFRESH_TOKEN_TTL }}
         run: |
+          test -n "${CLOUDFLARE_ACCESS_CLIENT_ID}"
+          test -n "${CLOUDFLARE_ACCESS_CLIENT_SECRET}"
           test -n "${SSH_HOST}"
           test -n "${SSH_USER}"
           test -n "${SSH_PRIVATE_KEY}"
@@ -129,8 +133,22 @@ jobs:
             echo "SSH_PORT is not set. Falling back to port 22."
           fi
 
+      - name: Install cloudflared client
+        env:
+          CLOUDFLARED_VERSION: 2026.3.0
+        run: |
+          install -m 755 -d "${HOME}/bin"
+          curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" \
+            -o "${HOME}/bin/cloudflared"
+          chmod 755 "${HOME}/bin/cloudflared"
+          echo "${HOME}/bin" >> "${GITHUB_PATH}"
+          "${HOME}/bin/cloudflared" --version
+
       - name: Configure SSH
         env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
@@ -158,6 +176,20 @@ jobs:
           printf '%s' "${SSH_KNOWN_HOSTS}" \
             | perl -0pe 's/\r\n/\n/g; s/\r/\n/g; s/\\n/\n/g' \
             > ~/.ssh/known_hosts
+          ssh_port="${SSH_PORT:-22}"
+          cat > ~/.ssh/config <<EOF
+          Host ${SSH_HOST}
+            HostName ${SSH_HOST}
+            User ${SSH_USER}
+            Port ${ssh_port}
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            StrictHostKeyChecking yes
+            ProxyCommand ${HOME}/bin/cloudflared access ssh --hostname %h
+          EOF
+          chmod 600 ~/.ssh/config
           rm -f "${private_key_source}" "${decoded_key}"
 
       - name: Render runtime env file from GitHub configuration
@@ -190,28 +222,28 @@ jobs:
 
       - name: Upload runtime env file
         env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
           RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
         run: |
           runtime_env_dir="$(dirname "${RUNTIME_ENV_PATH}")"
           runtime_env_tmp="${RUNTIME_ENV_PATH}.tmp"
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "install -m 700 -d '${runtime_env_dir}' && if [ -d '${RUNTIME_ENV_PATH}' ]; then echo 'RUNTIME_ENV_PATH points to a directory, expected a file path.' >&2; exit 1; fi"
-          scp -P "${SSH_PORT:-22}" .deploy-runtime.env "${SSH_USER}@${SSH_HOST}:${runtime_env_tmp}"
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" "mv '${runtime_env_tmp}' '${RUNTIME_ENV_PATH}' && chmod 600 '${RUNTIME_ENV_PATH}'"
+          ssh "${SSH_HOST}" "install -m 700 -d '${runtime_env_dir}' && if [ -d '${RUNTIME_ENV_PATH}' ]; then echo 'RUNTIME_ENV_PATH points to a directory, expected a file path.' >&2; exit 1; fi"
+          scp .deploy-runtime.env "${SSH_HOST}:${runtime_env_tmp}"
+          ssh "${SSH_HOST}" "mv '${runtime_env_tmp}' '${RUNTIME_ENV_PATH}' && chmod 600 '${RUNTIME_ENV_PATH}'"
 
-      - name: Deploy on VPS
+      - name: Deploy on target machine
         env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           RUNTIME_ENV_PATH: ${{ vars.RUNTIME_ENV_PATH }}
           SERVICE_RESTART_COMMAND: ${{ vars.SERVICE_RESTART_COMMAND }}
           DEPLOY_REF: ${{ inputs.ref }}
         run: |
-          ssh -p "${SSH_PORT:-22}" "${SSH_USER}@${SSH_HOST}" \
+          ssh "${SSH_HOST}" \
             "set -euo pipefail && \
             export NVM_DIR=\"\$HOME/.nvm\" && \
             test -s \"\$NVM_DIR/nvm.sh\" && \

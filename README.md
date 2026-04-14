@@ -62,6 +62,7 @@ pnpm prisma:validate
 - Repo `backend` có workflow CI riêng tại `.github/workflows/backend-ci.yml`; merge vào repo backend sẽ chạy `pnpm prisma:generate`, `pnpm lint`, `pnpm test`, `pnpm build`, và `pnpm prisma:validate`.
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
 - Repo `backend` có workflow deploy thủ công tại `.github/workflows/deploy-backend.yml`; workflow này chỉ chạy khi bạn bấm `Run workflow`, render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
+- Workflow deploy hiện đi qua `Cloudflare Tunnel` + `cloudflared access ssh`, nên không còn phụ thuộc vào reverse SSH tunnel tạm cho bước deploy.
 - Nền tảng auth đã có `AuthModule`, `AccessTokenAuthGuard`, `@Public()`, và `@CurrentUser()`. JWT verification adapter thực tế sẽ được hoàn thiện ở Phase 03.
 - Repo đã có bộ script runtime trên host:
   - `scripts/start-production.sh`
@@ -79,6 +80,8 @@ pnpm prisma:validate
 - `deploy-backend.yml` là workflow deploy thủ công cho repo backend riêng, không tự chạy khi merge `main`.
 - `backend-ci.yml` và `deploy-backend.yml` đều gọi `bash ./scripts/check-secrets.sh` trước các bước build/test chính.
 - Để workflow deploy hoạt động, repo backend cần các GitHub secrets:
+  - `CLOUDFLARE_ACCESS_CLIENT_ID`
+  - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
   - `SSH_HOST`
   - `SSH_PORT`
   - `SSH_USER`
@@ -95,10 +98,11 @@ pnpm prisma:validate
   - `RUNTIME_APP_PORT`
   - `RUNTIME_GLOBAL_PREFIX`
   - `RUNTIME_SWAGGER_ENABLED`
-  - `RUNTIME_JWT_ISSUER`
-  - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
-  - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
+- `RUNTIME_JWT_ISSUER`
+- `RUNTIME_JWT_ACCESS_TOKEN_TTL`
+- `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
+- Với hướng deploy ổn định trên máy cá nhân qua Cloudflare, `SSH_HOST` nên là hostname Access cố định như `ssh.buicojourney.com` và `SSH_PORT` nên để `22`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.
 - Với setup máy cá nhân hiện tại, giá trị phù hợp cho `SERVICE_RESTART_COMMAND` là `bash ./scripts/restart-production.sh`.
 - Runbook secrets/runtime nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.
@@ -106,6 +110,7 @@ pnpm prisma:validate
 - Runbook domain/reverse proxy trên máy cá nhân nằm tại `documents/08_backend-personal-machine-domain-runbook.md`.
 - Runbook domain thật cho `buicojourney.com` nằm tại `documents/09_buicojourney-domain-setup.md`.
 - Runbook `Cloudflare Tunnel` cho máy cá nhân nằm tại `documents/10_cloudflare-tunnel-personal-machine-runbook.md`.
+- Template `cloudflared` config cho HTTP + SSH nằm tại `deploy/cloudflare/journey-backend-config.yml.example`.
 
 ## Personal Machine Short Commands (Windows)
 

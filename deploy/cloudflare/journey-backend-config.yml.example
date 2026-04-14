@@ -1,0 +1,9 @@
+tunnel: <cloudflare-tunnel-id>
+credentials-file: C:\Users\<windows-user>\.cloudflared\<cloudflare-tunnel-id>.json
+
+ingress:
+  - hostname: ssh.buicojourney.com
+    service: ssh://localhost:22
+  - hostname: api.buicojourney.com
+    service: http://localhost:3001
+  - service: http_status:404

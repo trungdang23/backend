@@ -2,10 +2,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $dockerCli = 'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
+$cloudflaredConfig = 'C:\Users\dangv\.cloudflared\config.yml'
 $composeFileWindows = 'C:\TrungDang\journey\backend\docker-compose.yml'
 $wslDistro = 'Ubuntu-20.04'
 $deployDirWsl = '/home/trungdang/apps/journey-backend'
 $healthUrl = 'https://api.buicojourney.com/api/v1/health'
+$deploySshHostname = 'ssh.buicojourney.com'
 
 function Write-Section([string]$title) {
     Write-Host ('=' * 8 + " $title " + '=' * 8)
@@ -41,6 +43,19 @@ if ($processes) {
     }
 } else {
     Write-Host 'cloudflared process not running.'
+}
+
+Write-Section 'Deploy SSH'
+if (-not (Test-Path $cloudflaredConfig)) {
+    Write-Host "cloudflared config not found at $cloudflaredConfig"
+} else {
+    $configContent = Get-Content $cloudflaredConfig -Raw
+
+    if ($configContent.Contains("hostname: $deploySshHostname") -and $configContent.Contains('service: ssh://localhost:22')) {
+        Write-Host "$deploySshHostname -> ssh://localhost:22 configured."
+    } else {
+        Write-Host "Stable SSH route is missing from $cloudflaredConfig."
+    }
 }
 
 Write-Section 'Public Health'

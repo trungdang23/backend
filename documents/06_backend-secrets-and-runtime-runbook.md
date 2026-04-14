@@ -2,26 +2,28 @@
 
 ## Trạng thái
 
-- Date: `2026-04-13`
+- Date: `2026-04-14`
 - Status: `Accepted`
 - Scope: quản lý secret và runtime config cho repo `backend`
 
 ## Mục tiêu
 
 - Không commit secret thật vào repo backend.
-- Tách rõ secret phục vụ deploy với secret phục vụ runtime của ứng dụng.
-- Chuẩn hóa cách cấu hình trên GitHub và trên VPS để merge `main` không vô tình làm lộ khóa.
+- Tách rõ secret phục vụ Cloudflare Access, secret phục vụ SSH host, và secret phục vụ runtime của ứng dụng.
+- Chuẩn hóa cách cấu hình trên GitHub để deploy không phụ thuộc vào SSH tunnel tạm.
 
 ## Mô hình bảo mật hiện tại
 
-- GitHub giữ secret để workflow deploy truy cập được VPS.
+- GitHub giữ secret để workflow deploy đi qua `Cloudflare Access` và SSH vào máy đích.
 - GitHub cũng giữ runtime secrets/variables để workflow render file env production khi deploy.
-- Repo chỉ chứa `.env.*.example`, workflow, và tài liệu; không chứa env thật.
+- Repo chỉ chứa `.env.*.example`, workflow, script, và tài liệu; không chứa env thật.
 
 ## Nhóm bí mật và cấu hình
 
 ### GitHub Secrets cho repo backend
 
+- `CLOUDFLARE_ACCESS_CLIENT_ID`
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
 - `SSH_HOST`
 - `SSH_PORT`
 - `SSH_USER`
@@ -55,6 +57,8 @@
 - `JWT_ISSUER`
 - `JWT_ACCESS_TOKEN_TTL`
 - `JWT_REFRESH_TOKEN_TTL`
+- `JWT_ACCESS_TOKEN_SECRET`
+- `JWT_REFRESH_TOKEN_SECRET`
 
 ## Những gì đang được bảo vệ ở mức workflow
 
@@ -67,7 +71,8 @@
   - Google API key
   - OpenAI API key
   - Slack token
-- Workflow deploy chỉ đọc SSH key từ GitHub Secrets.
+- Workflow deploy dùng service token Cloudflare chỉ để vào Access app bảo vệ SSH hostname.
+- Workflow deploy vẫn dùng SSH private key để xác thực với `sshd` trên máy đích.
 - Workflow deploy render `.env.production` từ GitHub configuration, copy lên máy đích, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
 
 ## Thiết lập trên GitHub
@@ -75,6 +80,8 @@
 1. Vào repo `backend` trên GitHub.
 2. Mở `Settings` -> `Secrets and variables` -> `Actions`.
 3. Thêm các secrets:
+   - `CLOUDFLARE_ACCESS_CLIENT_ID`
+   - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
    - `SSH_HOST`
    - `SSH_PORT`
    - `SSH_USER`
@@ -95,18 +102,38 @@
    - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
    - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 
-## Thiết lập trên VPS
+## Giá trị nên dùng cho máy cá nhân hiện tại
 
-1. Tạo thư mục deploy, ví dụ `/var/www/journey-backend`.
-2. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
-3. Đảm bảo user deploy có quyền ghi vào thư mục chứa `RUNTIME_ENV_PATH`.
-4. Đảm bảo service restart command của bạn thực sự dùng file env đó.
+### Secrets
+
+- `SSH_HOST=ssh.buicojourney.com`
+- `SSH_PORT=22`
+- `SSH_USER=trungdang`
+
+`SSH_KNOWN_HOSTS` nên chứa host key thật của Windows OpenSSH server theo format:
+
+```text
+ssh.buicojourney.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
+```
+
+Có thể lấy public host key bằng PowerShell trên máy Windows:
+
+```powershell
+Get-Content 'C:\ProgramData\ssh\ssh_host_ed25519_key.pub'
+```
+
+Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub secret `SSH_KNOWN_HOSTS`.
+
+### Variables
+
+- `DEPLOY_PATH=/home/trungdang/apps/journey-backend`
+- `RUNTIME_ENV_PATH=/home/trungdang/apps/journey-backend/.env.production`
 
 ## Mẫu mapping GitHub configuration
 
 ### Secrets
 
-- `RUNTIME_DATABASE_URL=postgresql://journey:strong-password@db:5432/journey?schema=public`
+- `RUNTIME_DATABASE_URL=postgresql://journey:strong-password@localhost:5432/journey_prod_local?schema=public`
 - `RUNTIME_JWT_ACCESS_TOKEN_SECRET=64-plus-random-characters`
 - `RUNTIME_JWT_REFRESH_TOKEN_SECRET=another-64-plus-random-characters`
 
@@ -116,23 +143,37 @@
 - `RUNTIME_APP_PORT=3001`
 - `RUNTIME_GLOBAL_PREFIX=api/v1`
 - `RUNTIME_SWAGGER_ENABLED=true`
-- `RUNTIME_JWT_ISSUER=api.tenmiencuaban.com`
+- `RUNTIME_JWT_ISSUER=api.buicojourney.com`
 - `RUNTIME_JWT_ACCESS_TOKEN_TTL=15m`
 - `RUNTIME_JWT_REFRESH_TOKEN_TTL=7d`
+
+## Thiết lập trên máy đích
+
+1. Đảm bảo Windows OpenSSH Server đang chạy và `StartType` là `Automatic`.
+2. Đảm bảo `cloudflared` đang chạy với published route:
+   - `ssh.buicojourney.com -> ssh://localhost:22`
+   - `api.buicojourney.com -> http://localhost:3001`
+3. Đảm bảo Access app của `ssh.buicojourney.com` có policy `Service Auth` cho service token dùng bởi GitHub Actions.
+4. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
+5. Đảm bảo user deploy có quyền ghi vào thư mục chứa `RUNTIME_ENV_PATH`.
+6. Đảm bảo service restart command của bạn thực sự dùng file env đó.
 
 ## Quy trình deploy an toàn
 
 1. Merge code vào `main` của repo backend.
 2. Chờ `backend-ci.yml` pass.
-3. Vào GitHub Actions của repo backend.
-4. Chạy `deploy-backend.yml` bằng `Run workflow`.
-5. Workflow dùng SSH key từ GitHub để vào VPS.
-6. Workflow render `.env.production` từ GitHub Secrets/Variables và copy file đó vào `RUNTIME_ENV_PATH`.
-7. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
+3. Kiểm tra local stack bằng `pnpm status`.
+4. Xác nhận `cloudflared` config có route SSH ổn định.
+5. Vào GitHub Actions của repo backend.
+6. Chạy `deploy-backend.yml` bằng `Run workflow`.
+7. Workflow dùng `cloudflared access ssh` + service token để vào hostname SSH ổn định.
+8. Workflow render `.env.production` từ GitHub Secrets/Variables và copy file đó vào `RUNTIME_ENV_PATH`.
+9. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
 
 ## Kiểm tra sau deploy
 
 - Kiểm tra `/api/v1/health`
+- Kiểm tra `pnpm status`
 - Kiểm tra log ứng dụng
 - Kiểm tra migration đã apply
 - Kiểm tra không có file env thật nào bị track bởi git
@@ -141,4 +182,4 @@
 
 - Merge `main` hiện tại không làm lộ secret production nếu bạn chỉ commit source hiện có.
 - GitHub giữ cả deploy secrets lẫn runtime secrets/variables của app.
-- Repo backend chỉ giữ file example; giá trị thật đi qua GitHub Actions vào máy đích lúc deploy.
+- Deploy SSH đã chuyển sang hostname ổn định qua Cloudflare Access, nên không còn phải cập nhật `SSH_HOST` hay `SSH_PORT` sau mỗi lần reboot như mô hình Pinggy cũ.

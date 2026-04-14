@@ -2,10 +2,11 @@
 
 ## Trạng thái
 
-- Date: `2026-04-13`
-- Status: `In Progress`
+- Date: `2026-04-14`
+- Status: `Accepted`
 - Domain: `buicojourney.com`
 - Backend hostname: `api.buicojourney.com`
+- Deploy SSH hostname: `ssh.buicojourney.com`
 - Tunnel name: `journey-backend`
 - Tunnel id: `3446e326-9e78-4f9b-aa2a-ea440f2a27fb`
 
@@ -15,80 +16,63 @@ Hướng này phù hợp khi:
 
 - bạn muốn dùng máy cá nhân làm server
 - domain đang quản lý trên Cloudflare
-- bạn không muốn mở `80/443` từ router vào máy nhà
-- bạn không muốn phụ thuộc vào `Pinggy` hoặc tunnel tạm
+- bạn không muốn mở `80/443` hoặc `22` từ router vào máy nhà
+- bạn muốn cả public HTTP và deploy SSH đi qua một tunnel ổn định
 
 ## Vì sao hướng này phù hợp hơn
 
-Với `Cloudflare Tunnel`, máy của bạn chỉ cần mở kết nối đi ra ngoài tới Cloudflare. Bạn không cần public IP cố định, không cần mở inbound port trên router, và không cần expose giao diện quản trị mạng ra Internet.
+Với `Cloudflare Tunnel`, máy của bạn chỉ cần mở kết nối đi ra ngoài tới Cloudflare. Bạn không cần public IP cố định, không cần mở inbound port trên router, và không cần phụ thuộc vào tunnel SSH tạm kiểu Pinggy cho deploy.
 
-Với backend hiện tại, tunnel có thể route trực tiếp:
+Trong setup hiện tại, một tunnel phục vụ cả hai đường:
 
 - `api.buicojourney.com` -> `http://localhost:3001`
+- `ssh.buicojourney.com` -> `ssh://localhost:22`
 
-Điều này cũng có nghĩa là backend có thể đi ra public mà không cần `Apache/XAMPP` cho riêng API ở giai đoạn này.
-
-## Kiến trúc đề xuất
+## Kiến trúc hiện tại
 
 ```text
 Internet
   -> Cloudflare
-  -> Cloudflare Tunnel (cloudflared trên máy bạn)
-  -> backend NestJS tại http://localhost:3001
+  -> Cloudflare Tunnel (cloudflared trên Windows)
+  -> api.buicojourney.com -> backend NestJS tại http://localhost:3001
+  -> ssh.buicojourney.com -> Windows OpenSSH tại localhost:22
 ```
 
-## Những gì không còn cần cho backend nếu dùng Tunnel
+## Những gì không còn cần
 
-- không cần chỉnh `router/NAT` để mở `80/443`
-- không cần trỏ `A` record về IP mạng nhà cho backend
-- không cần dùng `Pinggy` để publish HTTP traffic
-- không bắt buộc dùng `Apache/XAMPP` để reverse proxy backend
+- không cần dùng Pinggy cho deploy
+- không cần NAT port forward cho HTTP
+- không cần NAT port forward cho SSH
 
 ## Những gì vẫn cần
 
 - backend phải chạy ổn tại `http://localhost:3001`
+- Windows OpenSSH Server phải chạy tại `localhost:22`
 - domain `buicojourney.com` phải nằm trong Cloudflare
-- bạn phải tạo và quản lý một `Cloudflare Tunnel`
-- máy cá nhân phải online khi muốn phục vụ traffic
+- `cloudflared` phải chạy đúng config
+- máy cá nhân phải online khi muốn phục vụ traffic hoặc nhận deploy
 
-## Luồng cấu hình đề xuất
+## File config tham chiếu
 
-### 1. Tạo tunnel trên Cloudflare
+Template đã được lưu trong repo:
 
-Trong Cloudflare Dashboard:
-
-- vào `Zero Trust`
-- vào `Networks` hoặc `Access` rồi tới `Tunnels`
-- tạo một tunnel mới
-
-### 2. Tạo published application
-
-Map hostname:
-
-- Hostname: `api.buicojourney.com`
-- Service type: `HTTP`
-- URL: `http://localhost:3001`
-
-### 3. Cài `cloudflared` trên máy cá nhân
-
-Khuyến nghị cài trên Windows và chạy như service, vì Windows có thể chạm được backend hiện đang lắng nghe tại `localhost:3001`.
-
-### 4. Gắn tunnel token vào máy
-
-Cloudflare sẽ cấp `tunnel token` hoặc hướng dẫn lệnh cài service.
-
-### 5. Kiểm tra public endpoint
-
-Sau khi tunnel chạy:
-
-```bash
-curl https://api.buicojourney.com/api/v1/health
+```text
+deploy/cloudflare/journey-backend-config.yml.example
 ```
 
-Kỳ vọng:
+Ví dụ:
 
-- trả `200`
-- body chứa health JSON của backend
+```yaml
+tunnel: 3446e326-9e78-4f9b-aa2a-ea440f2a27fb
+credentials-file: C:\Users\dangv\.cloudflared\3446e326-9e78-4f9b-aa2a-ea440f2a27fb.json
+
+ingress:
+  - hostname: ssh.buicojourney.com
+    service: ssh://localhost:22
+  - hostname: api.buicojourney.com
+    service: http://localhost:3001
+  - service: http_status:404
+```
 
 ## Trạng thái triển khai hiện tại trên máy này
 
@@ -97,32 +81,26 @@ Kỳ vọng:
 - login `cloudflared`
 - tạo tunnel `journey-backend`
 - tạo route DNS cho `api.buicojourney.com`
-- tạo file config tại:
-  - `C:\Users\dangv\.cloudflared\config.yml`
+- tạo route DNS cho `ssh.buicojourney.com`
 - xác minh public health:
   - `https://api.buicojourney.com/api/v1/health`
   - trả `200`
 
-File config hiện tại:
+## Access cho deploy SSH
 
-```yaml
-tunnel: 3446e326-9e78-4f9b-aa2a-ea440f2a27fb
-credentials-file: C:\Users\dangv\.cloudflared\3446e326-9e78-4f9b-aa2a-ea440f2a27fb.json
+Deploy SSH không nên để public trần.
 
-ingress:
-  - hostname: api.buicojourney.com
-    service: http://localhost:3001
-  - service: http_status:404
-```
+Tại Access app của `ssh.buicojourney.com`:
 
-## Bước còn thiếu để ổn định lâu dài
+- tạo policy `Service Auth`
+- gắn service token dành riêng cho GitHub Actions
+- nếu cần SSH thủ công, thêm policy user-based riêng
 
-Hiện tại backend public đang hoạt động ổn qua `Cloudflare Tunnel`.
+Workflow deploy trong repo sẽ dùng:
 
-Service `cloudflared` trên máy này từng được cài nhưng đang chưa phải đường ổn định cuối cùng để vận hành cùng backend WSL. Vì vậy hướng đang được dùng là:
-
-- `cloudflared` process đúng cấu hình
-- script Windows tự chạy lại sau khi user đăng nhập
+- `CLOUDFLARE_ACCESS_CLIENT_ID`
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
+- `cloudflared access ssh --hostname %h`
 
 ## Chạy thủ công bằng một lệnh
 
@@ -131,8 +109,9 @@ Repo có script:
 - `scripts/windows/start-personal-server.ps1`
 - `scripts/windows/run-personal-server.ps1`
 - `scripts/windows/stop-personal-server.ps1`
+- `scripts/windows/status-personal-server.ps1`
 
-Chỉ cần chạy một lệnh:
+Chỉ cần chạy:
 
 ```powershell
 pnpm up
@@ -146,33 +125,13 @@ Script sẽ tự:
 - đảm bảo có `cloudflared` process đúng cấu hình
 - chờ tới khi `https://api.buicojourney.com/api/v1/health` trả `200`
 
-Dừng toàn bộ bằng một lệnh:
-
-```powershell
-pnpm down
-```
-
-Kiểm tra trạng thái nhanh:
+Kiểm tra trạng thái:
 
 ```powershell
 pnpm status
 ```
 
-Các alias ngắn hơn:
-
-```powershell
-pnpm run u
-pnpm run d
-pnpm run s
-```
-
-Trong WSL, ngắn nhất:
-
-```bash
-./u
-./d
-./s
-```
+Từ `2026-04-14`, status script cũng kiểm tra việc config có route SSH ổn định hay chưa.
 
 ## Ý nghĩa của `reboot`
 
@@ -181,66 +140,25 @@ Trong WSL, ngắn nhất:
 - tắt máy rồi bật lại
 - hoặc chọn `Restart` trong Windows
 
-Với cấu hình hiện tại, sau `reboot` bạn chỉ cần chạy **một lệnh** ở trên để server lên lại.
-
-## Ghi chú về HTTPS
-
-Người dùng ngoài Internet truy cập bằng:
-
-- `https://api.buicojourney.com`
-
-Nhưng tunnel forward vào app local bằng:
-
-- `http://localhost:3001`
-
-Điều này là đúng vì TLS được terminate ở phía Cloudflare edge, còn origin local của bạn hiện đang chạy HTTP thuần.
+Với setup hiện tại, reboot không còn làm đổi `SSH_HOST` hoặc `SSH_PORT` của workflow deploy. Điều bạn vẫn phải đảm bảo là `cloudflared`, Docker, backend runtime, và OpenSSH đều lên lại bình thường.
 
 ## Ảnh hưởng tới deploy hiện tại
 
-Workflow deploy GitHub hiện tại có thể giữ nguyên cho backend app.
-
-Chỉ khác ở lớp public ingress:
-
-- trước đây: `Pinggy` hoặc `router/NAT`
-- sau khi chuyển: `Cloudflare Tunnel`
-
-Deploy code vẫn là:
+Workflow deploy GitHub hiện tại vẫn là:
 
 - GitHub Actions
-- SSH vào máy cá nhân
 - `git pull`
 - `pnpm install`
 - `build`
 - `migrate`
 - `restart`
 
+Điểm đổi chính là lớp SSH:
+
+- trước đây: reverse tunnel tạm
+- hiện tại: `ssh.buicojourney.com` qua `Cloudflare Tunnel` + `Service Auth`
+
 ## Bắt buộc trước khi test trên domain thật
 
 Mỗi khi bạn merge code mới lên `main`, nếu muốn kiểm thử trên domain thật
 (`https://api.buicojourney.com/...`) thì **bạn phải deploy lại thủ công trước**.
-
-Luồng tối thiểu:
-
-1. Merge/Push code mới
-2. Chạy deploy thủ công (workflow `deploy-backend`) hoặc chạy `pnpm up` trên máy
-3. Test lại endpoint trên domain thật
-
-## Những gì mình có thể làm tiếp
-
-Mình có thể chuẩn bị và thực hiện phần phía máy của bạn:
-
-- tài liệu hóa cấu hình tunnel
-- cấu hình service chạy `cloudflared`
-- kiểm tra backend public qua `api.buicojourney.com`
-
-## Những gì bạn cần tự làm
-
-Vì mình không có quyền vào tài khoản Cloudflare của bạn, bạn cần tự làm phần dashboard:
-
-- tạo tunnel
-- lấy token hoặc làm bước authorize tunnel
-- xác nhận hostname `api.buicojourney.com`
-
-## Kết luận
-
-Nếu mục tiêu là dùng máy cá nhân làm server nhưng vẫn muốn đường vào production ổn định hơn local/public IP trực tiếp, `Cloudflare Tunnel` là hướng phù hợp nhất cho backend của bạn ở giai đoạn này.
