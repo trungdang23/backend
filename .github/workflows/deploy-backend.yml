@@ -201,9 +201,12 @@ jobs:
           RUNTIME_APP_PORT: ${{ vars.RUNTIME_APP_PORT }}
           RUNTIME_GLOBAL_PREFIX: ${{ vars.RUNTIME_GLOBAL_PREFIX }}
           RUNTIME_SWAGGER_ENABLED: ${{ vars.RUNTIME_SWAGGER_ENABLED }}
+          RUNTIME_CORS_ALLOWED_ORIGINS: ${{ vars.RUNTIME_CORS_ALLOWED_ORIGINS }}
           RUNTIME_JWT_ISSUER: ${{ vars.RUNTIME_JWT_ISSUER }}
           RUNTIME_JWT_ACCESS_TOKEN_TTL: ${{ vars.RUNTIME_JWT_ACCESS_TOKEN_TTL }}
           RUNTIME_JWT_REFRESH_TOKEN_TTL: ${{ vars.RUNTIME_JWT_REFRESH_TOKEN_TTL }}
+          RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS: ${{ vars.RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS }}
+          RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS: ${{ vars.RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS }}
         run: |
           {
             printf 'NODE_ENV=production\n'
@@ -211,12 +214,15 @@ jobs:
             printf 'APP_PORT=%s\n' "${RUNTIME_APP_PORT}"
             printf 'GLOBAL_PREFIX=%s\n' "${RUNTIME_GLOBAL_PREFIX}"
             printf 'SWAGGER_ENABLED=%s\n' "${RUNTIME_SWAGGER_ENABLED}"
+            printf 'CORS_ALLOWED_ORIGINS=%s\n' "${RUNTIME_CORS_ALLOWED_ORIGINS}"
             printf 'DATABASE_URL=%s\n' "${RUNTIME_DATABASE_URL}"
             printf 'JWT_ISSUER=%s\n' "${RUNTIME_JWT_ISSUER}"
             printf 'JWT_ACCESS_TOKEN_TTL=%s\n' "${RUNTIME_JWT_ACCESS_TOKEN_TTL}"
             printf 'JWT_REFRESH_TOKEN_TTL=%s\n' "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
             printf 'JWT_ACCESS_TOKEN_SECRET=%s\n' "${RUNTIME_JWT_ACCESS_TOKEN_SECRET}"
             printf 'JWT_REFRESH_TOKEN_SECRET=%s\n' "${RUNTIME_JWT_REFRESH_TOKEN_SECRET}"
+            printf 'AUTH_RATE_LIMIT_MAX_REQUESTS=%s\n' "${RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS}"
+            printf 'AUTH_RATE_LIMIT_WINDOW_SECONDS=%s\n' "${RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS}"
           } > .deploy-runtime.env
           chmod 600 .deploy-runtime.env
 

@@ -11,6 +11,8 @@ import { RequestLoggingInterceptor } from '../logging/request-logging.intercepto
 import { RequestContextMiddleware } from '../request-context/request-context.middleware';
 import { RequestContextService } from '../request-context/request-context.service';
 
+type CorsOriginCallback = (error: Error | null, allow?: boolean) => void;
+
 export function setupApp(app: INestApplication): void {
   const config = app.get(AppConfigService);
   const logger = app.get(AppLogger);
@@ -20,6 +22,26 @@ export function setupApp(app: INestApplication): void {
   app.setGlobalPrefix(config.globalPrefix);
   app.use((request: Request, response: Response, next: NextFunction) => {
     requestContextMiddleware.use(request, response, next);
+  });
+  app.enableCors({
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Correlation-Id'],
+    exposedHeaders: [
+      'RateLimit-Limit',
+      'RateLimit-Remaining',
+      'RateLimit-Reset',
+      'Retry-After',
+      'X-Correlation-Id',
+    ],
+    methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
+    optionsSuccessStatus: 204,
+    origin(origin: string | undefined, callback: CorsOriginCallback) {
+      if (origin === undefined) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, config.corsAllowedOrigins.includes(origin));
+    },
   });
   app.useGlobalPipes(
     new ValidationPipe({

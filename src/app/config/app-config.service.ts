@@ -29,6 +29,10 @@ export class AppConfigService {
     return this.configService.get('app.swaggerEnabled', { infer: true });
   }
 
+  get corsAllowedOrigins(): string[] {
+    return this.configService.get('app.corsAllowedOrigins', { infer: true });
+  }
+
   get databaseUrl(): string {
     return this.configService.get('database.url', { infer: true });
   }
@@ -51,5 +55,15 @@ export class AppConfigService {
 
   get jwtRefreshTokenTtl(): string {
     return this.configService.get('auth.refreshTokenTtl', { infer: true });
+  }
+
+  get authRateLimitMaxRequests(): number {
+    return this.configService.get('auth.rateLimitMaxRequests', { infer: true });
+  }
+
+  get authRateLimitWindowSeconds(): number {
+    return this.configService.get('auth.rateLimitWindowSeconds', {
+      infer: true,
+    });
   }
 }

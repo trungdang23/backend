@@ -143,9 +143,12 @@ Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub se
 - `RUNTIME_APP_PORT=3001`
 - `RUNTIME_GLOBAL_PREFIX=api/v1`
 - `RUNTIME_SWAGGER_ENABLED=true`
+- `RUNTIME_CORS_ALLOWED_ORIGINS=https://buicojourney.com,https://www.buicojourney.com`
 - `RUNTIME_JWT_ISSUER=api.buicojourney.com`
 - `RUNTIME_JWT_ACCESS_TOKEN_TTL=15m`
 - `RUNTIME_JWT_REFRESH_TOKEN_TTL=7d`
+- `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS=10`
+- `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS=60`
 
 ## Thiết lập trên máy đích
 

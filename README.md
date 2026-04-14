@@ -64,6 +64,7 @@ pnpm prisma:validate
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
 - Repo `backend` có workflow deploy thủ công tại `.github/workflows/deploy-backend.yml`; workflow này chỉ chạy khi bạn bấm `Run workflow`, render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
+- CORS cho frontend tách origin được điều khiển bằng `CORS_ALLOWED_ORIGINS`; các endpoint public của auth hiện có rate limiting theo IP với `AUTH_RATE_LIMIT_MAX_REQUESTS` và `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 - Workflow deploy hiện đi qua `Cloudflare Tunnel` + `cloudflared access ssh`, nên không còn phụ thuộc vào reverse SSH tunnel tạm cho bước deploy.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, và JWT access/refresh token flow thật.
 - Repo đã có bộ script runtime trên host:
@@ -100,9 +101,12 @@ pnpm prisma:validate
   - `RUNTIME_APP_PORT`
   - `RUNTIME_GLOBAL_PREFIX`
   - `RUNTIME_SWAGGER_ENABLED`
-- `RUNTIME_JWT_ISSUER`
-- `RUNTIME_JWT_ACCESS_TOKEN_TTL`
-- `RUNTIME_JWT_REFRESH_TOKEN_TTL`
+  - `RUNTIME_CORS_ALLOWED_ORIGINS`
+  - `RUNTIME_JWT_ISSUER`
+  - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
+  - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
+  - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
+  - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
 - Với hướng deploy ổn định trên máy cá nhân qua Cloudflare, `SSH_HOST` nên là hostname Access cố định như `ssh.buicojourney.com` và `SSH_PORT` nên để `22`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.

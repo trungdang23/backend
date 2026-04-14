@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  type NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 
 import { RequestContextModule } from '../../app/request-context/request-context.module';
 import { UsersModule } from '../users/users.module';
@@ -10,6 +15,8 @@ import { RegisterAuthSessionService } from './application/services/register-auth
 import { JwtAuthTokenService } from './infrastructure/security/jwt-auth-token.service';
 import { AuthController } from './presentation/auth.controller';
 import { AccessTokenAuthGuard } from './presentation/guards/access-token-auth.guard';
+import { PublicAuthRateLimitMiddleware } from './presentation/public-auth-rate-limit.middleware';
+import { PublicAuthRateLimitService } from './presentation/public-auth-rate-limit.service';
 
 @Module({
   imports: [RequestContextModule, UsersModule],
@@ -18,6 +25,8 @@ import { AccessTokenAuthGuard } from './presentation/guards/access-token-auth.gu
     AccessTokenAuthGuard,
     JwtAuthTokenService,
     LoginUserService,
+    PublicAuthRateLimitMiddleware,
+    PublicAuthRateLimitService,
     RefreshAuthSessionService,
     RegisterAuthSessionService,
     {
@@ -31,4 +40,14 @@ import { AccessTokenAuthGuard } from './presentation/guards/access-token-auth.gu
   ],
   exports: [AccessTokenAuthGuard, ACCESS_TOKEN_VERIFIER, AUTH_TOKEN_SERVICE],
 })
-export class AuthModule {}
+export class AuthModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer
+      .apply(PublicAuthRateLimitMiddleware)
+      .forRoutes(
+        { path: 'auth/register', method: RequestMethod.POST },
+        { path: 'auth/login', method: RequestMethod.POST },
+        { path: 'auth/refresh', method: RequestMethod.POST },
+      );
+  }
+}

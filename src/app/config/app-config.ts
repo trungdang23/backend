@@ -7,6 +7,7 @@ export interface ApplicationConfig {
     port: number;
     globalPrefix: string;
     swaggerEnabled: boolean;
+    corsAllowedOrigins: string[];
   };
   database: {
     url: string;
@@ -17,5 +18,7 @@ export interface ApplicationConfig {
     accessTokenTtl: string;
     refreshTokenSecret: string;
     refreshTokenTtl: string;
+    rateLimitMaxRequests: number;
+    rateLimitWindowSeconds: number;
   };
 }

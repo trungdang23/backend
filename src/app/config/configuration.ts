@@ -21,6 +21,30 @@ function parseBoolean(
   return value === 'true';
 }
 
+function parseStringList(value: string | undefined): string[] {
+  if (value === undefined) {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(
+      (entry, index, entries) =>
+        entry.length > 0 && entries.indexOf(entry) === index,
+    );
+}
+
+function parseInteger(value: string | undefined, defaultValue: number): number {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+
+  return Number.isNaN(parsed) ? defaultValue : parsed;
+}
+
 function parsePort(value: string | undefined, defaultValue: number): number {
   if (value === undefined) {
     return defaultValue;
@@ -41,6 +65,7 @@ export function configuration(): ApplicationConfig {
       port: parsePort(process.env.APP_PORT, 3001),
       globalPrefix: process.env.GLOBAL_PREFIX ?? 'api/v1',
       swaggerEnabled: parseBoolean(process.env.SWAGGER_ENABLED, true),
+      corsAllowedOrigins: parseStringList(process.env.CORS_ALLOWED_ORIGINS),
     },
     database: {
       url: requireEnv('DATABASE_URL'),
@@ -51,6 +76,14 @@ export function configuration(): ApplicationConfig {
       accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '15m',
       refreshTokenSecret: requireEnv('JWT_REFRESH_TOKEN_SECRET'),
       refreshTokenTtl: process.env.JWT_REFRESH_TOKEN_TTL ?? '7d',
+      rateLimitMaxRequests: parseInteger(
+        process.env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+        10,
+      ),
+      rateLimitWindowSeconds: parseInteger(
+        process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+        60,
+      ),
     },
   };
 }
