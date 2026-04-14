@@ -66,6 +66,7 @@ Các script này:
 - `SSH_HOST` phải là hostname Access cố định, không phải hostname tunnel tạm.
 - `SSH_PORT` nên để `22` trong mô hình Cloudflare SSH hiện tại.
 - Merge `main` không tự deploy; bạn vẫn phải bấm `Run workflow`.
+- `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
 
 ## GitHub configuration hiện cần
 
