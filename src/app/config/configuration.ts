@@ -1,5 +1,15 @@
 import type { ApplicationConfig, NodeEnvironment } from './app-config';
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (value === undefined || value.trim().length === 0) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
 function parseBoolean(
   value: string | undefined,
   defaultValue: boolean,
@@ -33,19 +43,13 @@ export function configuration(): ApplicationConfig {
       swaggerEnabled: parseBoolean(process.env.SWAGGER_ENABLED, true),
     },
     database: {
-      url:
-        process.env.DATABASE_URL ??
-        'postgresql://journey:journey@localhost:5432/journey?schema=public',
+      url: requireEnv('DATABASE_URL'),
     },
     auth: {
-      jwtIssuer: process.env.JWT_ISSUER ?? 'journey.local',
-      accessTokenSecret:
-        process.env.JWT_ACCESS_TOKEN_SECRET ??
-        'journey-local-access-token-secret-change-me',
+      jwtIssuer: requireEnv('JWT_ISSUER'),
+      accessTokenSecret: requireEnv('JWT_ACCESS_TOKEN_SECRET'),
       accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '15m',
-      refreshTokenSecret:
-        process.env.JWT_REFRESH_TOKEN_SECRET ??
-        'journey-local-refresh-token-secret-change-me',
+      refreshTokenSecret: requireEnv('JWT_REFRESH_TOKEN_SECRET'),
       refreshTokenTtl: process.env.JWT_REFRESH_TOKEN_TTL ?? '7d',
     },
   };
