@@ -6,10 +6,13 @@ describe('HealthService', () => {
     const prismaService = {
       $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
     } as unknown as PrismaService;
-    const service = new HealthService({
-      appName: 'journey-backend',
-      nodeEnv: 'test',
-    } as never, prismaService);
+    const service = new HealthService(
+      {
+        appName: 'journey-backend',
+        nodeEnv: 'test',
+      } as never,
+      prismaService,
+    );
 
     await expect(service.getSnapshot()).resolves.toEqual(
       expect.objectContaining({
@@ -30,10 +33,13 @@ describe('HealthService', () => {
     const prismaService = {
       $queryRaw: jest.fn().mockRejectedValue(new Error('connect ECONNREFUSED')),
     } as unknown as PrismaService;
-    const service = new HealthService({
-      appName: 'journey-backend',
-      nodeEnv: 'test',
-    } as never, prismaService);
+    const service = new HealthService(
+      {
+        appName: 'journey-backend',
+        nodeEnv: 'test',
+      } as never,
+      prismaService,
+    );
 
     await expect(service.getSnapshot()).rejects.toMatchObject({
       response: {

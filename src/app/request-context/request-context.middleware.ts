@@ -7,9 +7,7 @@ import { resolveCorrelationId } from './resolve-correlation-id';
 
 @Injectable()
 export class RequestContextMiddleware {
-  constructor(
-    private readonly requestContextService: RequestContextService,
-  ) {}
+  constructor(private readonly requestContextService: RequestContextService) {}
 
   use(request: Request, response: Response, next: NextFunction): void {
     const correlationId = resolveCorrelationId(

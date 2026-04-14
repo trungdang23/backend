@@ -20,7 +20,11 @@ describe('configuration', () => {
     process.env.DATABASE_URL =
       'postgresql://journey:journey@localhost:5432/journey_prod?schema=public';
     process.env.JWT_ISSUER = 'api.tenmiencuaban.com';
+    process.env.JWT_ACCESS_TOKEN_SECRET =
+      'journey-production-access-token-secret-123456789';
     process.env.JWT_ACCESS_TOKEN_TTL = '10m';
+    process.env.JWT_REFRESH_TOKEN_SECRET =
+      'journey-production-refresh-token-secret-123456789';
     process.env.JWT_REFRESH_TOKEN_TTL = '14d';
 
     expect(configuration()).toEqual({
@@ -36,7 +40,9 @@ describe('configuration', () => {
       },
       auth: {
         jwtIssuer: 'api.tenmiencuaban.com',
+        accessTokenSecret: 'journey-production-access-token-secret-123456789',
         accessTokenTtl: '10m',
+        refreshTokenSecret: 'journey-production-refresh-token-secret-123456789',
         refreshTokenTtl: '14d',
       },
     });

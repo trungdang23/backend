@@ -19,10 +19,7 @@ export class RequestLoggingInterceptor implements NestInterceptor {
     private readonly requestContextService: RequestContextService,
   ) {}
 
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<unknown> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const httpContext = context.switchToHttp();
     const request = httpContext.getRequest<Request>();
     const response = httpContext.getResponse<Response>();

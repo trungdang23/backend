@@ -41,7 +41,9 @@ describe('RequestContextMiddleware', () => {
   });
 
   it('generates a correlation id when the request does not provide one', () => {
-    const middleware = new RequestContextMiddleware(new RequestContextService());
+    const middleware = new RequestContextMiddleware(
+      new RequestContextService(),
+    );
     const setHeader = jest.fn();
     const response = {
       setHeader,

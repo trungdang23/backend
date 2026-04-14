@@ -13,7 +13,9 @@ export interface ApplicationConfig {
   };
   auth: {
     jwtIssuer: string;
+    accessTokenSecret: string;
     accessTokenTtl: string;
+    refreshTokenSecret: string;
     refreshTokenTtl: string;
   };
 }

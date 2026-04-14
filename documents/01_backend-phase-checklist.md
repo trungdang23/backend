@@ -20,7 +20,7 @@
 | 00 | Chuẩn bị nền tảng dự án và môi trường | Completed |
 | 01 | Scaffold backend và chuẩn hóa kiến trúc | Completed |
 | 02 | Hoàn thiện core technical foundation | Completed |
-| 03 | Xây dựng `auth` và `users` | In Progress |
+| 03 | Xây dựng `auth` và `users` | Completed |
 | 04 | Xây dựng `trips` | Todo |
 | 05 | Xây dựng `itineraries` và `budgets` | Todo |
 | 06 | Xây dựng `community` | Todo |
@@ -75,18 +75,18 @@ Status: `Completed`
 
 ## Phase 03 - Xây dựng `auth` và `users`
 
-Status: `In Progress`
+Status: `Completed`
 
 - [x] Tạo module `auth`
 - [x] Tạo module `users`
-- [ ] Tạo use case đăng ký tài khoản
-- [ ] Tạo use case đăng nhập
-- [ ] Tạo access token flow
-- [ ] Tạo password hashing service qua adapter riêng
-- [ ] Tạo endpoint lấy thông tin người dùng hiện tại
-- [ ] Tạo DTO input/output rõ ràng cho auth và user profile
-- [ ] Tạo unit test cho use case auth
-- [ ] Tạo e2e test cho luồng đăng ký và đăng nhập
+- [x] Tạo use case đăng ký tài khoản
+- [x] Tạo use case đăng nhập
+- [x] Tạo access token flow
+- [x] Tạo password hashing service qua adapter riêng
+- [x] Tạo endpoint lấy thông tin người dùng hiện tại
+- [x] Tạo DTO input/output rõ ràng cho auth và user profile
+- [x] Tạo unit test cho use case auth
+- [x] Tạo e2e test cho luồng đăng ký và đăng nhập
 
 ## Phase 04 - Xây dựng `trips`
 
