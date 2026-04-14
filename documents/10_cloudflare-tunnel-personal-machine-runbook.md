@@ -130,6 +130,7 @@ Repo có script:
 
 - `scripts/windows/start-personal-server.ps1`
 - `scripts/windows/run-personal-server.ps1`
+- `scripts/windows/stop-personal-server.ps1`
 
 Chỉ cần chạy một lệnh:
 
@@ -144,6 +145,12 @@ Script sẽ tự:
 - restart backend runtime trong WSL
 - đảm bảo có `cloudflared` process đúng cấu hình
 - chờ tới khi `https://api.buicojourney.com/api/v1/health` trả `200`
+
+Dừng toàn bộ bằng một lệnh:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\TrungDang\journey\backend\scripts\windows\stop-personal-server.ps1"
+```
 
 ## Ý nghĩa của `reboot`
 

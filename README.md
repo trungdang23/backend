@@ -71,6 +71,7 @@ pnpm prisma:validate
 - Repo đã có bộ script Windows để start personal-machine server bằng một lệnh:
   - `scripts/windows/run-personal-server.ps1`
   - `scripts/windows/start-personal-server.ps1`
+  - `scripts/windows/stop-personal-server.ps1`
 
 ## Deployment Workflow
 
@@ -105,6 +106,13 @@ pnpm prisma:validate
 - Runbook domain/reverse proxy trên máy cá nhân nằm tại `documents/08_backend-personal-machine-domain-runbook.md`.
 - Runbook domain thật cho `buicojourney.com` nằm tại `documents/09_buicojourney-domain-setup.md`.
 - Runbook `Cloudflare Tunnel` cho máy cá nhân nằm tại `documents/10_cloudflare-tunnel-personal-machine-runbook.md`.
+
+## Personal Machine Short Commands (Windows)
+
+```powershell
+pnpm server:up
+pnpm server:down
+```
 
 ## Test Strategy
 
