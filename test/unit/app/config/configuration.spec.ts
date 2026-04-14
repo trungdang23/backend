@@ -17,6 +17,8 @@ describe('configuration', () => {
     process.env.APP_PORT = '8080';
     process.env.GLOBAL_PREFIX = 'api/v1';
     process.env.SWAGGER_ENABLED = 'false';
+    process.env.SWAGGER_USERNAME = 'docs-user';
+    process.env.SWAGGER_PASSWORD = 'docs-password';
     process.env.CORS_ALLOWED_ORIGINS =
       'https://buicojourney.com, https://www.buicojourney.com';
     process.env.DATABASE_URL =
@@ -38,6 +40,8 @@ describe('configuration', () => {
         port: 8080,
         globalPrefix: 'api/v1',
         swaggerEnabled: false,
+        swaggerUsername: 'docs-user',
+        swaggerPassword: 'docs-password',
         corsAllowedOrigins: [
           'https://buicojourney.com',
           'https://www.buicojourney.com',

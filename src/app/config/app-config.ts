@@ -7,6 +7,8 @@ export interface ApplicationConfig {
     port: number;
     globalPrefix: string;
     swaggerEnabled: boolean;
+    swaggerUsername: string | null;
+    swaggerPassword: string | null;
     corsAllowedOrigins: string[];
   };
   database: {

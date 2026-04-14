@@ -8,6 +8,8 @@ export const appConfigSchema = Joi.object({
   APP_PORT: Joi.number().port().default(3001),
   GLOBAL_PREFIX: Joi.string().default('api/v1'),
   SWAGGER_ENABLED: Joi.boolean().default(true),
+  SWAGGER_USERNAME: Joi.string().allow('').default(''),
+  SWAGGER_PASSWORD: Joi.string().allow('').default(''),
   CORS_ALLOWED_ORIGINS: Joi.string().allow('').default(''),
   DATABASE_URL: Joi.string()
     .uri({ scheme: ['postgresql', 'postgres'] })

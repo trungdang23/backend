@@ -29,6 +29,14 @@ export class AppConfigService {
     return this.configService.get('app.swaggerEnabled', { infer: true });
   }
 
+  get swaggerUsername(): string | null {
+    return this.configService.get('app.swaggerUsername', { infer: true });
+  }
+
+  get swaggerPassword(): string | null {
+    return this.configService.get('app.swaggerPassword', { infer: true });
+  }
+
   get corsAllowedOrigins(): string[] {
     return this.configService.get('app.corsAllowedOrigins', { infer: true });
   }

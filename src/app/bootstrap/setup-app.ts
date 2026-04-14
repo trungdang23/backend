@@ -10,6 +10,7 @@ import { AppLogger } from '../logging/app-logger.service';
 import { RequestLoggingInterceptor } from '../logging/request-logging.interceptor';
 import { RequestContextMiddleware } from '../request-context/request-context.middleware';
 import { RequestContextService } from '../request-context/request-context.service';
+import { createSwaggerBasicAuthMiddleware } from './create-swagger-basic-auth-middleware';
 
 type CorsOriginCallback = (error: Error | null, allow?: boolean) => void;
 
@@ -57,6 +58,44 @@ export function setupApp(app: INestApplication): void {
   app.useGlobalFilters(new HttpExceptionFilter(logger, requestContextService));
 
   if (config.swaggerEnabled) {
+    const swaggerDocsPath = `/${config.globalPrefix}/docs`;
+    const swaggerDocsJsonPath = `/${config.globalPrefix}/docs-json`;
+    const swaggerUsername = config.swaggerUsername;
+    const swaggerPassword = config.swaggerPassword;
+    const hasSwaggerUsername = swaggerUsername !== null;
+    const hasSwaggerPassword = swaggerPassword !== null;
+    const hasSwaggerCredentials = hasSwaggerUsername && hasSwaggerPassword;
+    const hasPartialSwaggerCredentials =
+      hasSwaggerUsername !== hasSwaggerPassword;
+
+    if (hasPartialSwaggerCredentials) {
+      logger.warn(
+        'Swagger docs are disabled because credentials are only partially configured.',
+        'Bootstrap',
+      );
+
+      return;
+    }
+
+    if (config.nodeEnv === 'production' && !hasSwaggerCredentials) {
+      logger.warn(
+        'Swagger docs are disabled in production because credentials are not configured.',
+        'Bootstrap',
+      );
+
+      return;
+    }
+
+    if (hasSwaggerCredentials) {
+      const swaggerBasicAuthMiddleware = createSwaggerBasicAuthMiddleware({
+        password: swaggerPassword,
+        username: swaggerUsername,
+      });
+
+      app.use(swaggerDocsPath, swaggerBasicAuthMiddleware);
+      app.use(swaggerDocsJsonPath, swaggerBasicAuthMiddleware);
+    }
+
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Journey API')
       .setDescription('Backend API for the Journey platform.')

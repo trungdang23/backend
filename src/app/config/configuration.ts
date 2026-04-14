@@ -35,6 +35,16 @@ function parseStringList(value: string | undefined): string[] {
     );
 }
 
+function parseOptionalString(value: string | undefined): string | null {
+  if (value === undefined) {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized.length === 0 ? null : normalized;
+}
+
 function parseInteger(value: string | undefined, defaultValue: number): number {
   if (value === undefined) {
     return defaultValue;
@@ -65,6 +75,8 @@ export function configuration(): ApplicationConfig {
       port: parsePort(process.env.APP_PORT, 3001),
       globalPrefix: process.env.GLOBAL_PREFIX ?? 'api/v1',
       swaggerEnabled: parseBoolean(process.env.SWAGGER_ENABLED, true),
+      swaggerUsername: parseOptionalString(process.env.SWAGGER_USERNAME),
+      swaggerPassword: parseOptionalString(process.env.SWAGGER_PASSWORD),
       corsAllowedOrigins: parseStringList(process.env.CORS_ALLOWED_ORIGINS),
     },
     database: {

@@ -136,6 +136,8 @@ Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub se
 - `RUNTIME_DATABASE_URL=postgresql://journey:strong-password@localhost:5432/journey_prod_local?schema=public`
 - `RUNTIME_JWT_ACCESS_TOKEN_SECRET=64-plus-random-characters`
 - `RUNTIME_JWT_REFRESH_TOKEN_SECRET=another-64-plus-random-characters`
+- `RUNTIME_SWAGGER_USERNAME=<set-in-github-secret>`
+- `RUNTIME_SWAGGER_PASSWORD=<set-in-github-secret>`
 
 ### Variables
 
