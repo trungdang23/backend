@@ -2,8 +2,12 @@ import { Module } from '@nestjs/common';
 
 import { RequestContextModule } from '../../app/request-context/request-context.module';
 import { UsersModule } from '../users/users.module';
+import { AUTH_TOKEN_SERVICE } from './application/ports/auth-token-service.port';
 import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier.port';
-import { UnconfiguredAccessTokenVerifier } from './application/services/unconfigured-access-token-verifier.service';
+import { LoginUserService } from './application/services/login-user.service';
+import { RefreshAuthSessionService } from './application/services/refresh-auth-session.service';
+import { RegisterAuthSessionService } from './application/services/register-auth-session.service';
+import { JwtAuthTokenService } from './infrastructure/security/jwt-auth-token.service';
 import { AuthController } from './presentation/auth.controller';
 import { AccessTokenAuthGuard } from './presentation/guards/access-token-auth.guard';
 
@@ -12,12 +16,19 @@ import { AccessTokenAuthGuard } from './presentation/guards/access-token-auth.gu
   controllers: [AuthController],
   providers: [
     AccessTokenAuthGuard,
-    UnconfiguredAccessTokenVerifier,
+    JwtAuthTokenService,
+    LoginUserService,
+    RefreshAuthSessionService,
+    RegisterAuthSessionService,
+    {
+      provide: AUTH_TOKEN_SERVICE,
+      useExisting: JwtAuthTokenService,
+    },
     {
       provide: ACCESS_TOKEN_VERIFIER,
-      useExisting: UnconfiguredAccessTokenVerifier,
+      useExisting: JwtAuthTokenService,
     },
   ],
-  exports: [AccessTokenAuthGuard, ACCESS_TOKEN_VERIFIER],
+  exports: [AccessTokenAuthGuard, ACCESS_TOKEN_VERIFIER, AUTH_TOKEN_SERVICE],
 })
 export class AuthModule {}

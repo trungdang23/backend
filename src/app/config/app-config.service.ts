@@ -36,4 +36,20 @@ export class AppConfigService {
   get jwtIssuer(): string {
     return this.configService.get('auth.jwtIssuer', { infer: true });
   }
+
+  get jwtAccessTokenSecret(): string {
+    return this.configService.get('auth.accessTokenSecret', { infer: true });
+  }
+
+  get jwtAccessTokenTtl(): string {
+    return this.configService.get('auth.accessTokenTtl', { infer: true });
+  }
+
+  get jwtRefreshTokenSecret(): string {
+    return this.configService.get('auth.refreshTokenSecret', { infer: true });
+  }
+
+  get jwtRefreshTokenTtl(): string {
+    return this.configService.get('auth.refreshTokenTtl', { infer: true });
+  }
 }

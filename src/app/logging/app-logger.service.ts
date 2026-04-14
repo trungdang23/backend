@@ -6,14 +6,16 @@ import { sanitizeLogData } from './sanitize-log-data';
 export class AppLogger extends ConsoleLogger {
   constructor() {
     super('JourneyBackend');
-    this.setLogLevels(['log', 'error', 'warn', 'debug', 'verbose'] satisfies LogLevel[]);
+    this.setLogLevels([
+      'log',
+      'error',
+      'warn',
+      'debug',
+      'verbose',
+    ] satisfies LogLevel[]);
   }
 
-  logWithMetadata(
-    message: string,
-    metadata: unknown,
-    context?: string,
-  ): void {
+  logWithMetadata(message: string, metadata: unknown, context?: string): void {
     super.log(this.formatStructuredMessage(message, metadata), context);
   }
 
@@ -23,13 +25,14 @@ export class AppLogger extends ConsoleLogger {
     metadata: unknown,
     context?: string,
   ): void {
-    super.error(this.formatStructuredMessage(message, metadata), stack, context);
+    super.error(
+      this.formatStructuredMessage(message, metadata),
+      stack,
+      context,
+    );
   }
 
-  private formatStructuredMessage(
-    message: string,
-    metadata: unknown,
-  ): string {
+  private formatStructuredMessage(message: string, metadata: unknown): string {
     return `${message} ${this.stringifyMetadata(metadata)}`;
   }
 

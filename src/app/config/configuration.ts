@@ -1,6 +1,9 @@
 import type { ApplicationConfig, NodeEnvironment } from './app-config';
 
-function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
   if (value === undefined) {
     return defaultValue;
   }
@@ -36,7 +39,13 @@ export function configuration(): ApplicationConfig {
     },
     auth: {
       jwtIssuer: process.env.JWT_ISSUER ?? 'journey.local',
+      accessTokenSecret:
+        process.env.JWT_ACCESS_TOKEN_SECRET ??
+        'journey-local-access-token-secret-change-me',
       accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '15m',
+      refreshTokenSecret:
+        process.env.JWT_REFRESH_TOKEN_SECRET ??
+        'journey-local-refresh-token-secret-change-me',
       refreshTokenTtl: process.env.JWT_REFRESH_TOKEN_TTL ?? '7d',
     },
   };
