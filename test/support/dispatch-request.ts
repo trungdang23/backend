@@ -46,9 +46,9 @@ export async function dispatchRequest(
       url: options.path,
       body: options.body as Record<string, unknown> | undefined,
     });
-    if (options.body !== undefined) {
+    if (options.body !== undefined && options.body !== null) {
       request.body = options.body as Record<string, unknown>;
-      request._setBody?.(options.body);
+      request._setBody?.(options.body as Record<string, unknown>);
     }
     const response = createResponse({
       eventEmitter: EventEmitter,
