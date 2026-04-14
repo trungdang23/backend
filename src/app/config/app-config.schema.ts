@@ -17,6 +17,14 @@ export const appConfigSchema = Joi.object({
   JWT_ACCESS_TOKEN_TTL: Joi.string().default('15m'),
   JWT_REFRESH_TOKEN_SECRET: Joi.string().min(32).required(),
   JWT_REFRESH_TOKEN_TTL: Joi.string().default('7d'),
-  AUTH_RATE_LIMIT_MAX_REQUESTS: Joi.number().integer().min(1).default(10),
-  AUTH_RATE_LIMIT_WINDOW_SECONDS: Joi.number().integer().min(1).default(60),
+  AUTH_RATE_LIMIT_MAX_REQUESTS: Joi.number()
+    .integer()
+    .min(1)
+    .empty('')
+    .default(10),
+  AUTH_RATE_LIMIT_WINDOW_SECONDS: Joi.number()
+    .integer()
+    .min(1)
+    .empty('')
+    .default(60),
 });
