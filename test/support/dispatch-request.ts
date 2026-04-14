@@ -7,6 +7,7 @@ export interface DispatchRequestOptions {
   headers?: Record<string, string>;
   method: 'GET' | 'POST';
   path: string;
+  body?: unknown;
 }
 
 export interface DispatchRequestResult {
@@ -32,12 +33,23 @@ export async function dispatchRequest(
   options: DispatchRequestOptions,
 ): Promise<DispatchRequestResult> {
   return await new Promise((resolve, reject) => {
+    const headers = { ...options.headers };
+
+    if (options.body !== undefined && headers['content-type'] === undefined) {
+      headers['content-type'] = 'application/json';
+    }
+
     const request = createRequest({
-      headers: options.headers,
+      headers,
       method: options.method,
       originalUrl: options.path,
       url: options.path,
+      body: options.body as unknown as Record<string, unknown>,
     });
+    if (options.body !== undefined) {
+      request.body = options.body as Record<string, unknown>;
+      request._setBody?.(options.body as Record<string, unknown>);
+    }
     const response = createResponse({
       eventEmitter: EventEmitter,
     });
