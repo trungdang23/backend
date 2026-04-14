@@ -44,11 +44,11 @@ export async function dispatchRequest(
       method: options.method,
       originalUrl: options.path,
       url: options.path,
-      body: options.body as unknown as Record<string, unknown>,
+      body: options.body as Record<string, unknown> | undefined,
     });
     if (options.body !== undefined) {
       request.body = options.body as Record<string, unknown>;
-      request._setBody?.(options.body as Record<string, unknown>);
+      request._setBody?.(options.body);
     }
     const response = createResponse({
       eventEmitter: EventEmitter,

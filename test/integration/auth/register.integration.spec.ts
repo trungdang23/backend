@@ -16,16 +16,14 @@ class InMemoryUserRepository implements UserRepositoryPort {
   private readonly users = new Map<string, User>();
 
   async findByEmail(email: string): Promise<User | null> {
-    for (const user of this.users.values()) {
-      if (user.email === email) {
-        return user;
-      }
-    }
-    return null;
+    return Promise.resolve(
+      Array.from(this.users.values()).find((user) => user.email === email) ??
+        null,
+    );
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.users.get(id) ?? null;
+    return Promise.resolve(this.users.get(id) ?? null);
   }
 
   async create(input: {
@@ -42,17 +40,17 @@ class InMemoryUserRepository implements UserRepositoryPort {
       updatedAt: new Date(),
     };
     this.users.set(user.id, user);
-    return user;
+    return Promise.resolve(user);
   }
 }
 
 class FakePasswordHasher implements PasswordHasherPort {
   async hash(password: string): Promise<string> {
-    return `hashed:${password}`;
+    return Promise.resolve(`hashed:${password}`);
   }
 
   async verify(password: string, passwordHash: string): Promise<boolean> {
-    return passwordHash === `hashed:${password}`;
+    return Promise.resolve(passwordHash === `hashed:${password}`);
   }
 }
 
@@ -91,20 +89,26 @@ describe('Auth register integration', () => {
         displayName: 'Demo User',
       },
     });
-
-    expect(response.statusCode).toBe(201);
-    expect(response.body).toEqual({
-      success: true,
+    const body = response.body as {
+      success: boolean;
       data: {
         user: {
-          id: expect.any(String),
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-        },
-      },
-    });
+          id: string;
+          email: string;
+          displayName: string | null;
+          createdAt: string;
+          updatedAt: string;
+        };
+      };
+    };
+
+    expect(response.statusCode).toBe(201);
+    expect(body.success).toBe(true);
+    expect(body.data.user.id).toEqual(expect.any(String));
+    expect(body.data.user.email).toBe('demo@example.com');
+    expect(body.data.user.displayName).toBe('Demo User');
+    expect(body.data.user.createdAt).toEqual(expect.any(String));
+    expect(body.data.user.updatedAt).toEqual(expect.any(String));
   });
 
   it('rejects duplicate email', async () => {

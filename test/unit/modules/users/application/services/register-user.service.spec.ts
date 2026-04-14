@@ -9,16 +9,14 @@ class InMemoryUserRepository implements UserRepositoryPort {
   private readonly users = new Map<string, User>();
 
   async findByEmail(email: string): Promise<User | null> {
-    for (const user of this.users.values()) {
-      if (user.email === email) {
-        return user;
-      }
-    }
-    return null;
+    return Promise.resolve(
+      Array.from(this.users.values()).find((user) => user.email === email) ??
+        null,
+    );
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.users.get(id) ?? null;
+    return Promise.resolve(this.users.get(id) ?? null);
   }
 
   async create(input: {
@@ -35,17 +33,17 @@ class InMemoryUserRepository implements UserRepositoryPort {
       updatedAt: new Date(),
     };
     this.users.set(user.id, user);
-    return user;
+    return Promise.resolve(user);
   }
 }
 
 class FakePasswordHasher implements PasswordHasherPort {
   async hash(password: string): Promise<string> {
-    return `hashed:${password}`;
+    return Promise.resolve(`hashed:${password}`);
   }
 
   async verify(password: string, passwordHash: string): Promise<boolean> {
-    return passwordHash === `hashed:${password}`;
+    return Promise.resolve(passwordHash === `hashed:${password}`);
   }
 }
 
