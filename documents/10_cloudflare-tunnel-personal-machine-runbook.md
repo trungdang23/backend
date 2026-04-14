@@ -166,6 +166,14 @@ pnpm run d
 pnpm run s
 ```
 
+Trong WSL, ngắn nhất:
+
+```bash
+./u
+./d
+./s
+```
+
 ## Ý nghĩa của `reboot`
 
 `Reboot` ở đây nghĩa là:

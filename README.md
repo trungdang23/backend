@@ -118,6 +118,14 @@ pnpm run d
 pnpm run s
 ```
 
+WSL shortcut ngắn nhất:
+
+```bash
+./u
+./d
+./s
+```
+
 ## Test Strategy
 
 - Unit tests validate isolated logic with mocked or in-memory dependencies.
