@@ -18,7 +18,8 @@
     "prisma:migrate:dev": "prisma migrate dev --schema db/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema db/schema.prisma",
     "up": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\TrungDang\\\\journey\\\\backend\\\\scripts\\\\windows\\\\run-personal-server.ps1\"",
-    "down": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\TrungDang\\\\journey\\\\backend\\\\scripts\\\\windows\\\\stop-personal-server.ps1\""
+    "down": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\TrungDang\\\\journey\\\\backend\\\\scripts\\\\windows\\\\stop-personal-server.ps1\"",
+    "status": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\TrungDang\\\\journey\\\\backend\\\\scripts\\\\windows\\\\status-personal-server.ps1\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

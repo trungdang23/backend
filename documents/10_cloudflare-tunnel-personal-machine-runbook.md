@@ -152,6 +152,12 @@ Dừng toàn bộ bằng một lệnh:
 pnpm down
 ```
 
+Kiểm tra trạng thái nhanh:
+
+```powershell
+pnpm status
+```
+
 ## Ý nghĩa của `reboot`
 
 `Reboot` ở đây nghĩa là:

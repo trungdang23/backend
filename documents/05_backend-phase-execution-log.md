@@ -145,6 +145,7 @@ Status: `In Progress`
 - `2026-04-13`: Login `cloudflared`, tạo tunnel `journey-backend`, route DNS `api.buicojourney.com`, ghi config local cho `localhost:3001`, và xác minh public health endpoint qua `https://api.buicojourney.com/api/v1/health` trả `200`.
 - `2026-04-13`: Thêm bộ script Windows để khởi động lại toàn bộ stack bằng một lệnh duy nhất, thay vì cần chạy nhiều lệnh thủ công.
 - `2026-04-14`: Bổ sung script dừng toàn bộ stack bằng một lệnh và thêm shortcut `pnpm up` / `pnpm down`.
+- `2026-04-14`: Thêm lệnh `pnpm status` để kiểm tra nhanh Docker, backend WSL, tunnel và public health.
 
 ### Verification
 

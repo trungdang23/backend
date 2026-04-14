@@ -112,6 +112,7 @@ pnpm prisma:validate
 ```powershell
 pnpm up
 pnpm down
+pnpm status
 ```
 
 ## Test Strategy
