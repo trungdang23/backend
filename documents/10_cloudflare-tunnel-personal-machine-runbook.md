@@ -214,6 +214,17 @@ Deploy code vẫn là:
 - `migrate`
 - `restart`
 
+## Bắt buộc trước khi test trên domain thật
+
+Mỗi khi bạn merge code mới lên `main`, nếu muốn kiểm thử trên domain thật
+(`https://api.buicojourney.com/...`) thì **bạn phải deploy lại thủ công trước**.
+
+Luồng tối thiểu:
+
+1. Merge/Push code mới
+2. Chạy deploy thủ công (workflow `deploy-backend`) hoặc chạy `pnpm up` trên máy
+3. Test lại endpoint trên domain thật
+
 ## Những gì mình có thể làm tiếp
 
 Mình có thể chuẩn bị và thực hiện phần phía máy của bạn:

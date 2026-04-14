@@ -147,6 +147,7 @@ Status: `In Progress`
 - `2026-04-14`: Bổ sung script dừng toàn bộ stack bằng một lệnh và thêm shortcut `pnpm up` / `pnpm down`.
 - `2026-04-14`: Thêm lệnh `pnpm status` để kiểm tra nhanh Docker, backend WSL, tunnel và public health.
 - `2026-04-14`: Bắt đầu phase auth/users: thêm User repository + password hasher, use case register, endpoint `POST /api/v1/auth/register`, unit tests và integration tests.
+- `2026-04-14`: Ghi rõ yêu cầu deploy thủ công trước khi test trên domain thật.
 
 ### Verification
 
