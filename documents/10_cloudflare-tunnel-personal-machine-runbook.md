@@ -135,7 +135,7 @@ Repo có script:
 Chỉ cần chạy một lệnh:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\TrungDang\journey\backend\scripts\windows\run-personal-server.ps1"
+pnpm up
 ```
 
 Script sẽ tự:
@@ -149,7 +149,7 @@ Script sẽ tự:
 Dừng toàn bộ bằng một lệnh:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\TrungDang\journey\backend\scripts\windows\stop-personal-server.ps1"
+pnpm down
 ```
 
 ## Ý nghĩa của `reboot`

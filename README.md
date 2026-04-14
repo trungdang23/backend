@@ -110,8 +110,8 @@ pnpm prisma:validate
 ## Personal Machine Short Commands (Windows)
 
 ```powershell
-pnpm server:up
-pnpm server:down
+pnpm up
+pnpm down
 ```
 
 ## Test Strategy
