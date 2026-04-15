@@ -234,10 +234,18 @@ jobs:
 
       - name: Preflight SSH diagnostics
         env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           echo "Known hosts fingerprints:"
           ssh-keygen -lf ~/.ssh/known_hosts || true
+          echo "cloudflared version:"
+          "${HOME}/bin/cloudflared" --version
+          echo "Token id sha256:"
+          printf '%s' "${TUNNEL_SERVICE_TOKEN_ID}" | sha256sum | cut -d' ' -f1
+          echo "Token secret sha256:"
+          printf '%s' "${TUNNEL_SERVICE_TOKEN_SECRET}" | sha256sum | cut -d' ' -f1
           debug_log="$(mktemp)"
           set +e
           ssh -vvv -o BatchMode=yes -o ConnectTimeout=20 "${SSH_HOST}" "true" > /dev/null 2> "${debug_log}"
