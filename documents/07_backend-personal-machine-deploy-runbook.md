@@ -205,10 +205,10 @@ git -C /home/trungdang/apps/journey-backend status --short --branch
 Kiểm tra SSH hostname ổn định từ client có `cloudflared`:
 
 ```bash
-TUNNEL_SERVICE_TOKEN_ID='<client-id>' \
-TUNNEL_SERVICE_TOKEN_SECRET='<client-secret>' \
-ssh -o ProxyCommand="cloudflared access ssh --hostname %h" trungdang@ssh.buicojourney.com 'echo tunnel_ok'
+ssh -o ProxyCommand="cloudflared access ssh --hostname %h --service-token-id <client-id> --service-token-secret <client-secret>" trungdang@ssh.buicojourney.com 'echo tunnel_ok'
 ```
+
+Workflow deploy trong repo cũng truyền service token trực tiếp vào `ProxyCommand` để tránh lệch hành vi giữa shell env và `cloudflared` trên runner.
 
 ## Các lỗi có thể gặp và cách xử lý
 

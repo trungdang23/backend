@@ -100,7 +100,7 @@ Workflow deploy trong repo sẽ dùng:
 
 - `CLOUDFLARE_ACCESS_CLIENT_ID`
 - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-- `cloudflared access ssh --hostname %h`
+- `cloudflared access ssh --hostname %h --service-token-id ... --service-token-secret ...`
 
 ## Chạy thủ công bằng một lệnh
 
