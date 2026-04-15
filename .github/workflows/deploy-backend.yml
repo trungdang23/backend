@@ -232,6 +232,24 @@ jobs:
           } > .deploy-runtime.env
           chmod 600 .deploy-runtime.env
 
+      - name: Preflight SSH diagnostics
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          echo "Known hosts fingerprints:"
+          ssh-keygen -lf ~/.ssh/known_hosts || true
+          debug_log="$(mktemp)"
+          set +e
+          ssh -vvv -o BatchMode=yes -o ConnectTimeout=20 "${SSH_HOST}" "true" > /dev/null 2> "${debug_log}"
+          status=$?
+          set -e
+          if [ "${status}" -ne 0 ]; then
+            echo "SSH preflight failed with exit code ${status}."
+            sed -E 's/(--service-token-id) [^ ]+/\1 ***/g; s/(--service-token-secret) [^ ]+/\1 ***/g' "${debug_log}" | tail -n 200
+            exit "${status}"
+          fi
+          rm -f "${debug_log}"
+
       - name: Upload runtime env file
         env:
           TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
