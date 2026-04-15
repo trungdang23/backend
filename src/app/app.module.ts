@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from '../modules/auth/auth.module';
 import { HealthModule } from '../modules/health/health.module';
+import { TripsModule } from '../modules/trips/trips.module';
 import { UsersModule } from '../modules/users/users.module';
 import { PrismaModule } from '../shared/infrastructure/prisma/prisma.module';
 import { AppConfigService } from './config/app-config.service';
@@ -25,6 +26,7 @@ import { RequestContextModule } from './request-context/request-context.module';
     PrismaModule,
     AuthModule,
     HealthModule,
+    TripsModule,
     UsersModule,
   ],
   providers: [AppConfigService, AppLogger],

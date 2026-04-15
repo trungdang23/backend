@@ -55,6 +55,8 @@ pnpm build
 pnpm prisma:validate
 ```
 
+`pnpm test`, `pnpm test:integration`, và `pnpm test:e2e` hiện sẽ tự chạy `pnpm prisma:migrate:deploy` vào test database trước khi vào Jest. Nếu `DATABASE_URL` chưa được set, package sẽ mặc định dùng `journey_test` trên `localhost:5432`.
+
 ## Operational Foundation
 
 - Mỗi request đều có correlation id. Header `X-Correlation-Id` được giữ nguyên nếu client gửi lên; nếu không có, backend sẽ tự tạo và phản hồi lại cùng header này.
@@ -144,4 +146,4 @@ WSL shortcut ngắn nhất:
 
 - Unit tests validate isolated logic with mocked or in-memory dependencies.
 - Integration tests boot the real Nest application wiring and exercise HTTP contracts without controller mocks.
-- As database-backed modules are added, integration tests must move to real Prisma repositories against a disposable PostgreSQL instance.
+- Database-backed modules như `trips` hiện đã có repository integration chạy với `Prisma` và PostgreSQL thật; full `pnpm test` sẽ apply migration test DB trước khi chạy suite liên quan.
