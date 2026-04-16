@@ -136,6 +136,22 @@ WSL shortcut ngắn nhất:
 ./s
 ```
 
+Nếu bạn cần kéo cả backend stack và frontend production runtime lên sau khi máy/WSL bị tắt:
+
+```bash
+./up-all
+./down-all
+./status-all
+```
+
+Các lệnh này sẽ:
+
+- chạy `./u` để bật backend, PostgreSQL, và backend tunnel
+- restart frontend production tại `/home/trungdang/apps/journey-frontend`
+- kiểm tra `https://buicojourney.com/health`
+- dừng frontend production rồi dừng backend stack khi dùng `./down-all`
+- gom trạng thái backend + frontend local runtime + frontend public health khi dùng `./status-all`
+
 ## Test Strategy
 
 - Unit tests validate isolated logic with mocked or in-memory dependencies.

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly FRONTEND_DEPLOY_DIR="${FRONTEND_DEPLOY_DIR:-/home/trungdang/apps/journey-frontend}"
+readonly FRONTEND_PUBLIC_HEALTH_URL="${FRONTEND_PUBLIC_HEALTH_URL:-https://buicojourney.com/health}"
+
+print_section() {
+  printf '\n======== %s ========\n' "$1"
+}
+
+wait_for_public_frontend() {
+  local attempts="${1:-20}"
+  local delay_seconds="${2:-2}"
+
+  for _ in $(seq 1 "${attempts}"); do
+    if curl --fail --silent --show-error --head "${FRONTEND_PUBLIC_HEALTH_URL}" >/dev/null; then
+      printf 'Frontend public health passed at %s\n' "${FRONTEND_PUBLIC_HEALTH_URL}"
+      return 0
+    fi
+
+    sleep "${delay_seconds}"
+  done
+
+  printf 'Frontend public health failed at %s\n' "${FRONTEND_PUBLIC_HEALTH_URL}" >&2
+  return 1
+}
+
+print_section 'Backend'
+(cd "${SCRIPT_DIR}" && ./u)
+
+print_section 'Frontend'
+if [ ! -d "${FRONTEND_DEPLOY_DIR}" ]; then
+  printf 'Frontend deploy directory was not found at %s\n' "${FRONTEND_DEPLOY_DIR}" >&2
+  exit 1
+fi
+
+(cd "${FRONTEND_DEPLOY_DIR}" && bash ./scripts/restart-production.sh)
+
+print_section 'Frontend Public Health'
+wait_for_public_frontend
+
+print_section 'Done'
+printf 'Backend API and frontend domain should now be reachable.\n'
