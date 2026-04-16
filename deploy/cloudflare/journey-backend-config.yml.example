@@ -2,6 +2,7 @@ tunnel: <cloudflare-tunnel-id>
 credentials-file: C:\Users\<windows-user>\.cloudflared\<cloudflare-tunnel-id>.json
 
 ingress:
+  # Optional manual/admin SSH route. GitHub Actions deploy no longer depends on this.
   - hostname: ssh.buicojourney.com
     service: ssh://localhost:22
   - hostname: api.buicojourney.com

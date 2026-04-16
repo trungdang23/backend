@@ -9,29 +9,24 @@
 ## Mục tiêu
 
 - Không commit secret thật vào repo backend.
-- Tách rõ secret phục vụ Cloudflare Access, secret phục vụ SSH host, và secret phục vụ runtime của ứng dụng.
-- Chuẩn hóa cách cấu hình trên GitHub để deploy không phụ thuộc vào SSH tunnel tạm.
+- Tách rõ runtime secret của ứng dụng với deploy variable của self-hosted runner.
+- Chuẩn hóa cách cấu hình trên GitHub để deploy không còn phụ thuộc vào SSH trung gian.
 
 ## Mô hình bảo mật hiện tại
 
-- GitHub giữ secret để workflow deploy đi qua `Cloudflare Access` và SSH vào máy đích.
-- GitHub cũng giữ runtime secrets/variables để workflow render file env production khi deploy.
+- GitHub giữ runtime secrets/variables để workflow render file env production khi deploy.
+- Job deploy chạy trên self-hosted runner Linux của chính máy đích, nên workflow không còn cần Cloudflare Access token hay SSH key để chui qua mạng.
 - Repo chỉ chứa `.env.*.example`, workflow, script, và tài liệu; không chứa env thật.
 
 ## Nhóm bí mật và cấu hình
 
 ### GitHub Secrets cho repo backend
 
-- `CLOUDFLARE_ACCESS_CLIENT_ID`
-- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-- `SSH_HOST`
-- `SSH_PORT`
-- `SSH_USER`
-- `SSH_PRIVATE_KEY`
-- `SSH_KNOWN_HOSTS`
 - `RUNTIME_DATABASE_URL`
 - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
 - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
+- `RUNTIME_SWAGGER_USERNAME`
+- `RUNTIME_SWAGGER_PASSWORD`
 
 ### GitHub Variables cho repo backend
 
@@ -71,25 +66,19 @@
   - Google API key
   - OpenAI API key
   - Slack token
-- Workflow deploy dùng service token Cloudflare chỉ để vào Access app bảo vệ SSH hostname.
-- Workflow deploy vẫn dùng SSH private key để xác thực với `sshd` trên máy đích.
-- Workflow deploy render `.env.production` từ GitHub configuration, copy lên máy đích, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
+- Workflow deploy render `.env.production` từ GitHub configuration, ghi file đó trực tiếp vào `RUNTIME_ENV_PATH`, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
+- Quyền truy cập vào máy deploy được chuyển từ mạng/SSH sang quyền của self-hosted runner service. Runner user vì vậy phải được coi như tài khoản production operator.
 
 ## Thiết lập trên GitHub
 
 1. Vào repo `backend` trên GitHub.
 2. Mở `Settings` -> `Secrets and variables` -> `Actions`.
 3. Thêm các secrets:
-   - `CLOUDFLARE_ACCESS_CLIENT_ID`
-   - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-   - `SSH_HOST`
-   - `SSH_PORT`
-   - `SSH_USER`
-   - `SSH_PRIVATE_KEY`
-   - `SSH_KNOWN_HOSTS`
    - `RUNTIME_DATABASE_URL`
    - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
    - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
+   - `RUNTIME_SWAGGER_USERNAME`
+   - `RUNTIME_SWAGGER_PASSWORD`
 4. Thêm các variables:
    - `DEPLOY_PATH`
    - `RUNTIME_ENV_PATH`
@@ -103,26 +92,6 @@
    - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 
 ## Giá trị nên dùng cho máy cá nhân hiện tại
-
-### Secrets
-
-- `SSH_HOST=ssh.buicojourney.com`
-- `SSH_PORT=22`
-- `SSH_USER=trungdang`
-
-`SSH_KNOWN_HOSTS` nên chứa host key thật của Windows OpenSSH server theo format:
-
-```text
-ssh.buicojourney.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
-```
-
-Có thể lấy public host key bằng PowerShell trên máy Windows:
-
-```powershell
-Get-Content 'C:\ProgramData\ssh\ssh_host_ed25519_key.pub'
-```
-
-Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub secret `SSH_KNOWN_HOSTS`.
 
 ### Variables
 
@@ -154,25 +123,25 @@ Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub se
 
 ## Thiết lập trên máy đích
 
-1. Đảm bảo Windows OpenSSH Server đang chạy và `StartType` là `Automatic`.
-2. Đảm bảo `cloudflared` đang chạy với published route:
-   - `ssh.buicojourney.com -> ssh://localhost:22`
-   - `api.buicojourney.com -> http://localhost:3001`
-3. Đảm bảo Access app của `ssh.buicojourney.com` có policy `Service Auth` cho service token dùng bởi GitHub Actions.
+1. Đảm bảo self-hosted runner Linux/X64 của GitHub đang online trên chính máy deploy.
+2. Runner nên chạy dưới user có quyền ghi vào:
+   - `DEPLOY_PATH`
+   - thư mục cha của `RUNTIME_ENV_PATH`
+   - state/log path mà `scripts/restart-production.sh` dùng
+3. Đảm bảo máy đích đã có `git`, `rsync`, `node`, `pnpm`, Docker/PostgreSQL runtime, và mọi phụ thuộc hệ thống cần cho build.
 4. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
-5. Đảm bảo user deploy có quyền ghi vào thư mục chứa `RUNTIME_ENV_PATH`.
-6. Đảm bảo service restart command của bạn thực sự dùng file env đó.
+5. Đảm bảo service restart command của bạn thực sự dùng file env đó.
 
 ## Quy trình deploy an toàn
 
 1. Merge code vào `main` của repo backend.
 2. Chờ `backend-ci.yml` pass.
 3. Kiểm tra local stack bằng `pnpm status`.
-4. Xác nhận `cloudflared` config có route SSH ổn định.
+4. Xác nhận self-hosted runner đang online.
 5. Vào GitHub Actions của repo backend.
 6. Chạy `deploy-backend.yml` bằng `Run workflow`.
-7. Workflow dùng `cloudflared access ssh` + service token để vào hostname SSH ổn định.
-8. Workflow render `.env.production` từ GitHub Secrets/Variables và copy file đó vào `RUNTIME_ENV_PATH`.
+7. Workflow sync source từ workspace checkout vào `DEPLOY_PATH`.
+8. Workflow render `.env.production` từ GitHub Secrets/Variables và ghi file đó vào `RUNTIME_ENV_PATH`.
 9. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
 
 ## Kiểm tra sau deploy
@@ -187,4 +156,4 @@ Sau đó ghép thêm hostname ở đầu dòng trước khi paste vào GitHub se
 
 - Merge `main` hiện tại không làm lộ secret production nếu bạn chỉ commit source hiện có.
 - GitHub giữ cả deploy secrets lẫn runtime secrets/variables của app.
-- Deploy SSH đã chuyển sang hostname ổn định qua Cloudflare Access, nên không còn phải cập nhật `SSH_HOST` hay `SSH_PORT` sau mỗi lần reboot như mô hình Pinggy cũ.
+- Deploy không còn phụ thuộc vào `cloudflared access ssh`; độ ổn định giờ nằm ở self-hosted runner, runtime stack local, và quyền file trên máy đích.

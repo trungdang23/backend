@@ -68,7 +68,7 @@ pnpm prisma:validate
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
 - CORS cho frontend tách origin được điều khiển bằng `CORS_ALLOWED_ORIGINS`; các endpoint public của auth hiện có rate limiting theo IP với `AUTH_RATE_LIMIT_MAX_REQUESTS` và `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.
-- Workflow deploy hiện đi qua `Cloudflare Tunnel` + `cloudflared access ssh`, nên không còn phụ thuộc vào reverse SSH tunnel tạm cho bước deploy.
+- Workflow deploy hiện giữ bước verify trên GitHub-hosted runner, nhưng chạy bước deploy thật trên self-hosted runner Linux của chính máy đích; vì vậy deploy không còn phụ thuộc vào `cloudflared access ssh` hay lớp SSH trung gian.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, và JWT access/refresh token flow thật.
 - Repo đã có bộ script runtime trên host:
   - `scripts/start-production.sh`
@@ -85,14 +85,8 @@ pnpm prisma:validate
 - `backend-ci.yml` là workflow verify cho repo backend riêng.
 - `deploy-backend.yml` là workflow deploy thủ công cho repo backend riêng, không tự chạy khi merge `main`.
 - `backend-ci.yml` và `deploy-backend.yml` đều gọi `bash ./scripts/check-secrets.sh` trước các bước build/test chính.
-- Để workflow deploy hoạt động, repo backend cần các GitHub secrets:
-  - `CLOUDFLARE_ACCESS_CLIENT_ID`
-  - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-  - `SSH_HOST`
-  - `SSH_PORT`
-  - `SSH_USER`
-  - `SSH_PRIVATE_KEY`
-  - `SSH_KNOWN_HOSTS`
+- Để workflow deploy hoạt động, repo backend cần một self-hosted runner Linux/X64 online trên chính máy deploy.
+- Repo backend cần các GitHub secrets runtime:
   - `RUNTIME_DATABASE_URL`
   - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
   - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
@@ -110,10 +104,10 @@ pnpm prisma:validate
   - `RUNTIME_JWT_ISSUER`
   - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
   - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
-  - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
-  - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
+- `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
+- `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
-- Với hướng deploy ổn định trên máy cá nhân qua Cloudflare, `SSH_HOST` nên là hostname Access cố định như `ssh.buicojourney.com` và `SSH_PORT` nên để `22`.
+- Self-hosted runner phải chạy dưới user có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và chạy được `SERVICE_RESTART_COMMAND`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.
 - Với setup máy cá nhân hiện tại, giá trị phù hợp cho `SERVICE_RESTART_COMMAND` là `bash ./scripts/restart-production.sh`.
 - Runbook secrets/runtime nằm tại `documents/06_backend-secrets-and-runtime-runbook.md`.

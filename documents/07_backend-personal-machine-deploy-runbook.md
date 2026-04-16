@@ -2,48 +2,46 @@
 
 ## Trạng thái
 
-- Date: `2026-04-14`
+- Date: `2026-04-15`
 - Status: `Accepted`
-- Scope: deploy thủ công repo `backend` từ GitHub Actions vào máy cá nhân qua SSH endpoint ổn định bằng `Cloudflare Tunnel`
+- Scope: deploy thủ công repo `backend` từ GitHub Actions vào máy cá nhân bằng self-hosted runner Linux
 
 ## Mục tiêu
 
 - Tách thư mục làm việc hằng ngày với thư mục deploy.
 - Giữ workflow deploy hiện tại của GitHub Actions.
-- Loại bỏ phụ thuộc vào reverse SSH tunnel tạm vốn đổi host hoặc port sau reboot.
+- Loại bỏ phụ thuộc vào `cloudflared access ssh` và mọi bước SSH trung gian.
 
 ## Kiến trúc deploy hiện tại
 
 - Workspace dev:
   - `/mnt/c/TrungDang/journey/backend`
+- Runner workspace:
+  - thư mục `_work` của GitHub self-hosted runner trên WSL/Linux
 - Deploy path:
   - `/home/trungdang/apps/journey-backend`
 - Source of truth của code:
   - GitHub repo `trungdang23/backend`
 - Source of truth của runtime config:
-  - GitHub `Secrets` và `Variables`
+  - GitHub `Environment secrets` và `Environment variables`
 - Database local cho deploy hiện tại:
   - PostgreSQL chạy bằng `docker compose`
 - Kiểu deploy:
   - manual qua workflow `deploy-backend.yml`
-- Kiểu SSH hiện tại:
-  - `Cloudflare Tunnel` published SSH app tại `ssh.buicojourney.com`
-- Kiểu xác thực Access cho GitHub Actions:
-  - `Service Auth` bằng Cloudflare service token
+- Kiểu thực thi deploy:
+  - self-hosted runner Linux/X64 chạy trên chính máy đích
 
 ## Những gì workflow đang làm
 
-1. Verify repo bằng `lint`, `test`, `build`, `prisma:validate`.
-2. Cài `cloudflared` client trên GitHub runner.
-3. Đọc Cloudflare Access secrets, SSH secrets, và runtime config từ GitHub.
-4. Render file env tạm trên GitHub runner.
-5. SSH qua `cloudflared access ssh` vào `ssh.buicojourney.com`.
-6. Copy file env đó lên máy đích tại `RUNTIME_ENV_PATH`.
-7. `git fetch`, `git checkout`, `git pull` trong `DEPLOY_PATH`.
-8. `pnpm install`, `pnpm prisma:generate`, `pnpm build`.
-9. Source runtime env vừa copy lên.
-10. Chạy `pnpm prisma:migrate:deploy`.
-11. Chạy `SERVICE_RESTART_COMMAND`.
+1. Verify repo bằng `lint`, `test`, `build`, `prisma:validate` trên GitHub-hosted runner.
+2. Checkout đúng `ref` lên self-hosted runner.
+3. Sync source từ workspace checkout vào `DEPLOY_PATH`.
+4. Render file env tạm từ GitHub configuration.
+5. Ghi file env đó vào `RUNTIME_ENV_PATH`.
+6. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
+7. Source runtime env vừa ghi.
+8. Chạy `pnpm prisma:migrate:deploy`.
+9. Chạy `SERVICE_RESTART_COMMAND`.
 
 ## Runtime script hiện có trong repo
 
@@ -63,29 +61,22 @@ Các script này:
 - Không deploy vào chính thư mục đang code.
 - Không commit `.env.production`.
 - `RUNTIME_ENV_PATH` phải là file path, không phải directory path.
-- `SSH_HOST` phải là hostname Access cố định, không phải hostname tunnel tạm.
-- `SSH_PORT` nên để `22` trong mô hình Cloudflare SSH hiện tại.
+- Self-hosted runner phải online trên chính máy deploy.
+- Runner user phải có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và state dir của runtime scripts.
 - Merge `main` không tự deploy; bạn vẫn phải bấm `Run workflow`.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
 
 ## GitHub configuration hiện cần
 
-### Secrets
+### Environment secrets
 
-- `CLOUDFLARE_ACCESS_CLIENT_ID`
-- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-- `SSH_HOST`
-- `SSH_PORT`
-- `SSH_USER`
-- `SSH_PRIVATE_KEY`
-- `SSH_KNOWN_HOSTS`
 - `RUNTIME_DATABASE_URL`
 - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
 - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
 - `RUNTIME_SWAGGER_USERNAME`
 - `RUNTIME_SWAGGER_PASSWORD`
 
-### Variables
+### Environment variables
 
 - `DEPLOY_PATH`
 - `RUNTIME_ENV_PATH`
@@ -101,63 +92,32 @@ Các script này:
 - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
 - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 
-## Giá trị path và host đã chốt cho máy hiện tại
-
-### Secrets
-
-```text
-SSH_HOST=ssh.buicojourney.com
-SSH_PORT=22
-SSH_USER=trungdang
-```
+## Giá trị path và command đã chốt cho máy hiện tại
 
 ### Variables
 
 ```text
 DEPLOY_PATH=/home/trungdang/apps/journey-backend
 RUNTIME_ENV_PATH=/home/trungdang/apps/journey-backend/.env.production
+SERVICE_RESTART_COMMAND=bash ./scripts/restart-production.sh
 ```
 
-`SERVICE_RESTART_COMMAND` nên dùng:
+## Thiết lập self-hosted runner
 
-```text
-bash ./scripts/restart-production.sh
-```
-
-## Cấu hình Cloudflare cần có
-
-### Published application routes
-
-- `ssh.buicojourney.com -> ssh://localhost:22`
-- `api.buicojourney.com -> http://localhost:3001`
-
-Template tham chiếu đã có trong repo:
-
-```text
-deploy/cloudflare/journey-backend-config.yml.example
-```
-
-### Access policy cho SSH hostname
-
-Tại Access app của `ssh.buicojourney.com`:
-
-- thêm policy `Service Auth`
-- cho phép service token mà GitHub Actions dùng
-- giữ thêm policy user-based riêng nếu bạn còn muốn SSH thủ công từ máy cá nhân
-
-### Host key secret
-
-GitHub secret `SSH_KNOWN_HOSTS` nên dùng host key thật của Windows OpenSSH server với hostname ổn định:
-
-```text
-ssh.buicojourney.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
-```
-
-Lấy public host key trên Windows:
-
-```powershell
-Get-Content 'C:\ProgramData\ssh\ssh_host_ed25519_key.pub'
-```
+1. Vào repo `backend` trên GitHub.
+2. Mở `Settings -> Actions -> Runners`.
+3. Tạo một self-hosted runner Linux/X64 cho repo này hoặc ở mức org.
+4. Cài runner trong WSL/Linux trên chính máy deploy.
+5. Chạy runner dưới user có quyền ghi vào:
+   - `/home/trungdang/apps/journey-backend`
+   - `/home/trungdang/apps/journey-backend/.env.production`
+   - `${XDG_STATE_HOME:-$HOME/.local/state}/journey-backend`
+6. Đảm bảo runner có sẵn:
+   - `git`
+   - `rsync`
+   - `node`
+   - `pnpm`
+   - Docker/PostgreSQL runtime mà backend cần
 
 ## Database local cho deploy
 
@@ -184,8 +144,7 @@ docker compose -f /mnt/c/TrungDang/journey/backend/docker-compose.yml up -d post
 4. Chạy `pnpm status` trên máy cá nhân để xác nhận:
    - Docker đang chạy
    - backend runtime healthy
-   - `cloudflared` process có mặt
-   - route SSH ổn định đã có trong config
+   - runner đang online
 5. Bấm `Run workflow` cho `deploy-backend`.
 
 ## Lệnh kiểm tra nhanh trước deploy
@@ -202,91 +161,70 @@ Kiểm tra deploy path:
 git -C /home/trungdang/apps/journey-backend status --short --branch
 ```
 
-Kiểm tra SSH hostname ổn định từ client có `cloudflared`:
-
-```bash
-ssh -o ProxyCommand="cloudflared access ssh --hostname %h --service-token-id <client-id> --service-token-secret <client-secret>" trungdang@ssh.buicojourney.com 'echo tunnel_ok'
-```
-
-Workflow deploy trong repo cũng truyền service token trực tiếp vào `ProxyCommand` để tránh lệch hành vi giữa shell env và `cloudflared` trên runner.
-
 ## Các lỗi có thể gặp và cách xử lý
 
-### `ssh: connect to host ... port ...: Connection timed out`
+### Runner ở trạng thái offline
 
 Nguyên nhân thường gặp:
 
-- `cloudflared` trên máy đích chưa chạy
-- config tunnel chưa có route `ssh://localhost:22`
-- `SSH_HOST` trong GitHub secret vẫn trỏ sai hostname cũ
+- runner service chưa chạy
+- runner cài ở WSL instance chưa được bật
+- machine đang sleep hoặc offline
 
 Khắc phục:
 
-- chạy lại `pnpm up`
-- kiểm tra `pnpm status`
-- xác nhận `SSH_HOST=ssh.buicojourney.com`
+- bật lại machine hoặc WSL
+- start lại runner service
+- xác nhận runner hiện `Idle` hoặc `Online` trong GitHub
 
-### `Permission denied (publickey)`
+### `rsync is required on the self-hosted runner`
 
 Nguyên nhân:
 
-- `SSH_PRIVATE_KEY` không khớp với authorized key trên máy đích
-- `SSH_USER` sai
+- runner host chưa có `rsync`
 
 Khắc phục:
 
-- kiểm tra lại private key deploy
-- kiểm tra `authorized_keys` của user deploy
-- kiểm tra `SSH_USER`
-
-### `Host key verification failed`
-
-Nguyên nhân:
-
-- `SSH_KNOWN_HOSTS` chưa được cập nhật theo hostname ổn định
-- secret đang chứa line cho host tạm cũ
-
-Khắc phục:
-
-- lấy lại host key từ `C:\ProgramData\ssh\ssh_host_ed25519_key.pub`
-- cập nhật `SSH_KNOWN_HOSTS` theo format `ssh.buicojourney.com <key>`
-
-### `403` hoặc bị Access chặn trước khi vào SSH
-
-Nguyên nhân:
-
-- service token sai
-- Access app của `ssh.buicojourney.com` chưa có policy `Service Auth`
-
-Khắc phục:
-
-- tạo mới service token nếu cần
-- cập nhật lại `CLOUDFLARE_ACCESS_CLIENT_ID`
-- cập nhật lại `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-- kiểm tra policy của Access app
+- cài `rsync` trên WSL/Linux
+- chạy lại workflow
 
 ### `RUNTIME_ENV_PATH points to a directory`
 
 Nguyên nhân:
 
-- `RUNTIME_ENV_PATH` trỏ vào thư mục repo thay vì file `.env.production`
+- khai báo `RUNTIME_ENV_PATH` sai thành thư mục
 
-Giá trị đúng:
+Khắc phục:
 
-```text
-/home/trungdang/apps/journey-backend/.env.production
-```
+- sửa về file path thật, ví dụ `/home/trungdang/apps/journey-backend/.env.production`
 
-## Giới hạn của setup hiện tại
+### `pnpm prisma:migrate:deploy` fail
 
-- Chưa phải production-ready.
-- Chưa có process manager hoặc container runtime cho chính app backend.
-- Máy cá nhân vẫn phải online để nhận traffic và nhận deploy.
-- Service token Cloudflare có hạn dùng, nên cần theo dõi ngày hết hạn.
+Nguyên nhân:
 
-## Bước tiếp theo được khuyến nghị
+- `RUNTIME_DATABASE_URL` sai
+- PostgreSQL local chưa chạy
+- migration chưa hợp lệ với DB hiện tại
 
-1. Cho `cloudflared` chạy như Windows service ổn định thay vì chỉ dựa vào process khởi động lại sau login.
-2. Đưa backend runtime sang process manager hoặc container runtime thật.
-3. Thêm health check riêng cho SSH deploy path nếu cần tự động hóa sâu hơn.
-4. Sau khi ổn định, cân nhắc chuyển từ máy cá nhân sang VPS hoặc máy luôn-on.
+Khắc phục:
+
+- kiểm tra `docker compose ps`
+- kiểm tra `RUNTIME_DATABASE_URL`
+- chạy lại sau khi DB local khỏe
+
+### `node was not found in PATH`
+
+Nguyên nhân:
+
+- runner user chưa có Node runtime hoặc `nvm` chưa được load
+
+Khắc phục:
+
+- cài Node cho runner
+- hoặc đảm bảo `nvm` của user deploy còn dùng được
+
+## Kết luận vận hành
+
+- Deploy không còn phụ thuộc vào Cloudflare SSH.
+- Độ ổn định của deploy giờ nằm ở self-hosted runner, runtime stack local, và quyền file đúng trên máy đích.
+- Cloudflare Tunnel vẫn hữu ích cho public ingress của API, nhưng không còn là đường bắt buộc của workflow deploy backend.

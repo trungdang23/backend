@@ -6,7 +6,6 @@
 - Status: `Accepted`
 - Domain: `buicojourney.com`
 - Backend hostname: `api.buicojourney.com`
-- Deploy SSH hostname: `ssh.buicojourney.com`
 - Tunnel name: `journey-backend`
 - Tunnel id: `3446e326-9e78-4f9b-aa2a-ea440f2a27fb`
 
@@ -17,16 +16,17 @@ Hướng này phù hợp khi:
 - bạn muốn dùng máy cá nhân làm server
 - domain đang quản lý trên Cloudflare
 - bạn không muốn mở `80/443` hoặc `22` từ router vào máy nhà
-- bạn muốn cả public HTTP và deploy SSH đi qua một tunnel ổn định
+- bạn muốn public HTTP đi qua một tunnel ổn định
 
 ## Vì sao hướng này phù hợp hơn
 
-Với `Cloudflare Tunnel`, máy của bạn chỉ cần mở kết nối đi ra ngoài tới Cloudflare. Bạn không cần public IP cố định, không cần mở inbound port trên router, và không cần phụ thuộc vào tunnel SSH tạm kiểu Pinggy cho deploy.
+Với `Cloudflare Tunnel`, máy của bạn chỉ cần mở kết nối đi ra ngoài tới Cloudflare. Bạn không cần public IP cố định, không cần mở inbound port trên router, và không cần phụ thuộc vào tunnel SSH tạm kiểu Pinggy cho public ingress.
 
-Trong setup hiện tại, một tunnel phục vụ cả hai đường:
+Trong setup hiện tại, một tunnel phục vụ các đường public:
 
 - `api.buicojourney.com` -> `http://localhost:3001`
-- `ssh.buicojourney.com` -> `ssh://localhost:22`
+- `buicojourney.com` -> `http://localhost:3000`
+- `www.buicojourney.com` -> `http://localhost:3000`
 
 ## Kiến trúc hiện tại
 
@@ -35,7 +35,8 @@ Internet
   -> Cloudflare
   -> Cloudflare Tunnel (cloudflared trên Windows)
   -> api.buicojourney.com -> backend NestJS tại http://localhost:3001
-  -> ssh.buicojourney.com -> Windows OpenSSH tại localhost:22
+  -> buicojourney.com -> frontend runtime tại http://localhost:3000
+  -> www.buicojourney.com -> frontend runtime tại http://localhost:3000
 ```
 
 ## Những gì không còn cần
@@ -47,10 +48,10 @@ Internet
 ## Những gì vẫn cần
 
 - backend phải chạy ổn tại `http://localhost:3001`
-- Windows OpenSSH Server phải chạy tại `localhost:22`
+- frontend phải chạy ổn tại `http://localhost:3000`
 - domain `buicojourney.com` phải nằm trong Cloudflare
 - `cloudflared` phải chạy đúng config
-- máy cá nhân phải online khi muốn phục vụ traffic hoặc nhận deploy
+- máy cá nhân phải online khi muốn phục vụ traffic
 
 ## File config tham chiếu
 
@@ -67,10 +68,12 @@ tunnel: 3446e326-9e78-4f9b-aa2a-ea440f2a27fb
 credentials-file: C:\Users\dangv\.cloudflared\3446e326-9e78-4f9b-aa2a-ea440f2a27fb.json
 
 ingress:
-  - hostname: ssh.buicojourney.com
-    service: ssh://localhost:22
   - hostname: api.buicojourney.com
     service: http://localhost:3001
+  - hostname: buicojourney.com
+    service: http://localhost:3000
+  - hostname: www.buicojourney.com
+    service: http://localhost:3000
   - service: http_status:404
 ```
 
@@ -81,26 +84,20 @@ ingress:
 - login `cloudflared`
 - tạo tunnel `journey-backend`
 - tạo route DNS cho `api.buicojourney.com`
-- tạo route DNS cho `ssh.buicojourney.com`
+- tạo route DNS cho `buicojourney.com`
+- tạo route DNS cho `www.buicojourney.com`
 - xác minh public health:
   - `https://api.buicojourney.com/api/v1/health`
   - trả `200`
 
-## Access cho deploy SSH
+## Vai trò hiện tại của tunnel
 
-Deploy SSH không nên để public trần.
+Tunnel giờ chỉ còn phục vụ public ingress:
 
-Tại Access app của `ssh.buicojourney.com`:
+- backend API tại `api.buicojourney.com`
+- frontend app tại `buicojourney.com` và `www.buicojourney.com`
 
-- tạo policy `Service Auth`
-- gắn service token dành riêng cho GitHub Actions
-- nếu cần SSH thủ công, thêm policy user-based riêng
-
-Workflow deploy trong repo sẽ dùng:
-
-- `CLOUDFLARE_ACCESS_CLIENT_ID`
-- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
-- `cloudflared access ssh --hostname %h --service-token-id ... --service-token-secret ...`
+Workflow deploy của cả backend và frontend đã chuyển sang self-hosted runner, nên tunnel không còn là đường bắt buộc để chép source hoặc env file lên máy deploy.
 
 ## Chạy thủ công bằng một lệnh
 
@@ -131,7 +128,7 @@ Kiểm tra trạng thái:
 pnpm status
 ```
 
-Từ `2026-04-14`, status script cũng kiểm tra việc config có route SSH ổn định hay chưa.
+Status script hiện nên được hiểu là kiểm tra tunnel/public ingress, không phải deploy transport.
 
 ## Ý nghĩa của `reboot`
 
@@ -140,23 +137,23 @@ Từ `2026-04-14`, status script cũng kiểm tra việc config có route SSH �
 - tắt máy rồi bật lại
 - hoặc chọn `Restart` trong Windows
 
-Với setup hiện tại, reboot không còn làm đổi `SSH_HOST` hoặc `SSH_PORT` của workflow deploy. Điều bạn vẫn phải đảm bảo là `cloudflared`, Docker, backend runtime, và OpenSSH đều lên lại bình thường.
+Với setup hiện tại, reboot không làm đổi public hostname. Điều bạn vẫn phải đảm bảo là `cloudflared`, Docker, backend runtime, frontend runtime, và self-hosted runner đều lên lại bình thường.
 
 ## Ảnh hưởng tới deploy hiện tại
 
 Workflow deploy GitHub hiện tại vẫn là:
 
 - GitHub Actions
-- `git pull`
+- sync source vào `DEPLOY_PATH`
 - `pnpm install`
 - `build`
 - `migrate`
 - `restart`
 
-Điểm đổi chính là lớp SSH:
+Điểm khác là deploy transport:
 
-- trước đây: reverse tunnel tạm
-- hiện tại: `ssh.buicojourney.com` qua `Cloudflare Tunnel` + `Service Auth`
+- trước đây: tunnel SSH tạm rồi `cloudflared access ssh`
+- hiện tại: self-hosted runner chạy trực tiếp trên máy đích
 
 ## Bắt buộc trước khi test trên domain thật
 
