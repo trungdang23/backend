@@ -120,6 +120,13 @@ jobs:
           test -n "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
           test -n "${RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS}"
           test -n "${RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS}"
+          case "${RUNTIME_DATABASE_URL}" in
+            postgresql://*|postgres://*) ;;
+            *)
+              echo "RUNTIME_DATABASE_URL must start with postgresql:// or postgres://." >&2
+              exit 1
+              ;;
+          esac
           if [ "${RUNTIME_SWAGGER_ENABLED}" = "true" ]; then
             test -n "${RUNTIME_SWAGGER_USERNAME}"
             test -n "${RUNTIME_SWAGGER_PASSWORD}"
