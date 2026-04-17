@@ -144,6 +144,14 @@ Nếu bạn cần kéo cả backend stack và frontend production runtime lên s
 ./status-all
 ```
 
+Alias ngắn tương ứng:
+
+```bash
+./ua
+./da
+./sa
+```
+
 Các lệnh này sẽ:
 
 - chạy `./u` để bật backend, PostgreSQL, và backend tunnel
