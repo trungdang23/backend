@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { Trip } from '../../domain/trip';
 
@@ -14,6 +14,12 @@ export class TripResponseDto {
 
   @ApiProperty()
   destination!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  summaryNotes!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  coverImageUrl!: string | null;
 
   @ApiProperty()
   startDate!: string;
@@ -42,6 +48,8 @@ export class TripResponseDto {
       userId: trip.userId,
       name: trip.name,
       destination: trip.destination,
+      summaryNotes: trip.summaryNotes,
+      coverImageUrl: trip.coverImageUrl,
       startDate: trip.startDate,
       endDate: trip.endDate,
       timezone: trip.timezone,

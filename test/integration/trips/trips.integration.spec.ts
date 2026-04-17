@@ -56,6 +56,8 @@ describe('Trips integration', () => {
       body: {
         name: 'Hoi An Lights',
         destination: 'Hoi An',
+        summaryNotes: 'Lanterns, coffee stops, and a slower second day.',
+        coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
         startDate: '2026-07-12',
         endDate: '2026-07-15',
         timezone: 'Asia/Ho_Chi_Minh',
@@ -69,6 +71,8 @@ describe('Trips integration', () => {
         id: string;
         budgetCurrency: string;
         userId: string;
+        summaryNotes: string | null;
+        coverImageUrl: string | null;
       };
     };
 
@@ -76,6 +80,12 @@ describe('Trips integration', () => {
     expect(laterTripBody.success).toBe(true);
     expect(laterTripBody.data.userId).toBe(firstTraveler.userId);
     expect(laterTripBody.data.budgetCurrency).toBe('VND');
+    expect(laterTripBody.data.summaryNotes).toBe(
+      'Lanterns, coffee stops, and a slower second day.',
+    );
+    expect(laterTripBody.data.coverImageUrl).toBe(
+      'https://example.com/hoi-an-cover.jpg',
+    );
 
     await dispatchRequest(expressApp, {
       method: 'POST',
@@ -162,6 +172,8 @@ describe('Trips integration', () => {
       data: {
         id: string;
         destination: string;
+        summaryNotes: string | null;
+        coverImageUrl: string | null;
       };
     };
 
@@ -170,6 +182,8 @@ describe('Trips integration', () => {
     expect(detailBody.data).toMatchObject({
       id: laterTripBody.data.id,
       destination: 'Hoi An',
+      summaryNotes: 'Lanterns, coffee stops, and a slower second day.',
+      coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
     });
 
     const missingResponse = await dispatchRequest(expressApp, {
@@ -225,6 +239,8 @@ describe('Trips integration', () => {
       },
       body: {
         destination: 'Hue Imperial City',
+        summaryNotes: 'Quiet mornings around the citadel.',
+        coverImageUrl: 'https://example.com/hue-imperial.jpg',
         budgetAmount: 1750000,
       },
     });
@@ -233,6 +249,8 @@ describe('Trips integration', () => {
       data: {
         destination: string;
         budgetAmount: number;
+        summaryNotes: string | null;
+        coverImageUrl: string | null;
       };
     };
 
@@ -240,6 +258,12 @@ describe('Trips integration', () => {
     expect(updateBody.success).toBe(true);
     expect(updateBody.data.destination).toBe('Hue Imperial City');
     expect(updateBody.data.budgetAmount).toBe(1750000);
+    expect(updateBody.data.summaryNotes).toBe(
+      'Quiet mornings around the citadel.',
+    );
+    expect(updateBody.data.coverImageUrl).toBe(
+      'https://example.com/hue-imperial.jpg',
+    );
 
     const emptyPatchResponse = await dispatchRequest(expressApp, {
       method: 'PATCH',

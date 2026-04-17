@@ -18,6 +18,8 @@ export interface UpdateTripInput {
   tripId: string;
   name?: string;
   destination?: string;
+  summaryNotes?: string | null;
+  coverImageUrl?: string | null;
   startDate?: string;
   endDate?: string;
   timezone?: string;
@@ -36,6 +38,8 @@ export class UpdateTripService implements UseCase<UpdateTripInput, Trip> {
     if (
       input.name === undefined &&
       input.destination === undefined &&
+      input.summaryNotes === undefined &&
+      input.coverImageUrl === undefined &&
       input.startDate === undefined &&
       input.endDate === undefined &&
       input.timezone === undefined &&
@@ -60,6 +64,8 @@ export class UpdateTripService implements UseCase<UpdateTripInput, Trip> {
       const updatedTrip = existingTrip.update({
         name: input.name,
         destination: input.destination,
+        summaryNotes: input.summaryNotes,
+        coverImageUrl: input.coverImageUrl,
         startDate: input.startDate,
         endDate: input.endDate,
         timezone: input.timezone,

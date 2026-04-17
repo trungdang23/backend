@@ -70,6 +70,8 @@ describe('Trips e2e', () => {
       body: {
         name: 'Da Nang Sprint',
         destination: 'Da Nang',
+        summaryNotes: 'A faster first pass with one strong photo spot.',
+        coverImageUrl: 'https://example.com/da-nang-sprint.jpg',
         startDate: '2026-06-10',
         endDate: '2026-06-14',
         timezone: 'Asia/Ho_Chi_Minh',
@@ -82,12 +84,20 @@ describe('Trips e2e', () => {
       data: {
         id: string;
         destination: string;
+        summaryNotes: string | null;
+        coverImageUrl: string | null;
       };
     };
 
     expect(createResponse.statusCode).toBe(201);
     expect(createBody.success).toBe(true);
     expect(createBody.data.destination).toBe('Da Nang');
+    expect(createBody.data.summaryNotes).toBe(
+      'A faster first pass with one strong photo spot.',
+    );
+    expect(createBody.data.coverImageUrl).toBe(
+      'https://example.com/da-nang-sprint.jpg',
+    );
 
     const listResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -129,18 +139,26 @@ describe('Trips e2e', () => {
       },
       body: {
         destination: 'Da Nang, Viet Nam',
+        summaryNotes: 'Expanded into a slower plan for the riverside evenings.',
+        coverImageUrl: null,
       },
     });
     const updateBody = updateResponse.body as {
       success: boolean;
       data: {
         destination: string;
+        summaryNotes: string | null;
+        coverImageUrl: string | null;
       };
     };
 
     expect(updateResponse.statusCode).toBe(200);
     expect(updateBody.success).toBe(true);
     expect(updateBody.data.destination).toBe('Da Nang, Viet Nam');
+    expect(updateBody.data.summaryNotes).toBe(
+      'Expanded into a slower plan for the riverside evenings.',
+    );
+    expect(updateBody.data.coverImageUrl).toBeNull();
 
     const deleteResponse = await dispatchRequest(expressApp, {
       method: 'DELETE',

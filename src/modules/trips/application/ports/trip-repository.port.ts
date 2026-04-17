@@ -7,6 +7,8 @@ export interface CreateTripRecordInput {
   userId: string;
   name: string;
   destination: string;
+  summaryNotes?: string | null;
+  coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
   timezone: string;

@@ -12,6 +12,8 @@ export interface CreateTripInput {
   userId: string;
   name: string;
   destination: string;
+  summaryNotes?: string | null;
+  coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
   timezone: string;
@@ -34,6 +36,8 @@ export class CreateTripService implements UseCase<CreateTripInput, Trip> {
         userId: trip.userId,
         name: trip.name,
         destination: trip.destination,
+        summaryNotes: trip.summaryNotes,
+        coverImageUrl: trip.coverImageUrl,
         startDate: trip.startDate,
         endDate: trip.endDate,
         timezone: trip.timezone,

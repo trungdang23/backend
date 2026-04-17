@@ -18,6 +18,8 @@ export class InMemoryTripRepository implements TripRepositoryPort {
       userId: input.userId,
       name: input.name,
       destination: input.destination,
+      summaryNotes: input.summaryNotes,
+      coverImageUrl: input.coverImageUrl,
       startDate: input.startDate,
       endDate: input.endDate,
       timezone: input.timezone,

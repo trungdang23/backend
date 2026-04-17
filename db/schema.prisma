@@ -25,6 +25,8 @@ model Trip {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
   destination    String
+  summaryNotes   String?  @map("summary_notes")
+  coverImageUrl  String?  @map("cover_image_url")
   startDate      String   @map("start_date")
   endDate        String   @map("end_date")
   timezone       String

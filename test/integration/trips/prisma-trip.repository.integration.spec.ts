@@ -31,6 +31,8 @@ describe('PrismaTripRepository integration', () => {
       userId: owner.id,
       name: 'Da Nang Escape',
       destination: 'Da Nang',
+      summaryNotes: 'Sunrise by the coast and coffee in the old quarter.',
+      coverImageUrl: 'https://example.com/da-nang-cover.jpg',
       startDate: '2026-06-10',
       endDate: '2026-06-14',
       timezone: 'Asia/Ho_Chi_Minh',
@@ -50,6 +52,12 @@ describe('PrismaTripRepository integration', () => {
     expect(foundTrip).not.toBeNull();
     expect(foundTrip?.name).toBe('Da Nang Escape');
     expect(foundTrip?.destination).toBe('Da Nang');
+    expect(foundTrip?.summaryNotes).toBe(
+      'Sunrise by the coast and coffee in the old quarter.',
+    );
+    expect(foundTrip?.coverImageUrl).toBe(
+      'https://example.com/da-nang-cover.jpg',
+    );
     expect(foreignLookup).toBeNull();
   });
 
@@ -71,6 +79,7 @@ describe('PrismaTripRepository integration', () => {
       userId: owner.id,
       name: 'Hoi An',
       destination: 'Hoi An',
+      summaryNotes: 'A slower walk through the old town.',
       startDate: '2026-07-12',
       endDate: '2026-07-15',
       timezone: 'Asia/Ho_Chi_Minh',
@@ -81,6 +90,7 @@ describe('PrismaTripRepository integration', () => {
       userId: owner.id,
       name: 'Da Nang',
       destination: 'Da Nang',
+      coverImageUrl: 'https://example.com/da-nang.jpg',
       startDate: '2026-06-10',
       endDate: '2026-06-14',
       timezone: 'Asia/Ho_Chi_Minh',
@@ -146,6 +156,8 @@ describe('PrismaTripRepository integration', () => {
 
     const updatedTrip = trip.update({
       destination: 'Hue Imperial City',
+      summaryNotes: 'Imperial walls, quieter afternoons, and a river cruise.',
+      coverImageUrl: 'https://example.com/hue-cover.jpg',
       budgetAmount: 1750000,
     });
 
@@ -160,6 +172,12 @@ describe('PrismaTripRepository integration', () => {
     });
 
     expect(persistedTrip.destination).toBe('Hue Imperial City');
+    expect(persistedTrip.summaryNotes).toBe(
+      'Imperial walls, quieter afternoons, and a river cruise.',
+    );
+    expect(persistedTrip.coverImageUrl).toBe(
+      'https://example.com/hue-cover.jpg',
+    );
     expect(persistedTrip.budgetAmount).toBe(1750000);
     expect(deletedTrip?.id).toBe(trip.id);
     expect(foundAfterDelete).toBeNull();

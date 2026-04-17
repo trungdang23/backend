@@ -8,12 +8,16 @@ import { TripDateRange } from './trip-date-range';
 export const MAX_TRIP_NAME_LENGTH = 120;
 export const MAX_TRIP_DESTINATION_LENGTH = 160;
 export const MAX_TRIP_TIMEZONE_LENGTH = 100;
+export const MAX_TRIP_SUMMARY_NOTES_LENGTH = 2000;
+export const MAX_TRIP_COVER_IMAGE_URL_LENGTH = 2048;
 
 interface TripProps extends Record<string, unknown> {
   id: string;
   userId: string;
   name: string;
   destination: string;
+  summaryNotes: string | null;
+  coverImageUrl: string | null;
   dateRange: TripDateRange;
   timezone: string;
   budget: TripBudget;
@@ -26,6 +30,8 @@ export interface TripInput {
   userId: string;
   name: string;
   destination: string;
+  summaryNotes?: string | null;
+  coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
   timezone: string;
@@ -38,6 +44,8 @@ export interface TripInput {
 export interface TripUpdateInput {
   name?: string;
   destination?: string;
+  summaryNotes?: string | null;
+  coverImageUrl?: string | null;
   startDate?: string;
   endDate?: string;
   timezone?: string;
@@ -68,6 +76,15 @@ export class Trip extends Entity<TripProps> {
         'Destination',
         MAX_TRIP_DESTINATION_LENGTH,
       ),
+      summaryNotes: normalizeOptionalString(
+        input.summaryNotes,
+        'Trip summary notes',
+        MAX_TRIP_SUMMARY_NOTES_LENGTH,
+      ),
+      coverImageUrl: normalizeOptionalUrl(
+        input.coverImageUrl,
+        'Trip cover image URL',
+      ),
       dateRange: TripDateRange.create({
         startDate: input.startDate,
         endDate: input.endDate,
@@ -88,6 +105,14 @@ export class Trip extends Entity<TripProps> {
       userId: this.userId,
       name: input.name ?? this.name,
       destination: input.destination ?? this.destination,
+      summaryNotes:
+        input.summaryNotes === undefined
+          ? this.summaryNotes
+          : input.summaryNotes,
+      coverImageUrl:
+        input.coverImageUrl === undefined
+          ? this.coverImageUrl
+          : input.coverImageUrl,
       startDate: input.startDate ?? this.startDate,
       endDate: input.endDate ?? this.endDate,
       timezone: input.timezone ?? this.timezone,
@@ -112,6 +137,14 @@ export class Trip extends Entity<TripProps> {
 
   get destination(): string {
     return this.props.destination;
+  }
+
+  get summaryNotes(): string | null {
+    return this.props.summaryNotes;
+  }
+
+  get coverImageUrl(): string | null {
+    return this.props.coverImageUrl;
   }
 
   get startDate(): string {
@@ -166,6 +199,57 @@ function normalizeRequiredString(
 
   if (normalizedValue.length > maxLength) {
     throw new DomainError(`${label} must be at most ${maxLength} characters.`);
+  }
+
+  return normalizedValue;
+}
+
+function normalizeOptionalString(
+  value: string | null | undefined,
+  label: string,
+  maxLength: number,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalizedValue = value.trim();
+
+  if (normalizedValue.length === 0) {
+    return null;
+  }
+
+  if (normalizedValue.length > maxLength) {
+    throw new DomainError(`${label} must be at most ${maxLength} characters.`);
+  }
+
+  return normalizedValue;
+}
+
+function normalizeOptionalUrl(
+  value: string | null | undefined,
+  label: string,
+): string | null {
+  const normalizedValue = normalizeOptionalString(
+    value,
+    label,
+    MAX_TRIP_COVER_IMAGE_URL_LENGTH,
+  );
+
+  if (normalizedValue === null) {
+    return null;
+  }
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(normalizedValue);
+  } catch {
+    throw new DomainError(`${label} must be a valid http or https URL.`);
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new DomainError(`${label} must be a valid http or https URL.`);
   }
 
   return normalizedValue;
