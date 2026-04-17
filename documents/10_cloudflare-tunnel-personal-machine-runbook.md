@@ -7,7 +7,7 @@
 - Domain: `buicojourney.com`
 - Backend hostname: `api.buicojourney.com`
 - Tunnel name: `journey-backend`
-- Tunnel id: `3446e326-9e78-4f9b-aa2a-ea440f2a27fb`
+- Tunnel id: `c3f021f7-a312-4a34-a0bb-cce43946d413`
 
 ## Khi nào nên dùng hướng này
 
@@ -64,8 +64,8 @@ deploy/cloudflare/journey-backend-config.yml.example
 Ví dụ:
 
 ```yaml
-tunnel: 3446e326-9e78-4f9b-aa2a-ea440f2a27fb
-credentials-file: C:\Users\dangv\.cloudflared\3446e326-9e78-4f9b-aa2a-ea440f2a27fb.json
+tunnel: c3f021f7-a312-4a34-a0bb-cce43946d413
+credentials-file: C:\Users\dangv\.cloudflared\c3f021f7-a312-4a34-a0bb-cce43946d413.json
 
 ingress:
   - hostname: api.buicojourney.com
@@ -119,7 +119,7 @@ Script sẽ tự:
 - mở `Docker Desktop` nếu cần
 - `docker compose up -d postgres`
 - restart backend runtime trong WSL
-- đảm bảo có `cloudflared` process đúng cấu hình
+- xác minh tunnel `journey-backend` có active connection; nếu process `cloudflared` còn treo nhưng tunnel đã rơi thì script sẽ tự restart tunnel
 - chờ tới khi `https://api.buicojourney.com/api/v1/health` trả `200`
 
 Kiểm tra trạng thái:
@@ -129,6 +129,8 @@ pnpm status
 ```
 
 Status script hiện nên được hiểu là kiểm tra tunnel/public ingress, không phải deploy transport.
+
+Nếu domain public trả `1033` hoặc `The origin has been unregistered from Argo Tunnel`, hãy hiểu đây là lỗi `cloudflared` không còn active connection với tunnel, không phải backend runtime tại `localhost:3001`.
 
 ## Ý nghĩa của `reboot`
 

@@ -2,7 +2,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $dockerCli = 'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
+$cloudflaredExe = 'C:\Cloudflared\bin\cloudflared.exe'
 $cloudflaredConfig = 'C:\Users\dangv\.cloudflared\config.yml'
+$cloudflaredTunnelName = 'journey-backend'
 $composeFileWindows = 'C:\TrungDang\journey\backend\docker-compose.yml'
 $wslDistro = 'Ubuntu-20.04'
 $deployDirWsl = '/home/trungdang/apps/journey-backend'
@@ -11,6 +13,22 @@ $deploySshHostname = 'ssh.buicojourney.com'
 
 function Write-Section([string]$title) {
     Write-Host ('=' * 8 + " $title " + '=' * 8)
+}
+
+function Get-CloudflaredTunnelInfo {
+    if (-not (Test-Path $cloudflaredExe)) {
+        return @{
+            ExitCode = 1
+            Output = "cloudflared was not found at $cloudflaredExe"
+        }
+    }
+
+    $output = & $cloudflaredExe tunnel info $cloudflaredTunnelName 2>&1 | Out-String
+
+    return @{
+        ExitCode = $LASTEXITCODE
+        Output = $output.Trim()
+    }
 }
 
 Write-Section 'Docker'
@@ -43,6 +61,16 @@ if ($processes) {
     }
 } else {
     Write-Host 'cloudflared process not running.'
+}
+
+$tunnelInfo = Get-CloudflaredTunnelInfo
+if ($tunnelInfo.ExitCode -ne 0) {
+    Write-Host 'Tunnel info is unavailable.'
+    Write-Host $tunnelInfo.Output
+} elseif ($tunnelInfo.Output.Contains('does not have any active connection')) {
+    Write-Host 'journey-backend tunnel has no active connection.'
+} else {
+    Write-Host 'journey-backend tunnel has an active connection.'
 }
 
 Write-Section 'Deploy SSH'
