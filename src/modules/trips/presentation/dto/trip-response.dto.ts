@@ -12,8 +12,8 @@ export class TripResponseDto {
   @ApiProperty()
   name!: string;
 
-  @ApiProperty()
-  destination!: string;
+  @ApiPropertyOptional({ nullable: true })
+  destination!: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   summaryNotes!: string | null;
@@ -27,8 +27,8 @@ export class TripResponseDto {
   @ApiProperty()
   endDate!: string;
 
-  @ApiProperty()
-  timezone!: string;
+  @ApiPropertyOptional({ nullable: true })
+  timezone!: string | null;
 
   @ApiProperty()
   budgetAmount!: number;

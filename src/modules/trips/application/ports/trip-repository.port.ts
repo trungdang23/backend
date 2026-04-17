@@ -6,12 +6,12 @@ export const TRIP_REPOSITORY = Symbol('TRIP_REPOSITORY');
 export interface CreateTripRecordInput {
   userId: string;
   name: string;
-  destination: string;
+  destination?: string | null;
   summaryNotes?: string | null;
   coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
-  timezone: string;
+  timezone?: string | null;
   budgetAmount: number;
   budgetCurrency: string;
 }

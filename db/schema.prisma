@@ -24,12 +24,12 @@ model Trip {
   userId         String   @map("user_id")
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
-  destination    String
+  destination    String?
   summaryNotes   String?  @map("summary_notes")
   coverImageUrl  String?  @map("cover_image_url")
   startDate      String   @map("start_date")
   endDate        String   @map("end_date")
-  timezone       String
+  timezone       String?
   budgetAmount   Int      @map("budget_amount")
   budgetCurrency String   @map("budget_currency")
   createdAt      DateTime @default(now()) @map("created_at")

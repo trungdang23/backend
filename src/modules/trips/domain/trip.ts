@@ -15,11 +15,11 @@ interface TripProps extends Record<string, unknown> {
   id: string;
   userId: string;
   name: string;
-  destination: string;
+  destination: string | null;
   summaryNotes: string | null;
   coverImageUrl: string | null;
   dateRange: TripDateRange;
-  timezone: string;
+  timezone: string | null;
   budget: TripBudget;
   createdAt: Date;
   updatedAt: Date;
@@ -29,12 +29,12 @@ export interface TripInput {
   id?: string;
   userId: string;
   name: string;
-  destination: string;
+  destination?: string | null;
   summaryNotes?: string | null;
   coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
-  timezone: string;
+  timezone?: string | null;
   budgetAmount: number;
   budgetCurrency: string;
   createdAt?: Date;
@@ -43,12 +43,12 @@ export interface TripInput {
 
 export interface TripUpdateInput {
   name?: string;
-  destination?: string;
+  destination?: string | null;
   summaryNotes?: string | null;
   coverImageUrl?: string | null;
   startDate?: string;
   endDate?: string;
-  timezone?: string;
+  timezone?: string | null;
   budgetAmount?: number;
   budgetCurrency?: string;
   updatedAt?: Date;
@@ -71,7 +71,7 @@ export class Trip extends Entity<TripProps> {
         'Trip name',
         MAX_TRIP_NAME_LENGTH,
       ),
-      destination: normalizeRequiredString(
+      destination: normalizeOptionalString(
         input.destination,
         'Destination',
         MAX_TRIP_DESTINATION_LENGTH,
@@ -135,7 +135,7 @@ export class Trip extends Entity<TripProps> {
     return this.props.name;
   }
 
-  get destination(): string {
+  get destination(): string | null {
     return this.props.destination;
   }
 
@@ -155,7 +155,7 @@ export class Trip extends Entity<TripProps> {
     return this.props.dateRange.endDate;
   }
 
-  get timezone(): string {
+  get timezone(): string | null {
     return this.props.timezone;
   }
 
@@ -255,11 +255,15 @@ function normalizeOptionalUrl(
   return normalizedValue;
 }
 
-function normalizeTimezone(value: string): string {
+function normalizeTimezone(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
   const normalizedValue = value.trim();
 
   if (normalizedValue.length === 0) {
-    throw new DomainError('Timezone is required.');
+    return null;
   }
 
   if (normalizedValue.length > MAX_TRIP_TIMEZONE_LENGTH) {

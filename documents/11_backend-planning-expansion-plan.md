@@ -21,6 +21,14 @@ Backend hiện đã có:
 - `itineraries`
 - `budgets`
 
+Những gì đã được mở rộng thêm:
+
+- `Trip` đã có `summaryNotes` và `coverImageUrl`
+- `Trip.destination` và `Trip.timezone` đã được nới thành nullable để không ép UI theo single-location flow
+- `itineraries` hiện đã support create/update/delete cho địa điểm chính và địa điểm con
+- `TripItineraryDay` và `TripItineraryActivity` hiện đã có thời gian, chi phí, ghi chú, và nhiều `imageUrls`
+- `budgets` đã bridge được planner 2 cấp hiện tại qua budget summary
+
 Model đang chạy thực tế:
 
 ```text
@@ -31,18 +39,19 @@ Trip
 
 Model này đủ cho:
 
-- trip cơ bản
-- ngày trong lịch trình
-- activity trong ngày
-- notes/cost ở activity
+- trip metadata tối giản
+- nhiều địa điểm chính trong một trip
+- địa điểm con trong từng địa điểm chính
+- notes/cost/time ở cả 2 cấp
+- nhiều ảnh URL ở cả 2 cấp
+- planner list-first hiện tại của frontend
 
 Model này chưa đủ cho:
 
-- nhiều địa điểm trong một trip theo cấu trúc mở
 - node cha/con nhiều tầng
-- nhiều ảnh ở nhiều cấp
-- ghi chú tổng cho kế hoạch lớn
 - planner dạng outline/list có thể flatten
+- recursive planning không giới hạn
+- planning module tách biệt khỏi itinerary bridge
 
 ## Quyết định kiến trúc
 
@@ -56,10 +65,12 @@ Model này chưa đủ cho:
 - điểm neo quyền truy cập theo `userId`
 - nơi giữ metadata tổng
 
-`Trip` sẽ được mở rộng thêm:
+`Trip` hiện đã được mở rộng với:
 
 - `summaryNotes nullable`
 - `coverImageUrl nullable`
+- `destination nullable`
+- `timezone nullable`
 
 ## 2. Bổ sung `planning` như module mới
 
@@ -121,28 +132,29 @@ Phải tách 3 lớp:
 
 ## 1. Mở rộng `Trip`
 
-Đề xuất:
+Trạng thái hiện tại:
 
 ```text
 Trip
   id
   userId
   name
-  destination
-  startDate
-  endDate
-  timezone
-  budgetAmount
-  budgetCurrency
+  destination nullable
   summaryNotes nullable
   coverImageUrl nullable
+  startDate
+  endDate
+  timezone nullable
+  budgetAmount
+  budgetCurrency
   createdAt
   updatedAt
 ```
 
 Giải thích:
 
-- `destination` giữ vai trò summary như hiện tại
+- `destination` giữ vai trò compatibility field, không còn là phần bắt buộc trong primary UI
+- `timezone` là compatibility field nullable, không còn được hiển thị ở trip detail hiện tại
 - `summaryNotes` là ghi chú tổng của kế hoạch lớn
 - `coverImageUrl` là ảnh bìa tổng
 
@@ -253,6 +265,17 @@ Sau này sẽ có quyết định:
 - map dần sang `PlanNode type=day/activity`
 - hoặc giữ làm read model cũ trong một thời gian
 
+Bridge đang chạy thực tế cho frontend hiện tại:
+
+- `GET /api/v1/trips/:tripId/itinerary`
+- `POST /api/v1/trips/:tripId/itinerary/days`
+- `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId`
+- `DELETE /api/v1/trips/:tripId/itinerary/days/:dayId`
+- `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`
+- `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
+- `DELETE /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
+- `GET /api/v1/trips/:tripId/budget-summary`
+
 ## API roadmap
 
 ## Slice 1: mở rộng `trips` với media và notes
@@ -263,13 +286,14 @@ Sau này sẽ có quyết định:
 
 ### Việc cần làm
 
-- thêm field mới vào Prisma schema
-- migration
-- domain `Trip`
-- DTO create/update/response
-- service create/update
-- repository mapping
-- test unit/integration/e2e cho field mới
+- [x] thêm field mới vào Prisma schema
+- [x] migration
+- [x] domain `Trip`
+- [x] DTO create/update/response
+- [x] service create/update
+- [x] repository mapping
+- [x] test unit/integration/e2e cho field mới
+- [x] nới `destination` và `timezone` thành nullable
 
 ### Contract additive
 
@@ -284,6 +308,13 @@ Chỉ mở rộng payload:
 
 - `summaryNotes?: string`
 - `coverImageUrl?: string`
+- `destination?: string | null`
+- `timezone?: string | null`
+
+Ghi chú:
+
+- frontend hiện không còn gửi `destination` và `timezone` trong primary form
+- backend vẫn giữ hai field này để tương thích ngược và tránh breaking change không cần thiết
 
 ## Slice 2: read API cho planning workspace
 
@@ -410,6 +441,8 @@ Chỉ mở rộng `Trip`:
 
 - `summaryNotes`
 - `coverImageUrl`
+- `destination nullable`
+- `timezone nullable`
 
 Không động vào `itineraries`
 

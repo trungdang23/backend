@@ -23,7 +23,7 @@
 | 03 | Xây dựng `auth` và `users` | Completed |
 | 04 | Xây dựng `trips` | Completed |
 | 05 | Xây dựng `itineraries` và `budgets` | Completed |
-| 05B | Mở rộng `planning` model, `trip media`, và AI seam | Todo |
+| 05B | Mở rộng `planning` model, `trip media`, và AI seam | In Progress |
 | 06 | Xây dựng `community` | Todo |
 | 07 | Kiểm thử, hardening, và tài liệu vận hành | Todo |
 | 08 | Chuẩn bị môi trường production | Todo |
@@ -121,11 +121,12 @@ Status: `Completed`
 
 ## Phase 05B - Mở rộng `planning` model, `trip media`, và AI seam
 
-Status: `Todo`
+Status: `In Progress`
 
-- [ ] Mở rộng `Trip` với `summaryNotes`
-- [ ] Mở rộng `Trip` với `coverImageUrl`
-- [ ] Tạo migration additive cho `trip media`
+- [x] Mở rộng `Trip` với `summaryNotes`
+- [x] Mở rộng `Trip` với `coverImageUrl`
+- [x] Tạo migration additive cho `trip media`
+- [x] Nới `destination` và `timezone` thành nullable để không khóa UI vào single-location flow
 - [ ] Tạo module `planning`
 - [ ] Tạo entity và repository cho `PlanNode`
 - [ ] Tạo entity và repository cho `PlanNodeImage` hoặc chốt chỉ dùng `coverImageUrl` cho phase đầu

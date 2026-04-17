@@ -1,0 +1,3 @@
+ALTER TABLE "trips"
+ALTER COLUMN "destination" DROP NOT NULL,
+ALTER COLUMN "timezone" DROP NOT NULL;

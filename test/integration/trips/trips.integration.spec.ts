@@ -55,12 +55,10 @@ describe('Trips integration', () => {
       },
       body: {
         name: 'Hoi An Lights',
-        destination: 'Hoi An',
         summaryNotes: 'Lanterns, coffee stops, and a slower second day.',
         coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
         startDate: '2026-07-12',
         endDate: '2026-07-15',
-        timezone: 'Asia/Ho_Chi_Minh',
         budgetAmount: 3500000,
         budgetCurrency: 'vnd',
       },
@@ -95,10 +93,8 @@ describe('Trips integration', () => {
       },
       body: {
         name: 'Da Nang Sunrise',
-        destination: 'Da Nang',
         startDate: '2026-06-10',
         endDate: '2026-06-14',
-        timezone: 'Asia/Ho_Chi_Minh',
         budgetAmount: 1000000,
         budgetCurrency: 'VND',
       },
@@ -112,10 +108,8 @@ describe('Trips integration', () => {
       },
       body: {
         name: 'Nha Trang',
-        destination: 'Nha Trang',
         startDate: '2026-08-01',
         endDate: '2026-08-05',
-        timezone: 'Asia/Ho_Chi_Minh',
         budgetAmount: 2000000,
         budgetCurrency: 'VND',
       },
@@ -171,9 +165,10 @@ describe('Trips integration', () => {
       success: boolean;
       data: {
         id: string;
-        destination: string;
+        destination: string | null;
         summaryNotes: string | null;
         coverImageUrl: string | null;
+        timezone: string | null;
       };
     };
 
@@ -181,9 +176,10 @@ describe('Trips integration', () => {
     expect(detailBody.success).toBe(true);
     expect(detailBody.data).toMatchObject({
       id: laterTripBody.data.id,
-      destination: 'Hoi An',
+      destination: null,
       summaryNotes: 'Lanterns, coffee stops, and a slower second day.',
       coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
+      timezone: null,
     });
 
     const missingResponse = await dispatchRequest(expressApp, {
@@ -217,10 +213,8 @@ describe('Trips integration', () => {
       },
       body: {
         name: 'Hue Discovery',
-        destination: 'Hue',
         startDate: '2026-09-10',
         endDate: '2026-09-12',
-        timezone: 'Asia/Ho_Chi_Minh',
         budgetAmount: 1500000,
         budgetCurrency: 'VND',
       },
@@ -238,7 +232,7 @@ describe('Trips integration', () => {
         authorization: `Bearer ${traveler.accessToken}`,
       },
       body: {
-        destination: 'Hue Imperial City',
+        name: 'Hue Discovery Updated',
         summaryNotes: 'Quiet mornings around the citadel.',
         coverImageUrl: 'https://example.com/hue-imperial.jpg',
         budgetAmount: 1750000,
@@ -247,7 +241,7 @@ describe('Trips integration', () => {
     const updateBody = updateResponse.body as {
       success: boolean;
       data: {
-        destination: string;
+        name: string;
         budgetAmount: number;
         summaryNotes: string | null;
         coverImageUrl: string | null;
@@ -256,7 +250,7 @@ describe('Trips integration', () => {
 
     expect(updateResponse.statusCode).toBe(200);
     expect(updateBody.success).toBe(true);
-    expect(updateBody.data.destination).toBe('Hue Imperial City');
+    expect(updateBody.data.name).toBe('Hue Discovery Updated');
     expect(updateBody.data.budgetAmount).toBe(1750000);
     expect(updateBody.data.summaryNotes).toBe(
       'Quiet mornings around the citadel.',

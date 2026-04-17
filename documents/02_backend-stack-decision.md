@@ -20,7 +20,7 @@
 | Hạ tầng database giai đoạn đầu | database đặt cùng VPS |
 | Production deployment | `Docker Compose + Nginx + SSL Let's Encrypt` |
 | API domain mục tiêu | `api.tenmiencuaban.com` |
-| Mức tự động hóa deploy | build/test tự động, deploy production thủ công |
+| Mức tự động hóa deploy | build/test tự động, deploy production tự động trên `push main` + fallback `workflow_dispatch` |
 | API documentation | bật `Swagger / OpenAPI` ngay từ đầu |
 | Package manager | `pnpm` |
 | Quy ước ngôn ngữ | code tiếng Anh, docs tiếng Việt |

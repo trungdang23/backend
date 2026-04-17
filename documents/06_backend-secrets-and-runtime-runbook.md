@@ -135,14 +135,13 @@
 ## Quy trình deploy an toàn
 
 1. Merge code vào `main` của repo backend.
-2. Chờ `backend-ci.yml` pass.
+2. GitHub Actions sẽ tự chạy `deploy-backend.yml`, trong đó đã có bước verify riêng trước khi deploy.
 3. Kiểm tra local stack bằng `pnpm status`.
 4. Xác nhận self-hosted runner đang online.
-5. Vào GitHub Actions của repo backend.
-6. Chạy `deploy-backend.yml` bằng `Run workflow`.
-7. Workflow sync source từ workspace checkout vào `DEPLOY_PATH`.
-8. Workflow render `.env.production` từ GitHub Secrets/Variables và ghi file đó vào `RUNTIME_ENV_PATH`.
-9. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
+5. Nếu cần redeploy lại một ref cũ hoặc chạy lại sau khi runner lỗi, vào GitHub Actions của repo backend và dùng `Run workflow`.
+6. Workflow sync source từ workspace checkout vào `DEPLOY_PATH`.
+7. Workflow render `.env.production` từ GitHub Secrets/Variables và ghi file đó vào `RUNTIME_ENV_PATH`.
+8. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
 
 ## Kiểm tra sau deploy
 

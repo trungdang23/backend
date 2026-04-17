@@ -16,7 +16,6 @@ import {
   MAX_TRIP_DESTINATION_LENGTH,
   MAX_TRIP_NAME_LENGTH,
   MAX_TRIP_SUMMARY_NOTES_LENGTH,
-  MAX_TRIP_TIMEZONE_LENGTH,
 } from '../../domain/trip';
 import { MAX_TRIP_BUDGET_AMOUNT } from '../../domain/trip-budget';
 import { ISO_DATE_REGEX } from '../../domain/trip-date-range';
@@ -27,10 +26,10 @@ export class CreateTripRequestDto {
   @MaxLength(MAX_TRIP_NAME_LENGTH)
   name!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(MAX_TRIP_DESTINATION_LENGTH)
-  destination!: string;
+  destination?: string | null;
 
   @IsOptional()
   @IsString()
@@ -54,10 +53,9 @@ export class CreateTripRequestDto {
   @Matches(ISO_DATE_REGEX)
   endDate!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  @MaxLength(MAX_TRIP_TIMEZONE_LENGTH)
-  timezone!: string;
+  timezone?: string | null;
 
   @Type(() => Number)
   @IsInt()

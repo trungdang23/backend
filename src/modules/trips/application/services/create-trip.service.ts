@@ -11,12 +11,12 @@ import { rethrowTripDomainError } from './map-trip-domain-error';
 export interface CreateTripInput {
   userId: string;
   name: string;
-  destination: string;
+  destination?: string | null;
   summaryNotes?: string | null;
   coverImageUrl?: string | null;
   startDate: string;
   endDate: string;
-  timezone: string;
+  timezone?: string | null;
   budgetAmount: number;
   budgetCurrency: string;
 }

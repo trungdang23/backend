@@ -1,6 +1,9 @@
 name: deploy-backend
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       ref:
@@ -11,6 +14,9 @@ on:
 concurrency:
   group: backend-production
   cancel-in-progress: false
+
+env:
+  DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.sha }}
 
 jobs:
   verify-backend:
@@ -35,7 +41,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ env.DEPLOY_REF }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -81,7 +87,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ env.DEPLOY_REF }}
 
       - name: Validate deploy configuration
         env:

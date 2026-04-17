@@ -30,12 +30,10 @@ describe('PrismaTripRepository integration', () => {
     const trip = await repository.create({
       userId: owner.id,
       name: 'Da Nang Escape',
-      destination: 'Da Nang',
       summaryNotes: 'Sunrise by the coast and coffee in the old quarter.',
       coverImageUrl: 'https://example.com/da-nang-cover.jpg',
       startDate: '2026-06-10',
       endDate: '2026-06-14',
-      timezone: 'Asia/Ho_Chi_Minh',
       budgetAmount: 1000000,
       budgetCurrency: 'VND',
     });
@@ -51,13 +49,14 @@ describe('PrismaTripRepository integration', () => {
 
     expect(foundTrip).not.toBeNull();
     expect(foundTrip?.name).toBe('Da Nang Escape');
-    expect(foundTrip?.destination).toBe('Da Nang');
+    expect(foundTrip?.destination).toBeNull();
     expect(foundTrip?.summaryNotes).toBe(
       'Sunrise by the coast and coffee in the old quarter.',
     );
     expect(foundTrip?.coverImageUrl).toBe(
       'https://example.com/da-nang-cover.jpg',
     );
+    expect(foundTrip?.timezone).toBeNull();
     expect(foreignLookup).toBeNull();
   });
 
@@ -146,16 +145,14 @@ describe('PrismaTripRepository integration', () => {
     const trip = await repository.create({
       userId: owner.id,
       name: 'Hue Discovery',
-      destination: 'Hue',
       startDate: '2026-09-10',
       endDate: '2026-09-12',
-      timezone: 'Asia/Ho_Chi_Minh',
       budgetAmount: 1500000,
       budgetCurrency: 'VND',
     });
 
     const updatedTrip = trip.update({
-      destination: 'Hue Imperial City',
+      name: 'Hue Discovery Updated',
       summaryNotes: 'Imperial walls, quieter afternoons, and a river cruise.',
       coverImageUrl: 'https://example.com/hue-cover.jpg',
       budgetAmount: 1750000,
@@ -171,7 +168,7 @@ describe('PrismaTripRepository integration', () => {
       userId: owner.id,
     });
 
-    expect(persistedTrip.destination).toBe('Hue Imperial City');
+    expect(persistedTrip.name).toBe('Hue Discovery Updated');
     expect(persistedTrip.summaryNotes).toBe(
       'Imperial walls, quieter afternoons, and a river cruise.',
     );

@@ -4,7 +4,7 @@
 
 - Date: `2026-04-15`
 - Status: `Accepted`
-- Scope: deploy thủ công repo `backend` từ GitHub Actions vào máy cá nhân bằng self-hosted runner Linux
+- Scope: deploy repo `backend` từ GitHub Actions vào máy cá nhân bằng self-hosted runner Linux
 
 ## Mục tiêu
 
@@ -27,7 +27,8 @@
 - Database local cho deploy hiện tại:
   - PostgreSQL chạy bằng `docker compose`
 - Kiểu deploy:
-  - manual qua workflow `deploy-backend.yml`
+  - tự động khi `push` vào `main`
+  - manual qua `workflow_dispatch` khi cần redeploy
 - Kiểu thực thi deploy:
   - self-hosted runner Linux/X64 chạy trên chính máy đích
 
@@ -64,7 +65,7 @@ Các script này:
 - `RUNTIME_ENV_PATH` phải là file path, không phải directory path.
 - Self-hosted runner phải online trên chính máy deploy.
 - Runner user phải có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và state dir của runtime scripts.
-- Merge `main` không tự deploy; bạn vẫn phải bấm `Run workflow`.
+- `push` vào `main` sẽ tự kích hoạt deploy; `Run workflow` vẫn được giữ để redeploy thủ công khi cần.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
 
 ## GitHub configuration hiện cần
@@ -141,12 +142,12 @@ docker compose -f /mnt/c/TrungDang/journey/backend/docker-compose.yml up -d post
 1. Sửa code ở source dev:
    - `/mnt/c/TrungDang/journey/backend`
 2. Commit và push lên `main`.
-3. Chờ `backend-ci.yml` pass.
+3. GitHub Actions sẽ tự chạy `deploy-backend.yml`, trong đó đã có bước verify riêng trước khi deploy thật.
 4. Chạy `pnpm status` trên máy cá nhân để xác nhận:
    - Docker đang chạy
    - backend runtime healthy
    - runner đang online
-5. Bấm `Run workflow` cho `deploy-backend`.
+5. Nếu cần redeploy lại cùng ref hoặc chạy lại sau khi runner lỗi, dùng `Run workflow` cho `deploy-backend`.
 
 ## Lệnh kiểm tra nhanh trước deploy
 
@@ -212,6 +213,21 @@ Khắc phục:
 - kiểm tra `docker compose ps`
 - kiểm tra `RUNTIME_DATABASE_URL`
 - chạy lại sau khi DB local khỏe
+
+### Push `main` nhưng deploy không tự chạy
+
+Nguyên nhân:
+
+- workflow đang bị disable
+- push không vào đúng branch `main`
+- self-hosted runner đang offline nên job không được nhận
+
+Khắc phục:
+
+- kiểm tra tab `Actions`
+- xác nhận commit đã vào `main`
+- xác nhận self-hosted runner online
+- dùng `Run workflow` để redeploy thủ công nếu cần
 
 ### `node was not found in PATH`
 

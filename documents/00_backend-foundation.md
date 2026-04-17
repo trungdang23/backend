@@ -144,7 +144,8 @@ Các mục dưới đây là bộ quyết định đã chốt cho giai đoạn s
 
 - Deploy theo hướng `Docker Compose + Nginx + SSL Let's Encrypt`
 - API domain mục tiêu: `api.tenmiencuaban.com`
-- Giai đoạn đầu build/test tự động, deploy production thủ công qua SSH hoặc quy trình tương đương
+- Build/test tự động qua GitHub Actions
+- Deploy production tự động khi `push` vào `main`, đồng thời giữ `workflow_dispatch` để redeploy thủ công khi cần
 
 ### Quy ước ngôn ngữ
 

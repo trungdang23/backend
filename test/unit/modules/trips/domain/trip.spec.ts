@@ -26,18 +26,20 @@ describe('Trip domain entity', () => {
     const trip = Trip.create({
       userId: 'user-01',
       name: 'Da Nang Escape',
-      destination: 'Da Nang',
+      destination: '   ',
       summaryNotes: '   ',
       coverImageUrl: '   ',
       startDate: '2026-06-10',
       endDate: '2026-06-14',
-      timezone: 'Asia/Ho_Chi_Minh',
+      timezone: '   ',
       budgetAmount: 1000000,
       budgetCurrency: 'VND',
     });
 
+    expect(trip.destination).toBeNull();
     expect(trip.summaryNotes).toBeNull();
     expect(trip.coverImageUrl).toBeNull();
+    expect(trip.timezone).toBeNull();
   });
 
   it('rejects invalid date ranges', () => {
