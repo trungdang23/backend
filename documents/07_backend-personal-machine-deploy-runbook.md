@@ -54,6 +54,7 @@ Các script này:
 
 - tự source file env tại `RUNTIME_ENV_PATH` hoặc `./.env.production`
 - ghi PID và log vào `${XDG_STATE_HOME:-$HOME/.local/state}/journey-backend`
+- clear `RUNNER_TRACKING_ID` trước khi detach backend runtime để process không bị self-hosted runner cleanup sau khi workflow kết thúc
 - dùng `curl` để xác minh `/api/v1/health` sau khi restart
 
 ## Giá trị cốt lõi cần nhớ
@@ -217,6 +218,19 @@ Khắc phục:
 Nguyên nhân:
 
 - runner user chưa có Node runtime hoặc `nvm` chưa được load
+
+### Deploy báo xanh nhưng public API trả `502`
+
+Nguyên nhân hay gặp:
+
+- backend process được start từ self-hosted runner nhưng bị runner cleanup sau khi job kết thúc
+- backend runtime chết sau restart nên `cloudflared` vẫn sống nhưng không còn origin ở `127.0.0.1:3001`
+
+Khắc phục:
+
+- chạy `pnpm run status` trong `backend/` để xác nhận local health tại `http://127.0.0.1:3001/api/v1/health`
+- nếu local health fail, chạy `pnpm run up` hoặc `bash ./scripts/restart-production.sh`
+- xem log tại `${XDG_STATE_HOME:-$HOME/.local/state}/journey-backend/journey-backend.log`
 
 Khắc phục:
 

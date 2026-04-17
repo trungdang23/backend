@@ -21,7 +21,15 @@ if [ -n "${existing_pid}" ] && kill -0 "${existing_pid}" >/dev/null 2>&1; then
 fi
 
 cd "${APP_DIR}"
-nohup setsid node dist/main.js </dev/null >>"${LOG_FILE}" 2>&1 &
+
+# Self-hosted GitHub Actions runners may clean up background children that inherit
+# RUNNER_TRACKING_ID after the job exits. Clear it for the detached runtime.
+if [ -n "${RUNNER_TRACKING_ID:-}" ]; then
+  nohup env -u RUNNER_TRACKING_ID setsid node dist/main.js </dev/null >>"${LOG_FILE}" 2>&1 &
+else
+  nohup setsid node dist/main.js </dev/null >>"${LOG_FILE}" 2>&1 &
+fi
+
 pid="$!"
 echo "${pid}" >"${PID_FILE}"
 
