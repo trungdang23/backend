@@ -21,8 +21,8 @@
 | 01 | Scaffold backend và chuẩn hóa kiến trúc | Completed |
 | 02 | Hoàn thiện core technical foundation | Completed |
 | 03 | Xây dựng `auth` và `users` | Completed |
-| 04 | Xây dựng `trips` | Todo |
-| 05 | Xây dựng `itineraries` và `budgets` | Todo |
+| 04 | Xây dựng `trips` | Completed |
+| 05 | Xây dựng `itineraries` và `budgets` | Completed |
 | 06 | Xây dựng `community` | Todo |
 | 07 | Kiểm thử, hardening, và tài liệu vận hành | Todo |
 | 08 | Chuẩn bị môi trường production | Todo |
@@ -90,33 +90,33 @@ Status: `Completed`
 
 ## Phase 04 - Xây dựng `trips`
 
-Status: `Todo`
+Status: `Completed`
 
-- [ ] Tạo module `trips`
-- [ ] Tạo entity và value object cho chuyến đi
-- [ ] Tạo use case tạo chuyến đi
-- [ ] Tạo use case danh sách chuyến đi theo người dùng
-- [ ] Tạo use case lấy chi tiết chuyến đi
-- [ ] Tạo use case cập nhật thông tin chuyến đi
-- [ ] Tạo use case xóa hoặc archive chuyến đi
-- [ ] Tạo contract API cho create/list/detail/update/delete
-- [ ] Tạo integration test cho repository của `trips`
-- [ ] Tạo e2e test cho flow tạo và xem chi tiết chuyến đi
+- [x] Tạo module `trips`
+- [x] Tạo entity và value object cho chuyến đi
+- [x] Tạo use case tạo chuyến đi
+- [x] Tạo use case danh sách chuyến đi theo người dùng
+- [x] Tạo use case lấy chi tiết chuyến đi
+- [x] Tạo use case cập nhật thông tin chuyến đi
+- [x] Tạo use case xóa hoặc archive chuyến đi
+- [x] Tạo contract API cho create/list/detail/update/delete
+- [x] Tạo integration test cho repository của `trips`
+- [x] Tạo e2e test cho flow tạo và xem chi tiết chuyến đi
 
 ## Phase 05 - Xây dựng `itineraries` và `budgets`
 
-Status: `Todo`
+Status: `Completed`
 
-- [ ] Tạo module `itineraries`
-- [ ] Tạo module `budgets`
-- [ ] Tạo use case thêm ngày vào lịch trình
-- [ ] Tạo use case thêm hoạt động vào một ngày
-- [ ] Tạo use case cập nhật hoạt động và ghi chú
-- [ ] Tạo use case tính tổng chi phí chuyến đi
-- [ ] Tạo rule kiểm tra ngày bắt đầu và ngày kết thúc hợp lệ
-- [ ] Tạo DTO và response contract cho lịch trình và ngân sách
-- [ ] Tạo unit test cho rule tính ngân sách
-- [ ] Tạo integration test cho persistence của lịch trình
+- [x] Tạo module `itineraries`
+- [x] Tạo module `budgets`
+- [x] Tạo use case thêm ngày vào lịch trình
+- [x] Tạo use case thêm hoạt động vào một ngày
+- [x] Tạo use case cập nhật hoạt động và ghi chú
+- [x] Tạo use case tính tổng chi phí chuyến đi
+- [x] Tạo rule kiểm tra ngày bắt đầu và ngày kết thúc hợp lệ
+- [x] Tạo DTO và response contract cho lịch trình và ngân sách
+- [x] Tạo unit test cho rule tính ngân sách
+- [x] Tạo integration test cho persistence của lịch trình
 
 ## Phase 06 - Xây dựng `community`
 

@@ -70,6 +70,8 @@ pnpm prisma:validate
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.
 - Workflow deploy hiện giữ bước verify trên GitHub-hosted runner, nhưng chạy bước deploy thật trên self-hosted runner Linux của chính máy đích; vì vậy deploy không còn phụ thuộc vào `cloudflared access ssh` hay lớp SSH trung gian.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, và JWT access/refresh token flow thật.
+- Phase trips hiện đã có `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:tripId`, `PATCH /api/v1/trips/:tripId`, `DELETE /api/v1/trips/:tripId`, pagination/sort, Prisma-backed persistence, và trip-specific unit/integration/e2e coverage.
+- Phase itineraries/budgets hiện đã có `GET /api/v1/trips/:tripId/itinerary`, `POST /api/v1/trips/:tripId/itinerary/days`, `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`, `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`, `GET /api/v1/trips/:tripId/budget-summary`, cùng Prisma-backed persistence và itinerary/budget-specific test coverage.
 - Repo đã có bộ script runtime trên host:
   - `scripts/start-production.sh`
   - `scripts/stop-production.sh`

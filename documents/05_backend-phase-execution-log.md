@@ -217,3 +217,96 @@ Status: `Completed`
 - Trên máy hiện tại, local runtime ổn định hơn khi chạy verify bằng Node `20.20.2`; CI vẫn giữ Node `22`, là runtime mục tiêu của pipeline.
 - Từ mốc này, file env production thật không còn là prerequisite trên máy đích; nguồn sự thật của runtime config được chuyển sang GitHub Secrets/Variables.
 - Auth flow hiện dùng JWT stateless với `jti` để đảm bảo token mới được issue khác token cũ ngay cả khi refresh diễn ra trong cùng giây; chiến lược revoke/blacklist vẫn là phạm vi cho phase hardening sau.
+
+## Phase 04
+
+Status: `Completed`
+
+### Mục tiêu
+
+- Hoàn thiện slice `trips` end-to-end để frontend có thể dùng contract thật thay cho placeholder.
+- Giữ đúng hướng module-driven: domain rule nằm trong `trips`, persistence qua Prisma repository, và HTTP contract tách khỏi persistence model.
+
+### Nhật ký
+
+- `2026-04-17`: Đồng bộ lại execution log cho phase `trips` theo artifact hiện có trong repo, vì checklist phase trước đó chưa phản ánh đúng trạng thái code.
+- `2026-04-17`: Ghi nhận `TripsModule` đã được mount vào `AppModule`, có đủ `CreateTripService`, `ListTripsService`, `GetTripDetailService`, `UpdateTripService`, và `DeleteTripService`.
+- `2026-04-17`: Ghi nhận domain `Trip`, `TripDateRange`, `TripBudget`, trip sort, repository port, và Prisma repository đã sẵn.
+- `2026-04-17`: Ghi nhận contract HTTP thật cho `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:tripId`, `PATCH /api/v1/trips/:tripId`, và `DELETE /api/v1/trips/:tripId`.
+- `2026-04-17`: Ghi nhận migration `db/migrations/20260415093000_create_trips/migration.sql` cùng unit, integration, và e2e coverage cho phase này.
+
+### Verification
+
+- File review đối chiếu `backend/src/modules/trips/**` với `backend/src/app/app.module.ts`
+- File review đối chiếu migration `backend/db/migrations/20260415093000_create_trips/migration.sql`
+- File review đối chiếu coverage hiện có:
+  - `backend/test/unit/modules/trips/domain/trip.spec.ts`
+  - `backend/test/integration/trips/prisma-trip.repository.integration.spec.ts`
+  - `backend/test/integration/trips/trips.integration.spec.ts`
+  - `backend/test/e2e/trips/trips.e2e.spec.ts`
+
+### Artifact
+
+- `backend/src/modules/trips/**`
+- `backend/db/migrations/20260415093000_create_trips/migration.sql`
+- `backend/test/support/in-memory-trip-repository.ts`
+- `backend/test/unit/modules/trips/domain/trip.spec.ts`
+- `backend/test/integration/trips/prisma-trip.repository.integration.spec.ts`
+- `backend/test/integration/trips/trips.integration.spec.ts`
+- `backend/test/e2e/trips/trips.e2e.spec.ts`
+
+### Ghi chú
+
+- Từ trạng thái hiện tại, frontend Phase 05 đã có thể bám contract `trips` thật thay vì tiếp tục giữ placeholder.
+- Phase backend tiếp theo nên tập trung vào `community` và phần hardening của các contract đã mở.
+
+## Phase 05
+
+Status: `Completed`
+
+### Mục tiêu
+
+- Mở `itineraries` và `budgets` bằng contract backend thật để frontend Phase 06 không còn bị block bởi planning cũ.
+- Giữ scope nhỏ nhưng end-to-end: thêm ngày, thêm activity, cập nhật activity, xem itinerary, và tính budget summary theo trip.
+
+### Nhật ký
+
+- `2026-04-17`: Thêm persistence Prisma cho `trip_itinerary_days` và `trip_itinerary_activities`, cùng migration `20260417113000_create_itinerary_and_budget_phase`.
+- `2026-04-17`: Tạo `ItinerariesModule` với repository port + Prisma adapter, `AddItineraryDayService`, `AddItineraryActivityService`, `UpdateItineraryActivityService`, và `GetTripItineraryService`.
+- `2026-04-17`: Tạo `BudgetsModule` với `GetTripBudgetSummaryService`, tính tổng planned cost từ itinerary activities so với `trip.budgetAmount`.
+- `2026-04-17`: Mount `ItinerariesModule` và `BudgetsModule` vào `AppModule`, mở các endpoint:
+  - `GET /api/v1/trips/:tripId/itinerary`
+  - `POST /api/v1/trips/:tripId/itinerary/days`
+  - `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`
+  - `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
+  - `GET /api/v1/trips/:tripId/budget-summary`
+- `2026-04-17`: Bổ sung in-memory itinerary repository cho test app pipeline, unit test cho budget summary rule, Prisma repository integration, HTTP integration, và e2e cho itinerary/budget flow.
+
+### Verification
+
+- `pnpm prisma:generate` pass
+- `pnpm exec tsc -p tsconfig.json --noEmit --pretty false` pass
+- `pnpm build` pass
+- `DATABASE_URL=postgresql://journey:journey@localhost:5432/journey_test?schema=public pnpm prisma:validate` pass
+- `pnpm exec jest --config ./test/jest.unit.config.ts test/unit/modules/budgets/domain/trip-budget-summary.spec.ts --runInBand` pass
+- `pnpm test:prepare-db` pass
+- `pnpm exec jest --config ./test/jest.integration.config.ts test/integration/itineraries/prisma-itinerary.repository.integration.spec.ts test/integration/itineraries/itineraries.integration.spec.ts --runInBand` pass
+- `pnpm exec jest --config ./test/jest.e2e.config.ts test/e2e/itineraries/itineraries.e2e.spec.ts --runInBand` pass
+- `pnpm lint` pass
+
+### Artifact
+
+- `backend/db/schema.prisma`
+- `backend/db/migrations/20260417113000_create_itinerary_and_budget_phase/migration.sql`
+- `backend/src/modules/itineraries/**`
+- `backend/src/modules/budgets/**`
+- `backend/test/support/in-memory-itinerary.repository.ts`
+- `backend/test/unit/modules/budgets/domain/trip-budget-summary.spec.ts`
+- `backend/test/integration/itineraries/prisma-itinerary.repository.integration.spec.ts`
+- `backend/test/integration/itineraries/itineraries.integration.spec.ts`
+- `backend/test/e2e/itineraries/itineraries.e2e.spec.ts`
+
+### Ghi chú
+
+- Budget summary hiện dùng tổng `activity.costAmount` theo cùng currency với `trip.budgetCurrency`; phase sau mới cần mở rộng nếu product cho phép multi-currency hoặc transaction-style budget ledger.
+- Từ trạng thái này, frontend Phase 06 có thể nối API thật cho timeline/day planner và budget summary mà không cần giữ placeholder backend-blocked nữa.

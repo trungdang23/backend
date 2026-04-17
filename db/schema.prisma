@@ -32,7 +32,41 @@ model Trip {
   budgetCurrency String   @map("budget_currency")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+  itineraryDays  TripItineraryDay[]
 
   @@index([userId, startDate])
   @@map("trips")
+}
+
+model TripItineraryDay {
+  id         String                 @id @default(cuid())
+  tripId     String                 @map("trip_id")
+  trip       Trip                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  date       String
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
+  activities TripItineraryActivity[]
+
+  @@unique([tripId, date])
+  @@index([tripId, date])
+  @@map("trip_itinerary_days")
+}
+
+model TripItineraryActivity {
+  id             String           @id @default(cuid())
+  itineraryDayId String           @map("itinerary_day_id")
+  itineraryDay   TripItineraryDay @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
+  title          String
+  startsAt       String?          @map("starts_at")
+  location       String?
+  notes          String?
+  costAmount     Int              @default(0) @map("cost_amount")
+  costCurrency   String           @map("cost_currency")
+  position       Int
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@unique([itineraryDayId, position])
+  @@index([itineraryDayId, position])
+  @@map("trip_itinerary_activities")
 }
