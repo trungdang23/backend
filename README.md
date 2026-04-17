@@ -122,45 +122,37 @@ pnpm prisma:validate
 ## Personal Machine Short Commands (Windows)
 
 ```powershell
-pnpm up
-pnpm down
-pnpm status
+pnpm run up
+pnpm run down
+pnpm run status
 pnpm run u
 pnpm run d
 pnpm run s
 ```
 
-WSL shortcut ngắn nhất:
+WSL helper cho cả backend + frontend production runtime:
 
 ```bash
-./u
-./d
-./s
-```
-
-Nếu bạn cần kéo cả backend stack và frontend production runtime lên sau khi máy/WSL bị tắt:
-
-```bash
-./up-all
-./down-all
-./status-all
+pnpm run stack:up
+pnpm run stack:down
+pnpm run stack:status
 ```
 
 Alias ngắn tương ứng:
 
-```bash
-./ua
-./da
-./sa
+```powershell
+pnpm run ua
+pnpm run da
+pnpm run sa
 ```
 
 Các lệnh này sẽ:
 
-- chạy `./u` để bật backend, PostgreSQL, và backend tunnel
+- chạy `pnpm run up` để bật backend, PostgreSQL, và backend tunnel
 - restart frontend production tại `/home/trungdang/apps/journey-frontend`
 - kiểm tra `https://buicojourney.com/health`
-- dừng frontend production rồi dừng backend stack khi dùng `./down-all`
-- gom trạng thái backend + frontend local runtime + frontend public health khi dùng `./status-all`
+- dừng frontend production rồi dừng backend stack khi dùng `pnpm run stack:down`
+- gom trạng thái backend + frontend local runtime + frontend public health khi dùng `pnpm run stack:status`
 
 ## Test Strategy
 

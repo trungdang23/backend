@@ -6,8 +6,9 @@
 - Hỗ trợ các nhóm chức năng cốt lõi của sản phẩm:
   - quản lý tài khoản người dùng
   - quản lý chuyến đi
-  - quản lý lịch trình chi tiết
+  - quản lý lịch trình chi tiết và planning hierarchy
   - theo dõi ngân sách
+  - hiển thị media qua image URL
   - các tính năng cộng đồng
 - Giữ khả năng phát triển dần từ giai đoạn MVP đến giai đoạn có nhiều module mà không làm phình controller hoặc service.
 - Ưu tiên `modular monolith` trong giai đoạn đầu để giảm độ phức tạp vận hành, nhưng vẫn chuẩn bị sẵn ranh giới để tách module khi cần.
@@ -17,6 +18,7 @@
 - Chưa tách microservice.
 - Tập trung dựng khung kiến trúc, convention, và các module đầu tiên.
 - Ưu tiên hoàn thiện vertical slice cho `auth`, `users`, `trips`, sau đó mới mở rộng sang `itineraries`, `budgets`, `community`.
+- Khi nhu cầu planner vượt khỏi mô hình `trip -> day -> activity`, ưu tiên mở module `planning` additive thay vì vá sâu vào `itineraries` hiện tại.
 
 ## Nguyên tắc thiết kế
 
@@ -63,6 +65,7 @@ Mỗi module backend cần ưu tiên cấu trúc theo 4 lớp:
 - Không truy cập chéo trực tiếp sang persistence của module khác.
 - Giao tiếp giữa các module thông qua use case, port, hoặc event nội bộ nếu thực sự cần.
 - Không để `community` kéo logic của `trips` hoặc `users` vào cùng một service lớn.
+- Khi mở rộng planner nhiều tầng, giữ `planning` như boundary riêng thay vì trộn vào `trips` controller/service hiện có.
 
 ### 4. Validation ở boundary, business rule ở domain/application
 
@@ -178,6 +181,7 @@ backend/
       auth/
       users/
       trips/
+      planning/
       itineraries/
       budgets/
       community/

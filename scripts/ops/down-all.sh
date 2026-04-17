@@ -3,6 +3,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly FRONTEND_DEPLOY_DIR="${FRONTEND_DEPLOY_DIR:-/home/trungdang/apps/journey-frontend}"
 
 print_section() {
@@ -17,7 +18,7 @@ else
 fi
 
 print_section 'Backend'
-(cd "${SCRIPT_DIR}" && ./d)
+(cd "${REPO_DIR}" && pnpm run down)
 
 print_section 'Done'
 printf 'Frontend runtime and backend stack have been stopped.\n'

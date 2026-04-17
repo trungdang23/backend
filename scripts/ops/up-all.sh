@@ -3,6 +3,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly REPO_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly FRONTEND_DEPLOY_DIR="${FRONTEND_DEPLOY_DIR:-/home/trungdang/apps/journey-frontend}"
 readonly FRONTEND_PUBLIC_HEALTH_URL="${FRONTEND_PUBLIC_HEALTH_URL:-https://buicojourney.com/health}"
 
@@ -28,7 +29,7 @@ wait_for_public_frontend() {
 }
 
 print_section 'Backend'
-(cd "${SCRIPT_DIR}" && ./u)
+(cd "${REPO_DIR}" && pnpm run up)
 
 print_section 'Frontend'
 if [ ! -d "${FRONTEND_DEPLOY_DIR}" ]; then

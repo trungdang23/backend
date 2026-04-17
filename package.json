@@ -24,7 +24,13 @@
     "status": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\\\TrungDang\\\\journey\\\\backend\\\\scripts\\\\windows\\\\status-personal-server.ps1\"",
     "u": "pnpm run up",
     "d": "pnpm run down",
-    "s": "pnpm run status"
+    "s": "pnpm run status",
+    "stack:up": "bash ./scripts/ops/up-all.sh",
+    "stack:down": "bash ./scripts/ops/down-all.sh",
+    "stack:status": "bash ./scripts/ops/status-all.sh",
+    "ua": "pnpm run stack:up",
+    "da": "pnpm run stack:down",
+    "sa": "pnpm run stack:status"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.19",

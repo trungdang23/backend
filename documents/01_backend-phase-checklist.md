@@ -23,6 +23,7 @@
 | 03 | Xây dựng `auth` và `users` | Completed |
 | 04 | Xây dựng `trips` | Completed |
 | 05 | Xây dựng `itineraries` và `budgets` | Completed |
+| 05B | Mở rộng `planning` model, `trip media`, và AI seam | Todo |
 | 06 | Xây dựng `community` | Todo |
 | 07 | Kiểm thử, hardening, và tài liệu vận hành | Todo |
 | 08 | Chuẩn bị môi trường production | Todo |
@@ -117,6 +118,22 @@ Status: `Completed`
 - [x] Tạo DTO và response contract cho lịch trình và ngân sách
 - [x] Tạo unit test cho rule tính ngân sách
 - [x] Tạo integration test cho persistence của lịch trình
+
+## Phase 05B - Mở rộng `planning` model, `trip media`, và AI seam
+
+Status: `Todo`
+
+- [ ] Mở rộng `Trip` với `summaryNotes`
+- [ ] Mở rộng `Trip` với `coverImageUrl`
+- [ ] Tạo migration additive cho `trip media`
+- [ ] Tạo module `planning`
+- [ ] Tạo entity và repository cho `PlanNode`
+- [ ] Tạo entity và repository cho `PlanNodeImage` hoặc chốt chỉ dùng `coverImageUrl` cho phase đầu
+- [ ] Tạo read contract `GET /trips/:tripId/planning`
+- [ ] Tạo CRUD contract cho planning node
+- [ ] Chốt chiến lược bridge giữa `planning` mới và `itineraries` hiện có
+- [ ] Chốt seam dữ liệu cho `PlaceResearch` và `AiPlanSuggestion` mà chưa build AI ngay
+- [ ] Tạo unit, integration, e2e test cho planning slice đầu tiên
 
 ## Phase 06 - Xây dựng `community`
 
