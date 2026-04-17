@@ -2,12 +2,16 @@ import { randomUUID } from 'node:crypto';
 
 import { DomainError } from '../../../shared/domain/domain-error';
 import { Entity } from '../../../shared/domain/entity';
+import { MAX_TRIP_COVER_IMAGE_URL_LENGTH } from '../../trips/domain/trip';
 import { MAX_TRIP_BUDGET_AMOUNT } from '../../trips/domain/trip-budget';
+import {
+  MAX_ITINERARY_DAY_IMAGE_COUNT,
+  TIME_OF_DAY_REGEX,
+} from './itinerary-day';
 
 export const MAX_ITINERARY_ACTIVITY_TITLE_LENGTH = 160;
 export const MAX_ITINERARY_ACTIVITY_LOCATION_LENGTH = 160;
 export const MAX_ITINERARY_ACTIVITY_NOTES_LENGTH = 1000;
-export const TIME_OF_DAY_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const ISO_CURRENCY_CODE_REGEX = /^[A-Z]{3}$/;
 
@@ -16,11 +20,13 @@ interface ItineraryActivityProps extends Record<string, unknown> {
   itineraryDayId: string;
   title: string;
   startsAt: string | null;
+  endsAt: string | null;
   location: string | null;
   notes: string | null;
   costAmount: number;
   costCurrency: string;
   position: number;
+  imageUrls: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,11 +36,13 @@ export interface ItineraryActivityInput {
   itineraryDayId: string;
   title: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   location?: string | null;
   notes?: string | null;
   costAmount: number;
   costCurrency: string;
   position: number;
+  imageUrls?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -42,10 +50,12 @@ export interface ItineraryActivityInput {
 export interface ItineraryActivityUpdateInput {
   title?: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   location?: string | null;
   notes?: string | null;
   costAmount?: number;
   costCurrency?: string;
+  imageUrls?: string[];
   updatedAt?: Date;
 }
 
@@ -57,6 +67,10 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
   static create(input: ItineraryActivityInput): ItineraryActivity {
     const createdAt = ensureDate(input.createdAt ?? new Date(), 'Created at');
     const updatedAt = ensureDate(input.updatedAt ?? createdAt, 'Updated at');
+    const startsAt = normalizeTime(input.startsAt, 'Activity start time');
+    const endsAt = normalizeTime(input.endsAt, 'Activity end time');
+
+    ensureTimeRange(startsAt, endsAt);
 
     return new ItineraryActivity({
       id: normalizeIdentifier(input.id ?? randomUUID(), 'Itinerary activity id'),
@@ -69,7 +83,8 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
         'Activity title',
         MAX_ITINERARY_ACTIVITY_TITLE_LENGTH,
       ),
-      startsAt: normalizeStartsAt(input.startsAt),
+      startsAt,
+      endsAt,
       location: normalizeOptionalString(
         input.location,
         'Activity location',
@@ -83,6 +98,7 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
       costAmount: normalizeCostAmount(input.costAmount),
       costCurrency: normalizeCurrency(input.costCurrency),
       position: normalizePosition(input.position),
+      imageUrls: normalizeImageUrls(input.imageUrls),
       createdAt,
       updatedAt,
     });
@@ -95,12 +111,14 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
       title: input.title ?? this.title,
       startsAt:
         input.startsAt === undefined ? this.startsAt : input.startsAt,
+      endsAt: input.endsAt === undefined ? this.endsAt : input.endsAt,
       location:
         input.location === undefined ? this.location : input.location,
       notes: input.notes === undefined ? this.notes : input.notes,
       costAmount: input.costAmount ?? this.costAmount,
       costCurrency: input.costCurrency ?? this.costCurrency,
       position: this.position,
+      imageUrls: input.imageUrls ?? this.imageUrls,
       createdAt: this.createdAt,
       updatedAt: input.updatedAt ?? new Date(),
     });
@@ -122,6 +140,10 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
     return this.props.startsAt;
   }
 
+  get endsAt(): string | null {
+    return this.props.endsAt;
+  }
+
   get location(): string | null {
     return this.props.location;
   }
@@ -140,6 +162,10 @@ export class ItineraryActivity extends Entity<ItineraryActivityProps> {
 
   get position(): number {
     return this.props.position;
+  }
+
+  get imageUrls(): string[] {
+    return [...this.props.imageUrls];
   }
 
   get createdAt(): Date {
@@ -201,7 +227,10 @@ function normalizeOptionalString(
   return normalizedValue;
 }
 
-function normalizeStartsAt(value: string | null | undefined): string | null {
+function normalizeTime(
+  value: string | null | undefined,
+  label: string,
+): string | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -213,10 +242,18 @@ function normalizeStartsAt(value: string | null | undefined): string | null {
   }
 
   if (!TIME_OF_DAY_REGEX.test(normalizedValue)) {
-    throw new DomainError('Activity start time must use HH:MM format.');
+    throw new DomainError(`${label} must use HH:MM format.`);
   }
 
   return normalizedValue;
+}
+
+function ensureTimeRange(startsAt: string | null, endsAt: string | null): void {
+  if (startsAt !== null && endsAt !== null && startsAt > endsAt) {
+    throw new DomainError(
+      'Activity end time must be on or after the activity start time.',
+    );
+  }
 }
 
 function normalizeCostAmount(value: number): number {
@@ -251,6 +288,42 @@ function normalizePosition(value: number): number {
   }
 
   return value;
+}
+
+function normalizeImageUrls(value: string[] | undefined): string[] {
+  const imageUrls = value ?? [];
+
+  if (imageUrls.length > MAX_ITINERARY_DAY_IMAGE_COUNT) {
+    throw new DomainError(
+      `Activity images must contain at most ${MAX_ITINERARY_DAY_IMAGE_COUNT} items.`,
+    );
+  }
+
+  return imageUrls.map((imageUrl, index) =>
+    normalizeOptionalUrl(imageUrl, `Activity image URL #${index + 1}`),
+  );
+}
+
+function normalizeOptionalUrl(value: string, label: string): string {
+  const normalizedValue = normalizeRequiredString(
+    value,
+    label,
+    MAX_TRIP_COVER_IMAGE_URL_LENGTH,
+  );
+
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(normalizedValue);
+  } catch {
+    throw new DomainError(`${label} must be a valid http or https URL.`);
+  }
+
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    throw new DomainError(`${label} must be a valid http or https URL.`);
+  }
+
+  return normalizedValue;
 }
 
 function ensureDate(value: Date, label: string): Date {

@@ -11,6 +11,15 @@ export interface ItineraryDayAggregate {
 export interface CreateItineraryDayRecordInput {
   tripId: string;
   date: string;
+  title: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  location?: string | null;
+  notes?: string | null;
+  costAmount: number;
+  costCurrency: string;
+  position: number;
+  imageUrls: string[];
 }
 
 export interface FindItineraryDayByDateInput {
@@ -27,15 +36,26 @@ export interface ListTripItineraryInput {
   tripId: string;
 }
 
+export interface FindNextDayPositionInput {
+  tripId: string;
+  date: string;
+}
+
+export interface FindNextActivityPositionInput {
+  dayId: string;
+}
+
 export interface CreateItineraryActivityRecordInput {
   itineraryDayId: string;
   title: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   location?: string | null;
   notes?: string | null;
   costAmount: number;
   costCurrency: string;
   position: number;
+  imageUrls: string[];
 }
 
 export interface ItineraryRepositoryPort {
@@ -49,8 +69,17 @@ export interface ItineraryRepositoryPort {
   listDayAggregatesByTrip(
     input: ListTripItineraryInput,
   ): Promise<ItineraryDayAggregate[]>;
+  findNextDayPositionForDate(
+    input: FindNextDayPositionInput,
+  ): Promise<number>;
   createActivity(
     input: CreateItineraryActivityRecordInput,
   ): Promise<ItineraryActivity>;
+  findNextActivityPositionForDay(
+    input: FindNextActivityPositionInput,
+  ): Promise<number>;
+  updateDay(day: ItineraryDay): Promise<ItineraryDay>;
+  deleteDay(dayId: string): Promise<void>;
   updateActivity(activity: ItineraryActivity): Promise<ItineraryActivity>;
+  deleteActivity(activityId: string): Promise<void>;
 }

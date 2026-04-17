@@ -90,6 +90,10 @@ describe('Itineraries e2e', () => {
       },
       body: {
         date: '2026-07-12',
+        title: 'Hoi An center',
+        location: 'Hoi An Old Town',
+        costAmount: 300000,
+        imageUrls: ['https://images.example.com/hoi-an-center.jpg'],
       },
     });
     const createDayBody = createDayResponse.body as {
@@ -111,8 +115,10 @@ describe('Itineraries e2e', () => {
       body: {
         title: 'Lantern Walk',
         startsAt: '18:30',
+        endsAt: '20:00',
         location: 'Hoi An Old Town',
         costAmount: 250000,
+        imageUrls: ['https://images.example.com/lantern-walk.jpg'],
       },
     });
 
@@ -139,8 +145,8 @@ describe('Itineraries e2e', () => {
     expect(budgetSummaryResponse.statusCode).toBe(200);
     expect(budgetSummaryBody.success).toBe(true);
     expect(budgetSummaryBody.data.totalBudgetAmount).toBe(2_000_000);
-    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(250_000);
-    expect(budgetSummaryBody.data.remainingAmount).toBe(1_750_000);
+    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(550_000);
+    expect(budgetSummaryBody.data.remainingAmount).toBe(1_450_000);
     expect(budgetSummaryBody.data.totalDays).toBe(1);
     expect(budgetSummaryBody.data.totalActivities).toBe(1);
   });

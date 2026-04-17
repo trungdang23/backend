@@ -3,6 +3,8 @@ import type {
   CreateItineraryDayRecordInput,
   FindItineraryDayAggregateInput,
   FindItineraryDayByDateInput,
+  FindNextActivityPositionInput,
+  FindNextDayPositionInput,
   ItineraryDayAggregate,
   ItineraryRepositoryPort,
   ListTripItineraryInput,
@@ -20,6 +22,15 @@ export class InMemoryItineraryRepository implements ItineraryRepositoryPort {
       id: `itinerary-day-${this.days.size + 1}`,
       tripId: input.tripId,
       date: input.date,
+      title: input.title,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      location: input.location,
+      notes: input.notes,
+      costAmount: input.costAmount,
+      costCurrency: input.costCurrency,
+      position: input.position,
+      imageUrls: input.imageUrls,
       tripStartDate: input.date,
       tripEndDate: input.date,
       createdAt,
@@ -35,10 +46,12 @@ export class InMemoryItineraryRepository implements ItineraryRepositoryPort {
     input: FindItineraryDayByDateInput,
   ): Promise<ItineraryDay | null> {
     const day =
-      Array.from(this.days.values()).find(
-        (candidate) =>
-          candidate.tripId === input.tripId && candidate.date === input.date,
-      ) ?? null;
+      Array.from(this.days.values())
+        .filter(
+          (candidate) =>
+            candidate.tripId === input.tripId && candidate.date === input.date,
+        )
+        .sort(createDayComparator())[0] ?? null;
 
     return Promise.resolve(day);
   }
@@ -72,6 +85,18 @@ export class InMemoryItineraryRepository implements ItineraryRepositoryPort {
     return Promise.resolve(aggregates);
   }
 
+  findNextDayPositionForDate(
+    input: FindNextDayPositionInput,
+  ): Promise<number> {
+    const maxPosition = Array.from(this.days.values())
+      .filter(
+        (day) => day.tripId === input.tripId && day.date === input.date,
+      )
+      .reduce((currentMax, day) => Math.max(currentMax, day.position), 0);
+
+    return Promise.resolve(maxPosition + 1);
+  }
+
   createActivity(
     input: CreateItineraryActivityRecordInput,
   ): Promise<ItineraryActivity> {
@@ -81,11 +106,13 @@ export class InMemoryItineraryRepository implements ItineraryRepositoryPort {
       itineraryDayId: input.itineraryDayId,
       title: input.title,
       startsAt: input.startsAt,
+      endsAt: input.endsAt,
       location: input.location,
       notes: input.notes,
       costAmount: input.costAmount,
       costCurrency: input.costCurrency,
       position: input.position,
+      imageUrls: input.imageUrls,
       createdAt,
       updatedAt: createdAt,
     });
@@ -95,10 +122,44 @@ export class InMemoryItineraryRepository implements ItineraryRepositoryPort {
     return Promise.resolve(activity);
   }
 
+  findNextActivityPositionForDay(
+    input: FindNextActivityPositionInput,
+  ): Promise<number> {
+    const maxPosition = Array.from(this.activities.values())
+      .filter((activity) => activity.itineraryDayId === input.dayId)
+      .reduce((currentMax, activity) => Math.max(currentMax, activity.position), 0);
+
+    return Promise.resolve(maxPosition + 1);
+  }
+
+  updateDay(day: ItineraryDay): Promise<ItineraryDay> {
+    this.days.set(day.id, day);
+
+    return Promise.resolve(day);
+  }
+
+  deleteDay(dayId: string): Promise<void> {
+    this.days.delete(dayId);
+
+    for (const activity of Array.from(this.activities.values())) {
+      if (activity.itineraryDayId === dayId) {
+        this.activities.delete(activity.id);
+      }
+    }
+
+    return Promise.resolve();
+  }
+
   updateActivity(activity: ItineraryActivity): Promise<ItineraryActivity> {
     this.activities.set(activity.id, activity);
 
     return Promise.resolve(activity);
+  }
+
+  deleteActivity(activityId: string): Promise<void> {
+    this.activities.delete(activityId);
+
+    return Promise.resolve();
   }
 
   clear(): void {
@@ -119,6 +180,12 @@ function createDayComparator() {
 
     if (dateComparison !== 0) {
       return dateComparison;
+    }
+
+    const positionComparison = compareValues(left.position, right.position);
+
+    if (positionComparison !== 0) {
+      return positionComparison;
     }
 
     const createdAtComparison = compareValues(

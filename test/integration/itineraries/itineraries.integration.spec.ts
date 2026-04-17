@@ -61,6 +61,10 @@ describe('Itineraries integration', () => {
       },
       body: {
         date: '2026-06-10',
+        title: 'Da Nang arrival',
+        location: 'Da Nang',
+        costAmount: 150000,
+        imageUrls: ['https://images.example.com/da-nang-arrival.jpg'],
       },
     });
     const createDayBody = createDayResponse.body as {
@@ -68,12 +72,16 @@ describe('Itineraries integration', () => {
       data: {
         id: string;
         date: string;
+        title: string;
+        imageUrls: string[];
       };
     };
 
     expect(createDayResponse.statusCode).toBe(201);
     expect(createDayBody.success).toBe(true);
     expect(createDayBody.data.date).toBe('2026-06-10');
+    expect(createDayBody.data.title).toBe('Da Nang arrival');
+    expect(createDayBody.data.imageUrls).toHaveLength(1);
 
     const createActivityResponse = await dispatchRequest(expressApp, {
       method: 'POST',
@@ -84,9 +92,11 @@ describe('Itineraries integration', () => {
       body: {
         title: 'Dragon Bridge',
         startsAt: '19:00',
+        endsAt: '21:00',
         location: 'Da Nang',
         notes: 'Night photos',
         costAmount: 200000,
+        imageUrls: ['https://images.example.com/dragon-bridge-1.jpg'],
       },
     });
     const createActivityBody = createActivityResponse.body as {
@@ -112,9 +122,14 @@ describe('Itineraries integration', () => {
       success: boolean;
       data: {
         days: Array<{
+          title: string;
+          costAmount: number;
+          imageUrls: string[];
           activities: Array<{
             id: string;
             title: string;
+            endsAt: string | null;
+            imageUrls: string[];
           }>;
         }>;
       };
@@ -123,9 +138,14 @@ describe('Itineraries integration', () => {
     expect(itineraryResponse.statusCode).toBe(200);
     expect(itineraryBody.success).toBe(true);
     expect(itineraryBody.data.days).toHaveLength(1);
+    expect(itineraryBody.data.days[0]?.title).toBe('Da Nang arrival');
+    expect(itineraryBody.data.days[0]?.costAmount).toBe(150000);
+    expect(itineraryBody.data.days[0]?.imageUrls).toHaveLength(1);
     expect(itineraryBody.data.days[0]?.activities[0]?.title).toBe(
       'Dragon Bridge',
     );
+    expect(itineraryBody.data.days[0]?.activities[0]?.endsAt).toBe('21:00');
+    expect(itineraryBody.data.days[0]?.activities[0]?.imageUrls).toHaveLength(1);
 
     const budgetSummaryResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -147,8 +167,8 @@ describe('Itineraries integration', () => {
     expect(budgetSummaryResponse.statusCode).toBe(200);
     expect(budgetSummaryBody.success).toBe(true);
     expect(budgetSummaryBody.data.totalBudgetAmount).toBe(1_000_000);
-    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(200_000);
-    expect(budgetSummaryBody.data.remainingAmount).toBe(800_000);
+    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(350_000);
+    expect(budgetSummaryBody.data.remainingAmount).toBe(650_000);
     expect(budgetSummaryBody.data.isOverBudget).toBe(false);
 
     const updateActivityResponse = await dispatchRequest(expressApp, {
@@ -160,10 +180,25 @@ describe('Itineraries integration', () => {
       body: {
         notes: 'Night photos and coffee stop',
         costAmount: 1200000,
+        imageUrls: ['https://images.example.com/dragon-bridge-2.jpg'],
       },
     });
 
     expect(updateActivityResponse.statusCode).toBe(200);
+
+    const updateDayResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/trips/${tripId}/itinerary/days/${createDayBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        title: 'Da Nang downtown',
+        costAmount: 175000,
+      },
+    });
+
+    expect(updateDayResponse.statusCode).toBe(200);
 
     const overBudgetResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -182,9 +217,29 @@ describe('Itineraries integration', () => {
     };
 
     expect(overBudgetResponse.statusCode).toBe(200);
-    expect(overBudgetBody.data.totalPlannedAmount).toBe(1_200_000);
-    expect(overBudgetBody.data.remainingAmount).toBe(-200_000);
+    expect(overBudgetBody.data.totalPlannedAmount).toBe(1_375_000);
+    expect(overBudgetBody.data.remainingAmount).toBe(-375_000);
     expect(overBudgetBody.data.isOverBudget).toBe(true);
+
+    const deleteActivityResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}/itinerary/days/${createDayBody.data.id}/activities/${createActivityBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+
+    expect(deleteActivityResponse.statusCode).toBe(204);
+
+    const deleteDayResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}/itinerary/days/${createDayBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+
+    expect(deleteDayResponse.statusCode).toBe(204);
   });
 
   it('rejects itinerary days outside the trip date range', async () => {
@@ -202,6 +257,7 @@ describe('Itineraries integration', () => {
       },
       body: {
         date: '2026-06-20',
+        title: 'Outside range',
       },
     });
     const body = response.body as {

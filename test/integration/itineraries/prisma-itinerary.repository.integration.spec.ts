@@ -61,35 +61,59 @@ describe('PrismaItineraryRepository integration', () => {
     const firstDay = await repository.createDay({
       tripId: trip.id,
       date: '2026-06-10',
+      title: 'Da Nang arrival',
+      location: 'Da Nang',
+      notes: 'Check in hotel',
+      costAmount: 150_000,
+      costCurrency: 'VND',
+      position: 1,
+      imageUrls: ['https://images.example.com/da-nang-arrival.jpg'],
     });
     const secondDay = await repository.createDay({
       tripId: trip.id,
       date: '2026-06-11',
+      title: 'Beach day',
+      startsAt: '08:00',
+      location: 'My Khe',
+      notes: 'Morning beach',
+      costAmount: 50_000,
+      costCurrency: 'VND',
+      position: 1,
+      imageUrls: [],
     });
     await repository.createDay({
       tripId: foreignTrip.id,
       date: '2026-06-11',
+      title: 'Hue stop',
+      costAmount: 0,
+      costCurrency: 'VND',
+      position: 1,
+      imageUrls: [],
     });
 
     await repository.createActivity({
       itineraryDayId: secondDay.id,
       title: 'My Khe Beach',
       startsAt: '08:00',
+      endsAt: '10:00',
       location: 'My Khe',
       notes: 'Morning walk',
       costAmount: 0,
       costCurrency: 'VND',
       position: 1,
+      imageUrls: ['https://images.example.com/my-khe.jpg'],
     });
     await repository.createActivity({
       itineraryDayId: firstDay.id,
       title: 'Dragon Bridge',
       startsAt: '19:00',
+      endsAt: '21:00',
       location: 'Da Nang',
       notes: 'Night photos',
       costAmount: 200_000,
       costCurrency: 'VND',
       position: 1,
+      imageUrls: ['https://images.example.com/dragon-bridge.jpg'],
     });
 
     const foundDay = await repository.findDayByDateForTrip({
@@ -103,7 +127,10 @@ describe('PrismaItineraryRepository integration', () => {
     expect(foundDay?.id).toBe(firstDay.id);
     expect(aggregates).toHaveLength(2);
     expect(aggregates[0]?.day.date).toBe('2026-06-10');
+    expect(aggregates[0]?.day.title).toBe('Da Nang arrival');
+    expect(aggregates[0]?.day.imageUrls).toHaveLength(1);
     expect(aggregates[0]?.activities[0]?.title).toBe('Dragon Bridge');
+    expect(aggregates[0]?.activities[0]?.endsAt).toBe('21:00');
     expect(aggregates[1]?.day.date).toBe('2026-06-11');
     expect(aggregates[1]?.activities[0]?.title).toBe('My Khe Beach');
   });
@@ -130,21 +157,29 @@ describe('PrismaItineraryRepository integration', () => {
     const day = await repository.createDay({
       tripId: trip.id,
       date: '2026-07-12',
+      title: 'Hoi An center',
+      costAmount: 100_000,
+      costCurrency: 'VND',
+      position: 1,
+      imageUrls: [],
     });
     const activity = await repository.createActivity({
       itineraryDayId: day.id,
       title: 'Lantern Street',
       startsAt: '18:30',
+      endsAt: '20:00',
       location: 'Hoi An Old Town',
       notes: 'Bring camera',
       costAmount: 150_000,
       costCurrency: 'VND',
       position: 1,
+      imageUrls: ['https://images.example.com/lantern-street.jpg'],
     });
 
     const updatedActivity = activity.update({
       notes: 'Bring camera and tripod',
       costAmount: 225_000,
+      imageUrls: ['https://images.example.com/lantern-street-2.jpg'],
     });
 
     await repository.updateActivity(updatedActivity);
@@ -156,5 +191,8 @@ describe('PrismaItineraryRepository integration', () => {
 
     expect(refreshedDay?.activities[0]?.notes).toBe('Bring camera and tripod');
     expect(refreshedDay?.activities[0]?.costAmount).toBe(225_000);
+    expect(refreshedDay?.activities[0]?.imageUrls[0]).toBe(
+      'https://images.example.com/lantern-street-2.jpg',
+    );
   });
 });

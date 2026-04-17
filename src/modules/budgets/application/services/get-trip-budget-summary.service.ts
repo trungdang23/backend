@@ -51,6 +51,7 @@ export class GetTripBudgetSummaryService
     const totalPlannedAmount = dayAggregates.reduce(
       (sum, aggregate) =>
         sum +
+        aggregate.day.costAmount +
         aggregate.activities.reduce(
           (activitySum, activity) => activitySum + activity.costAmount,
           0,

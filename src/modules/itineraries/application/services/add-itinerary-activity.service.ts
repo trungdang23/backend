@@ -23,10 +23,12 @@ export interface AddItineraryActivityInput {
   dayId: string;
   title: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   location?: string | null;
   notes?: string | null;
   costAmount?: number;
   costCurrency?: string;
+  imageUrls?: string[];
 }
 
 @Injectable()
@@ -77,22 +79,28 @@ export class AddItineraryActivityService
         itineraryDayId: dayAggregate.day.id,
         title: input.title,
         startsAt: input.startsAt,
+        endsAt: input.endsAt,
         location: input.location,
         notes: input.notes,
         costAmount: input.costAmount ?? 0,
         costCurrency,
-        position: dayAggregate.activities.length + 1,
+        position: await this.itineraryRepository.findNextActivityPositionForDay({
+          dayId: dayAggregate.day.id,
+        }),
+        imageUrls: input.imageUrls,
       });
 
       return await this.itineraryRepository.createActivity({
         itineraryDayId: activity.itineraryDayId,
         title: activity.title,
         startsAt: activity.startsAt,
+        endsAt: activity.endsAt,
         location: activity.location,
         notes: activity.notes,
         costAmount: activity.costAmount,
         costCurrency: activity.costCurrency,
         position: activity.position,
+        imageUrls: activity.imageUrls,
       });
     } catch (error) {
       rethrowItineraryDomainError(error);

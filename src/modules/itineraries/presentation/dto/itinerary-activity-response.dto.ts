@@ -16,6 +16,9 @@ export class ItineraryActivityResponseDto {
   startsAt!: string | null;
 
   @ApiProperty({ nullable: true })
+  endsAt!: string | null;
+
+  @ApiProperty({ nullable: true })
   location!: string | null;
 
   @ApiProperty({ nullable: true })
@@ -30,6 +33,9 @@ export class ItineraryActivityResponseDto {
   @ApiProperty()
   position!: number;
 
+  @ApiProperty({ type: [String] })
+  imageUrls!: string[];
+
   @ApiProperty()
   createdAt!: Date;
 
@@ -42,11 +48,13 @@ export class ItineraryActivityResponseDto {
       itineraryDayId: activity.itineraryDayId,
       title: activity.title,
       startsAt: activity.startsAt,
+      endsAt: activity.endsAt,
       location: activity.location,
       notes: activity.notes,
       costAmount: activity.costAmount,
       costCurrency: activity.costCurrency,
       position: activity.position,
+      imageUrls: activity.imageUrls,
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
     };

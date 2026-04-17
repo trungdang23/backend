@@ -24,10 +24,12 @@ export interface UpdateItineraryActivityInput {
   activityId: string;
   title?: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   location?: string | null;
   notes?: string | null;
   costAmount?: number;
   costCurrency?: string;
+  imageUrls?: string[];
 }
 
 @Injectable()
@@ -47,10 +49,12 @@ export class UpdateItineraryActivityService
     if (
       input.title === undefined &&
       input.startsAt === undefined &&
+      input.endsAt === undefined &&
       input.location === undefined &&
       input.notes === undefined &&
       input.costAmount === undefined &&
-      input.costCurrency === undefined
+      input.costCurrency === undefined &&
+      input.imageUrls === undefined
     ) {
       throw new BadRequestException(
         'At least one field must be provided to update an itinerary activity.',
@@ -98,10 +102,12 @@ export class UpdateItineraryActivityService
       const updatedActivity = existingActivity.update({
         title: input.title,
         startsAt: input.startsAt,
+        endsAt: input.endsAt,
         location: input.location,
         notes: input.notes,
         costAmount: input.costAmount,
         costCurrency: nextCostCurrency,
+        imageUrls: input.imageUrls,
       });
 
       return await this.itineraryRepository.updateActivity(updatedActivity);
