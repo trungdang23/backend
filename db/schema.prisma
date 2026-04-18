@@ -20,21 +20,25 @@ model User {
 }
 
 model Trip {
-  id             String   @id @default(cuid())
-  userId         String   @map("user_id")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name           String
-  destination    String?
-  summaryNotes   String?  @map("summary_notes")
-  coverImageUrl  String?  @map("cover_image_url")
-  startDate      String   @map("start_date")
-  endDate        String   @map("end_date")
-  timezone       String?
-  budgetAmount   Int      @map("budget_amount")
-  budgetCurrency String   @map("budget_currency")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  itineraryDays  TripItineraryDay[]
+  id                   String   @id @default(cuid())
+  userId               String   @map("user_id")
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  destination          String?
+  summaryNotes         String?  @map("summary_notes")
+  coverImageUrl        String?  @map("cover_image_url")
+  startDate            String   @map("start_date")
+  endDate              String   @map("end_date")
+  timezone             String?
+  budgetAmount         Int      @map("budget_amount")
+  budgetCurrency       String   @map("budget_currency")
+  budgetMode           String   @default("manual") @map("budget_mode")
+  manualBudgetAmount   Int?     @map("manual_budget_amount")
+  manualBudgetCurrency String?  @map("manual_budget_currency")
+  visibility           String   @default("private")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  itineraryDays        TripItineraryDay[]
 
   @@index([userId, startDate])
   @@map("trips")

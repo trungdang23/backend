@@ -14,6 +14,10 @@ export interface CreateTripRecordInput {
   timezone?: string | null;
   budgetAmount: number;
   budgetCurrency: string;
+  budgetMode: string;
+  manualBudgetAmount?: number | null;
+  manualBudgetCurrency?: string | null;
+  visibility: string;
 }
 
 export interface FindTripForUserInput {

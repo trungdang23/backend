@@ -73,8 +73,10 @@ describe('Trips e2e', () => {
         coverImageUrl: 'https://example.com/da-nang-sprint.jpg',
         startDate: '2026-06-10',
         endDate: '2026-06-14',
-        budgetAmount: 1000000,
-        budgetCurrency: 'VND',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1000000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
       },
     });
     const createBody = createResponse.body as {
@@ -85,6 +87,10 @@ describe('Trips e2e', () => {
         summaryNotes: string | null;
         coverImageUrl: string | null;
         timezone: string | null;
+        budgetMode: string;
+        manualBudgetAmount: number | null;
+        manualBudgetCurrency: string | null;
+        visibility: string;
       };
     };
 
@@ -98,6 +104,10 @@ describe('Trips e2e', () => {
       'https://example.com/da-nang-sprint.jpg',
     );
     expect(createBody.data.timezone).toBeNull();
+    expect(createBody.data.budgetMode).toBe('manual');
+    expect(createBody.data.manualBudgetAmount).toBe(1000000);
+    expect(createBody.data.manualBudgetCurrency).toBe('VND');
+    expect(createBody.data.visibility).toBe('private');
 
     const listResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -141,6 +151,8 @@ describe('Trips e2e', () => {
         name: 'Da Nang Sprint Updated',
         summaryNotes: 'Expanded into a slower plan for the riverside evenings.',
         coverImageUrl: null,
+        budgetMode: 'auto',
+        visibility: 'public',
       },
     });
     const updateBody = updateResponse.body as {
@@ -149,6 +161,9 @@ describe('Trips e2e', () => {
         name: string;
         summaryNotes: string | null;
         coverImageUrl: string | null;
+        budgetMode: string;
+        manualBudgetAmount: number | null;
+        visibility: string;
       };
     };
 
@@ -159,6 +174,9 @@ describe('Trips e2e', () => {
       'Expanded into a slower plan for the riverside evenings.',
     );
     expect(updateBody.data.coverImageUrl).toBeNull();
+    expect(updateBody.data.budgetMode).toBe('auto');
+    expect(updateBody.data.manualBudgetAmount).toBeNull();
+    expect(updateBody.data.visibility).toBe('public');
 
     const deleteResponse = await dispatchRequest(expressApp, {
       method: 'DELETE',

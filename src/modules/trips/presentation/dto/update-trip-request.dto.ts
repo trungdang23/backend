@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -18,7 +19,9 @@ import {
   MAX_TRIP_SUMMARY_NOTES_LENGTH,
 } from '../../domain/trip';
 import { MAX_TRIP_BUDGET_AMOUNT } from '../../domain/trip-budget';
+import { TRIP_BUDGET_MODES } from '../../domain/trip-budget-mode';
 import { ISO_DATE_REGEX } from '../../domain/trip-date-range';
+import { TRIP_VISIBILITIES } from '../../domain/trip-visibility';
 
 export class UpdateTripRequestDto {
   @IsOptional()
@@ -71,4 +74,26 @@ export class UpdateTripRequestDto {
   @IsString()
   @Matches(/^[a-zA-Z]{3}$/)
   budgetCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(TRIP_BUDGET_MODES)
+  budgetMode?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(MAX_TRIP_BUDGET_AMOUNT)
+  manualBudgetAmount?: number | null;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-zA-Z]{3}$/)
+  manualBudgetCurrency?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(TRIP_VISIBILITIES)
+  visibility?: string;
 }

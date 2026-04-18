@@ -45,8 +45,8 @@
 - [x] Có trips CRUD baseline thật
 - [~] Có planner tạm theo `TripItineraryDay -> TripItineraryActivity`
 - [ ] Chưa có `PlanNode`
-- [ ] Chưa có `Trip.visibility`
-- [ ] Chưa có `budgetMode/manualBudget`
+- [x] Đã có `Trip.visibility`
+- [x] Đã có `budgetMode/manualBudget`
 - [ ] Chưa có `posts`
 - [x] Đã có `logout` endpoint đúng target
 
@@ -57,7 +57,7 @@
 | 00    | Re-baseline tài liệu và contract theo DRD mới   | Completed |
 | 01    | Foundation, ops, CI, deploy baseline            | Completed |
 | 02    | Auth và session aligned với DRD                 | Completed |
-| 03    | Trips aligned với DRD                           | Todo      |
+| 03    | Trips aligned với DRD                           | Completed |
 | 04    | Planner core trên `PlanNode`                    | Todo      |
 | 05    | Budget logic và migration khỏi itinerary bridge | Todo      |
 | 06    | Public trip sharing                             | Todo      |
@@ -107,24 +107,24 @@ Status: `Completed`
 
 ## Phase 03 - Trips aligned với DRD
 
-Status: `Todo`
+Status: `Completed`
 
 - [x] Trips CRUD baseline đã có
-- [ ] Thêm `visibility` vào `Trip`
-- [ ] Thêm `budgetMode: auto | manual`
-- [ ] Thêm `manualBudget`
-- [ ] Chốt schema thực tế cho manual budget:
+- [x] Thêm `visibility` vào `Trip`
+- [x] Thêm `budgetMode: auto | manual`
+- [x] Thêm `manualBudget`
+- [x] Chốt schema thực tế cho manual budget:
   - `manualBudgetAmount`
   - `manualBudgetCurrency`
-- [ ] Cập nhật DTO create/update/detail/list cho trip
-- [ ] Validate:
+- [x] Cập nhật DTO create/update/detail/list cho trip
+- [x] Validate:
   - `name` required
   - `startDate <= endDate`
   - `manualBudget >= 0`
   - `manualBudget` required nếu `budgetMode = manual`
-- [ ] Chốt backward compatibility với `budgetAmount/budgetCurrency` cũ
-- [ ] Cập nhật Swagger cho contract mới
-- [ ] Bổ sung integration/e2e tests cho trip contract mới
+- [x] Chốt backward compatibility với `budgetAmount/budgetCurrency` cũ
+- [x] Cập nhật Swagger cho contract mới
+- [x] Bổ sung integration/e2e tests cho trip contract mới
 
 ## Phase 04 - Planner core trên `PlanNode`
 

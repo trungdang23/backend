@@ -25,6 +25,10 @@ export class InMemoryTripRepository implements TripRepositoryPort {
       timezone: input.timezone,
       budgetAmount: input.budgetAmount,
       budgetCurrency: input.budgetCurrency,
+      budgetMode: input.budgetMode,
+      manualBudgetAmount: input.manualBudgetAmount,
+      manualBudgetCurrency: input.manualBudgetCurrency,
+      visibility: input.visibility,
       createdAt,
       updatedAt: createdAt,
     });
@@ -106,10 +110,7 @@ function createTripComparator(sort: TripSort) {
   };
 }
 
-function resolveTripSortValue(
-  trip: Trip,
-  sort: TripSort,
-): number | string {
+function resolveTripSortValue(trip: Trip, sort: TripSort): number | string {
   switch (sort.field) {
     case 'createdAt':
       return trip.createdAt.getTime();

@@ -17,8 +17,12 @@ export interface CreateTripInput {
   startDate: string;
   endDate: string;
   timezone?: string | null;
-  budgetAmount: number;
-  budgetCurrency: string;
+  budgetAmount?: number;
+  budgetCurrency?: string;
+  budgetMode?: string;
+  manualBudgetAmount?: number | null;
+  manualBudgetCurrency?: string | null;
+  visibility?: string;
 }
 
 @Injectable()
@@ -43,6 +47,10 @@ export class CreateTripService implements UseCase<CreateTripInput, Trip> {
         timezone: trip.timezone,
         budgetAmount: trip.budgetAmount,
         budgetCurrency: trip.budgetCurrency,
+        budgetMode: trip.budgetMode,
+        manualBudgetAmount: trip.manualBudgetAmount,
+        manualBudgetCurrency: trip.manualBudgetCurrency,
+        visibility: trip.visibility,
       });
     } catch (error) {
       rethrowTripDomainError(error);

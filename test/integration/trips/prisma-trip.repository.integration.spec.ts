@@ -36,6 +36,10 @@ describe('PrismaTripRepository integration', () => {
       endDate: '2026-06-14',
       budgetAmount: 1000000,
       budgetCurrency: 'VND',
+      budgetMode: 'manual',
+      manualBudgetAmount: 1000000,
+      manualBudgetCurrency: 'VND',
+      visibility: 'private',
     });
 
     const foundTrip = await repository.findByIdForUser({
@@ -57,6 +61,10 @@ describe('PrismaTripRepository integration', () => {
       'https://example.com/da-nang-cover.jpg',
     );
     expect(foundTrip?.timezone).toBeNull();
+    expect(foundTrip?.budgetMode).toBe('manual');
+    expect(foundTrip?.manualBudgetAmount).toBe(1000000);
+    expect(foundTrip?.manualBudgetCurrency).toBe('VND');
+    expect(foundTrip?.visibility).toBe('private');
     expect(foreignLookup).toBeNull();
   });
 
@@ -84,6 +92,10 @@ describe('PrismaTripRepository integration', () => {
       timezone: 'Asia/Ho_Chi_Minh',
       budgetAmount: 3500000,
       budgetCurrency: 'VND',
+      budgetMode: 'manual',
+      manualBudgetAmount: 3500000,
+      manualBudgetCurrency: 'VND',
+      visibility: 'private',
     });
     await repository.create({
       userId: owner.id,
@@ -95,6 +107,10 @@ describe('PrismaTripRepository integration', () => {
       timezone: 'Asia/Ho_Chi_Minh',
       budgetAmount: 1000000,
       budgetCurrency: 'VND',
+      budgetMode: 'manual',
+      manualBudgetAmount: 1000000,
+      manualBudgetCurrency: 'VND',
+      visibility: 'private',
     });
     await repository.create({
       userId: anotherUser.id,
@@ -105,6 +121,8 @@ describe('PrismaTripRepository integration', () => {
       timezone: 'Asia/Ho_Chi_Minh',
       budgetAmount: 2000000,
       budgetCurrency: 'VND',
+      budgetMode: 'auto',
+      visibility: 'public',
     });
 
     const pageOne = await repository.listByUser({
@@ -149,13 +167,18 @@ describe('PrismaTripRepository integration', () => {
       endDate: '2026-09-12',
       budgetAmount: 1500000,
       budgetCurrency: 'VND',
+      budgetMode: 'manual',
+      manualBudgetAmount: 1500000,
+      manualBudgetCurrency: 'VND',
+      visibility: 'private',
     });
 
     const updatedTrip = trip.update({
       name: 'Hue Discovery Updated',
       summaryNotes: 'Imperial walls, quieter afternoons, and a river cruise.',
       coverImageUrl: 'https://example.com/hue-cover.jpg',
-      budgetAmount: 1750000,
+      budgetMode: 'auto',
+      visibility: 'public',
     });
 
     const persistedTrip = await repository.update(updatedTrip);
@@ -175,7 +198,9 @@ describe('PrismaTripRepository integration', () => {
     expect(persistedTrip.coverImageUrl).toBe(
       'https://example.com/hue-cover.jpg',
     );
-    expect(persistedTrip.budgetAmount).toBe(1750000);
+    expect(persistedTrip.budgetMode).toBe('auto');
+    expect(persistedTrip.manualBudgetAmount).toBeNull();
+    expect(persistedTrip.visibility).toBe('public');
     expect(deletedTrip?.id).toBe(trip.id);
     expect(foundAfterDelete).toBeNull();
   });

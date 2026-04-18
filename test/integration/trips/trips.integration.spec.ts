@@ -44,8 +44,14 @@ describe('Trips integration', () => {
   });
 
   it('creates, lists, and fetches trips only for the authenticated user', async () => {
-    const firstTraveler = await registerUser(expressApp, 'trips.one@example.com');
-    const secondTraveler = await registerUser(expressApp, 'trips.two@example.com');
+    const firstTraveler = await registerUser(
+      expressApp,
+      'trips.one@example.com',
+    );
+    const secondTraveler = await registerUser(
+      expressApp,
+      'trips.two@example.com',
+    );
 
     const laterTripResponse = await dispatchRequest(expressApp, {
       method: 'POST',
@@ -59,8 +65,10 @@ describe('Trips integration', () => {
         coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
         startDate: '2026-07-12',
         endDate: '2026-07-15',
-        budgetAmount: 3500000,
-        budgetCurrency: 'vnd',
+        budgetMode: 'manual',
+        manualBudgetAmount: 3500000,
+        manualBudgetCurrency: 'vnd',
+        visibility: 'private',
       },
     });
     const laterTripBody = laterTripResponse.body as {
@@ -68,6 +76,10 @@ describe('Trips integration', () => {
       data: {
         id: string;
         budgetCurrency: string;
+        budgetMode: string;
+        manualBudgetAmount: number | null;
+        manualBudgetCurrency: string | null;
+        visibility: string;
         userId: string;
         summaryNotes: string | null;
         coverImageUrl: string | null;
@@ -78,6 +90,10 @@ describe('Trips integration', () => {
     expect(laterTripBody.success).toBe(true);
     expect(laterTripBody.data.userId).toBe(firstTraveler.userId);
     expect(laterTripBody.data.budgetCurrency).toBe('VND');
+    expect(laterTripBody.data.budgetMode).toBe('manual');
+    expect(laterTripBody.data.manualBudgetAmount).toBe(3500000);
+    expect(laterTripBody.data.manualBudgetCurrency).toBe('VND');
+    expect(laterTripBody.data.visibility).toBe('private');
     expect(laterTripBody.data.summaryNotes).toBe(
       'Lanterns, coffee stops, and a slower second day.',
     );
@@ -95,8 +111,10 @@ describe('Trips integration', () => {
         name: 'Da Nang Sunrise',
         startDate: '2026-06-10',
         endDate: '2026-06-14',
-        budgetAmount: 1000000,
-        budgetCurrency: 'VND',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1000000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
       },
     });
 
@@ -110,8 +128,8 @@ describe('Trips integration', () => {
         name: 'Nha Trang',
         startDate: '2026-08-01',
         endDate: '2026-08-05',
-        budgetAmount: 2000000,
-        budgetCurrency: 'VND',
+        budgetMode: 'auto',
+        visibility: 'public',
       },
     });
     const foreignTripBody = foreignTripResponse.body as {
@@ -169,6 +187,10 @@ describe('Trips integration', () => {
         summaryNotes: string | null;
         coverImageUrl: string | null;
         timezone: string | null;
+        budgetMode: string;
+        manualBudgetAmount: number | null;
+        manualBudgetCurrency: string | null;
+        visibility: string;
       };
     };
 
@@ -180,6 +202,10 @@ describe('Trips integration', () => {
       summaryNotes: 'Lanterns, coffee stops, and a slower second day.',
       coverImageUrl: 'https://example.com/hoi-an-cover.jpg',
       timezone: null,
+      budgetMode: 'manual',
+      manualBudgetAmount: 3500000,
+      manualBudgetCurrency: 'VND',
+      visibility: 'private',
     });
 
     const missingResponse = await dispatchRequest(expressApp, {
@@ -215,8 +241,10 @@ describe('Trips integration', () => {
         name: 'Hue Discovery',
         startDate: '2026-09-10',
         endDate: '2026-09-12',
-        budgetAmount: 1500000,
-        budgetCurrency: 'VND',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1500000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
       },
     });
     const createBody = createResponse.body as {
@@ -235,14 +263,17 @@ describe('Trips integration', () => {
         name: 'Hue Discovery Updated',
         summaryNotes: 'Quiet mornings around the citadel.',
         coverImageUrl: 'https://example.com/hue-imperial.jpg',
-        budgetAmount: 1750000,
+        budgetMode: 'auto',
+        visibility: 'public',
       },
     });
     const updateBody = updateResponse.body as {
       success: boolean;
       data: {
         name: string;
-        budgetAmount: number;
+        budgetMode: string;
+        manualBudgetAmount: number | null;
+        visibility: string;
         summaryNotes: string | null;
         coverImageUrl: string | null;
       };
@@ -251,7 +282,9 @@ describe('Trips integration', () => {
     expect(updateResponse.statusCode).toBe(200);
     expect(updateBody.success).toBe(true);
     expect(updateBody.data.name).toBe('Hue Discovery Updated');
-    expect(updateBody.data.budgetAmount).toBe(1750000);
+    expect(updateBody.data.budgetMode).toBe('auto');
+    expect(updateBody.data.manualBudgetAmount).toBeNull();
+    expect(updateBody.data.visibility).toBe('public');
     expect(updateBody.data.summaryNotes).toBe(
       'Quiet mornings around the citadel.',
     );

@@ -62,6 +62,10 @@ export class TripsController {
       timezone: input.timezone,
       budgetAmount: input.budgetAmount,
       budgetCurrency: input.budgetCurrency,
+      budgetMode: input.budgetMode,
+      manualBudgetAmount: input.manualBudgetAmount,
+      manualBudgetCurrency: input.manualBudgetCurrency,
+      visibility: input.visibility,
     });
 
     return TripResponseDto.from(trip);
@@ -125,6 +129,10 @@ export class TripsController {
       timezone: input.timezone,
       budgetAmount: input.budgetAmount,
       budgetCurrency: input.budgetCurrency,
+      budgetMode: input.budgetMode,
+      manualBudgetAmount: input.manualBudgetAmount,
+      manualBudgetCurrency: input.manualBudgetCurrency,
+      visibility: input.visibility,
     });
 
     return TripResponseDto.from(trip);

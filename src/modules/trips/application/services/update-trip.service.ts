@@ -25,6 +25,10 @@ export interface UpdateTripInput {
   timezone?: string | null;
   budgetAmount?: number;
   budgetCurrency?: string;
+  budgetMode?: string;
+  manualBudgetAmount?: number | null;
+  manualBudgetCurrency?: string | null;
+  visibility?: string;
 }
 
 @Injectable()
@@ -44,7 +48,11 @@ export class UpdateTripService implements UseCase<UpdateTripInput, Trip> {
       input.endDate === undefined &&
       input.timezone === undefined &&
       input.budgetAmount === undefined &&
-      input.budgetCurrency === undefined
+      input.budgetCurrency === undefined &&
+      input.budgetMode === undefined &&
+      input.manualBudgetAmount === undefined &&
+      input.manualBudgetCurrency === undefined &&
+      input.visibility === undefined
     ) {
       throw new BadRequestException(
         'At least one field must be provided to update a trip.',
@@ -71,6 +79,10 @@ export class UpdateTripService implements UseCase<UpdateTripInput, Trip> {
         timezone: input.timezone,
         budgetAmount: input.budgetAmount,
         budgetCurrency: input.budgetCurrency,
+        budgetMode: input.budgetMode,
+        manualBudgetAmount: input.manualBudgetAmount,
+        manualBudgetCurrency: input.manualBudgetCurrency,
+        visibility: input.visibility,
       });
 
       return await this.tripRepository.update(updatedTrip);

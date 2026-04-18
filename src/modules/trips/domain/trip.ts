@@ -3,13 +3,22 @@ import { randomUUID } from 'node:crypto';
 import { DomainError } from '../../../shared/domain/domain-error';
 import { Entity } from '../../../shared/domain/entity';
 import { TripBudget } from './trip-budget';
+import {
+  normalizeTripBudgetMode,
+  type TripBudgetMode,
+} from './trip-budget-mode';
 import { TripDateRange } from './trip-date-range';
+import {
+  normalizeTripVisibility,
+  type TripVisibility,
+} from './trip-visibility';
 
 export const MAX_TRIP_NAME_LENGTH = 120;
 export const MAX_TRIP_DESTINATION_LENGTH = 160;
 export const MAX_TRIP_TIMEZONE_LENGTH = 100;
 export const MAX_TRIP_SUMMARY_NOTES_LENGTH = 2000;
 export const MAX_TRIP_COVER_IMAGE_URL_LENGTH = 2048;
+const DEFAULT_INTERNAL_BUDGET_CURRENCY = 'VND';
 
 interface TripProps extends Record<string, unknown> {
   id: string;
@@ -20,7 +29,10 @@ interface TripProps extends Record<string, unknown> {
   coverImageUrl: string | null;
   dateRange: TripDateRange;
   timezone: string | null;
-  budget: TripBudget;
+  compatibilityBudget: TripBudget;
+  budgetMode: TripBudgetMode;
+  manualBudget: TripBudget | null;
+  visibility: TripVisibility;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,8 +47,12 @@ export interface TripInput {
   startDate: string;
   endDate: string;
   timezone?: string | null;
-  budgetAmount: number;
-  budgetCurrency: string;
+  budgetAmount?: number;
+  budgetCurrency?: string;
+  budgetMode?: string;
+  manualBudgetAmount?: number | null;
+  manualBudgetCurrency?: string | null;
+  visibility?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -51,6 +67,10 @@ export interface TripUpdateInput {
   timezone?: string | null;
   budgetAmount?: number;
   budgetCurrency?: string;
+  budgetMode?: string;
+  manualBudgetAmount?: number | null;
+  manualBudgetCurrency?: string | null;
+  visibility?: string;
   updatedAt?: Date;
 }
 
@@ -62,6 +82,9 @@ export class Trip extends Entity<TripProps> {
   static create(input: TripInput): Trip {
     const createdAt = ensureDate(input.createdAt ?? new Date(), 'Created at');
     const updatedAt = ensureDate(input.updatedAt ?? createdAt, 'Updated at');
+    const budgetMode = resolveTripBudgetMode(input);
+    const manualBudget = resolveManualBudget(input, budgetMode);
+    const compatibilityBudget = resolveCompatibilityBudget(input, manualBudget);
 
     return new Trip({
       id: normalizeIdentifier(input.id ?? randomUUID(), 'Trip id'),
@@ -90,16 +113,23 @@ export class Trip extends Entity<TripProps> {
         endDate: input.endDate,
       }),
       timezone: normalizeTimezone(input.timezone),
-      budget: TripBudget.create({
-        amount: input.budgetAmount,
-        currency: input.budgetCurrency,
-      }),
+      compatibilityBudget,
+      budgetMode,
+      manualBudget,
+      visibility: normalizeTripVisibility(input.visibility),
       createdAt,
       updatedAt,
     });
   }
 
   update(input: TripUpdateInput): Trip {
+    const nextBudgetMode = resolveNextBudgetMode(this, input);
+    const nextManualBudget = resolveNextManualBudget(
+      this,
+      input,
+      nextBudgetMode,
+    );
+
     return Trip.create({
       id: this.id,
       userId: this.userId,
@@ -118,6 +148,12 @@ export class Trip extends Entity<TripProps> {
       timezone: input.timezone ?? this.timezone,
       budgetAmount: input.budgetAmount ?? this.budgetAmount,
       budgetCurrency: input.budgetCurrency ?? this.budgetCurrency,
+      budgetMode: nextBudgetMode,
+      manualBudgetAmount:
+        nextManualBudget === null ? null : nextManualBudget.amount,
+      manualBudgetCurrency:
+        nextManualBudget === null ? null : nextManualBudget.currency,
+      visibility: input.visibility ?? this.visibility,
       createdAt: this.createdAt,
       updatedAt: input.updatedAt ?? new Date(),
     });
@@ -160,11 +196,27 @@ export class Trip extends Entity<TripProps> {
   }
 
   get budgetAmount(): number {
-    return this.props.budget.amount;
+    return this.props.compatibilityBudget.amount;
   }
 
   get budgetCurrency(): string {
-    return this.props.budget.currency;
+    return this.props.compatibilityBudget.currency;
+  }
+
+  get budgetMode(): TripBudgetMode {
+    return this.props.budgetMode;
+  }
+
+  get manualBudgetAmount(): number | null {
+    return this.props.manualBudget?.amount ?? null;
+  }
+
+  get manualBudgetCurrency(): string | null {
+    return this.props.manualBudget?.currency ?? null;
+  }
+
+  get visibility(): TripVisibility {
+    return this.props.visibility;
   }
 
   get createdAt(): Date {
@@ -281,6 +333,170 @@ function normalizeTimezone(value: string | null | undefined): string | null {
   }
 
   return normalizedValue;
+}
+
+function resolveTripBudgetMode(input: TripInput): TripBudgetMode {
+  return normalizeTripBudgetMode(
+    input.budgetMode ?? (hasAnyBudgetValue(input) ? 'manual' : undefined),
+  );
+}
+
+function resolveCompatibilityBudget(
+  input: TripInput,
+  manualBudget: TripBudget | null,
+): TripBudget {
+  const compatibilityAmount = normalizeOptionalBudgetAmount(input.budgetAmount);
+  const compatibilityCurrency = normalizeOptionalBudgetCurrency(
+    input.budgetCurrency,
+  );
+
+  if (
+    compatibilityAmount !== undefined ||
+    compatibilityCurrency !== undefined
+  ) {
+    if (
+      compatibilityAmount === undefined ||
+      compatibilityCurrency === undefined
+    ) {
+      throw new DomainError(
+        'Budget amount and budget currency must be provided together.',
+      );
+    }
+
+    return TripBudget.create({
+      amount: compatibilityAmount,
+      currency: compatibilityCurrency,
+    });
+  }
+
+  if (manualBudget !== null) {
+    return manualBudget;
+  }
+
+  return TripBudget.create({
+    amount: 0,
+    currency: DEFAULT_INTERNAL_BUDGET_CURRENCY,
+  });
+}
+
+function resolveManualBudget(
+  input: TripInput,
+  budgetMode: TripBudgetMode,
+): TripBudget | null {
+  const manualBudgetAmount = normalizeOptionalBudgetAmount(
+    input.manualBudgetAmount,
+  );
+  const compatibilityBudgetAmount = normalizeOptionalBudgetAmount(
+    input.budgetAmount,
+  );
+  const manualBudgetCurrency = normalizeOptionalBudgetCurrency(
+    input.manualBudgetCurrency,
+  );
+  const compatibilityBudgetCurrency = normalizeOptionalBudgetCurrency(
+    input.budgetCurrency,
+  );
+  const amount = manualBudgetAmount ?? compatibilityBudgetAmount;
+  const currency = manualBudgetCurrency ?? compatibilityBudgetCurrency;
+
+  if (budgetMode === 'auto') {
+    if (
+      manualBudgetAmount !== undefined ||
+      manualBudgetCurrency !== undefined
+    ) {
+      throw new DomainError(
+        'Manual budget must be empty when budget mode is auto.',
+      );
+    }
+
+    return null;
+  }
+
+  if (
+    amount === undefined ||
+    currency === undefined ||
+    amount === null ||
+    currency === null
+  ) {
+    throw new DomainError(
+      'Manual budget amount and currency are required when budget mode is manual.',
+    );
+  }
+
+  return TripBudget.create({
+    amount,
+    currency,
+  });
+}
+
+function hasAnyBudgetValue(input: TripInput): boolean {
+  return (
+    normalizeOptionalBudgetAmount(input.budgetAmount) !== undefined ||
+    normalizeOptionalBudgetCurrency(input.budgetCurrency) !== undefined ||
+    normalizeOptionalBudgetAmount(input.manualBudgetAmount) !== undefined ||
+    normalizeOptionalBudgetCurrency(input.manualBudgetCurrency) !== undefined
+  );
+}
+
+function resolveNextBudgetMode(
+  currentTrip: Trip,
+  input: TripUpdateInput,
+): TripBudgetMode {
+  return normalizeTripBudgetMode(input.budgetMode ?? currentTrip.budgetMode);
+}
+
+function resolveNextManualBudget(
+  currentTrip: Trip,
+  input: TripUpdateInput,
+  budgetMode: TripBudgetMode,
+): TripBudget | null {
+  if (budgetMode === 'auto') {
+    if (
+      normalizeOptionalBudgetAmount(input.manualBudgetAmount) !== undefined ||
+      normalizeOptionalBudgetCurrency(input.manualBudgetCurrency) !== undefined
+    ) {
+      throw new DomainError(
+        'Manual budget must be empty when budget mode is auto.',
+      );
+    }
+
+    return null;
+  }
+
+  const amount =
+    input.manualBudgetAmount ??
+    input.budgetAmount ??
+    currentTrip.manualBudgetAmount ??
+    currentTrip.budgetAmount;
+  const currency =
+    input.manualBudgetCurrency ??
+    input.budgetCurrency ??
+    currentTrip.manualBudgetCurrency ??
+    currentTrip.budgetCurrency;
+
+  return TripBudget.create({
+    amount,
+    currency,
+  });
+}
+
+function normalizeOptionalBudgetAmount(
+  value: number | null | undefined,
+): number | undefined {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function normalizeOptionalBudgetCurrency(
+  value: string | null | undefined,
+): string | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  return value;
 }
 
 function ensureDate(value: Date, label: string): Date {

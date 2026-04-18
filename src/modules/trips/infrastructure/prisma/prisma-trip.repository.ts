@@ -28,6 +28,10 @@ export class PrismaTripRepository implements TripRepositoryPort {
         timezone: input.timezone ?? null,
         budgetAmount: input.budgetAmount,
         budgetCurrency: input.budgetCurrency,
+        budgetMode: input.budgetMode,
+        manualBudgetAmount: input.manualBudgetAmount ?? null,
+        manualBudgetCurrency: input.manualBudgetCurrency ?? null,
+        visibility: input.visibility,
       },
     });
 
@@ -45,7 +49,9 @@ export class PrismaTripRepository implements TripRepositoryPort {
     return record === null ? null : toTrip(record);
   }
 
-  async listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult> {
+  async listByUser(
+    input: ListTripsForUserInput,
+  ): Promise<ListTripsForUserResult> {
     const [records, totalElements] = await this.prisma.$transaction([
       this.prisma.trip.findMany({
         where: {
@@ -83,6 +89,10 @@ export class PrismaTripRepository implements TripRepositoryPort {
         timezone: trip.timezone,
         budgetAmount: trip.budgetAmount,
         budgetCurrency: trip.budgetCurrency,
+        budgetMode: trip.budgetMode,
+        manualBudgetAmount: trip.manualBudgetAmount,
+        manualBudgetCurrency: trip.manualBudgetCurrency,
+        visibility: trip.visibility,
         updatedAt: trip.updatedAt,
       },
     });
@@ -127,6 +137,10 @@ function toTrip(record: PrismaTrip): Trip {
     timezone: record.timezone,
     budgetAmount: record.budgetAmount,
     budgetCurrency: record.budgetCurrency,
+    budgetMode: record.budgetMode,
+    manualBudgetAmount: record.manualBudgetAmount,
+    manualBudgetCurrency: record.manualBudgetCurrency,
+    visibility: record.visibility,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });
