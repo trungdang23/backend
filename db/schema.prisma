@@ -39,9 +39,45 @@ model Trip {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
   itineraryDays        TripItineraryDay[]
+  planNodes            PlanNode[]
 
   @@index([userId, startDate])
   @@map("trips")
+}
+
+enum PlanNodeType {
+  section
+  day
+  location
+  activity
+  note
+
+  @@map("plan_node_type")
+}
+
+model PlanNode {
+  id           String       @id @default(cuid())
+  tripId       String       @map("trip_id")
+  trip         Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  parentId     String?      @map("parent_id")
+  parent       PlanNode?    @relation("PlanNodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     PlanNode[]   @relation("PlanNodeHierarchy")
+  type         PlanNodeType
+  title        String
+  notes        String?
+  startAt      String?      @map("start_at")
+  endAt        String?      @map("end_at")
+  costAmount   Int?         @map("cost_amount")
+  costCurrency String?      @map("cost_currency")
+  imageUrl     String?      @map("image_url")
+  sortOrder    Int          @map("sort_order")
+  depth        Int
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@index([tripId, parentId, sortOrder])
+  @@index([tripId, depth])
+  @@map("plan_nodes")
 }
 
 model TripItineraryDay {
