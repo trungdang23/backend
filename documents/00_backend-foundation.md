@@ -17,8 +17,67 @@
 
 - Chưa tách microservice.
 - Tập trung dựng khung kiến trúc, convention, và các module đầu tiên.
-- Ưu tiên hoàn thiện vertical slice cho `auth`, `users`, `trips`, sau đó mới mở rộng sang `itineraries`, `budgets`, `community`.
-- Khi nhu cầu planner vượt khỏi mô hình `trip -> day -> activity`, ưu tiên mở module `planning` additive thay vì vá sâu vào `itineraries` hiện tại.
+- Ưu tiên hoàn thiện vertical slice cho `auth`, `users`, `trips`, `planning`, `budgets`, rồi mới sang `public sharing` và `community`.
+- `itineraries` nếu còn tồn tại chỉ được xem là bridge tạm trong giai đoạn migration, không phải target model dài hạn.
+
+## Snapshot nghiệp vụ cần phục vụ
+
+### Product priority
+
+- Planner là core
+- Social là supporting layer
+- MVP không làm:
+  - upload media thật
+  - AI generate plan
+  - realtime collaboration
+  - currency conversion
+  - follow/reaction/notification phức tạp
+
+### Target entities backend
+
+```text
+User
+Trip
+PlanNode
+Post
+Comment
+```
+
+### Target responsibilities
+
+- `Trip`:
+  - metadata cấp cao
+  - `visibility`
+  - `budgetMode`
+  - `manualBudget`
+- `PlanNode`:
+  - planner tree recursive
+  - source of truth cho planning
+- `Post`:
+  - social content public
+- `Comment`:
+  - tương tác cơ bản cho post
+
+### Target API groups
+
+- Auth:
+  - register
+  - login
+  - me
+  - refresh
+  - logout
+- Trips:
+  - create/list/detail/update/delete
+- Planner:
+  - read full tree
+  - create/update/delete node
+- Posts:
+  - create
+  - list
+  - detail
+- Comments:
+  - list theo post
+  - create theo post
 
 ## Nguyên tắc thiết kế
 

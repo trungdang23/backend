@@ -11,6 +11,51 @@ Backend service for the `journey` product, scaffolded with `NestJS`, `PostgreSQL
 - REST API with prefix `/api/v1`
 - Swagger at `/api/v1/docs`
 
+## Target Implementation Snapshot
+
+Backend package này là nơi giữ source of truth triển khai cho backend của Journey.
+
+### Nghiệp vụ mục tiêu
+
+- `planner-first`
+- trip có `visibility: private | public`
+- trip có `budgetMode: auto | manual`
+- planner dùng `PlanNode` tree
+- social tối thiểu gồm `posts` và có thể mở `comments` ngay sau đó
+
+### Contract mục tiêu
+
+- Auth:
+  - `POST /api/v1/auth/register`
+  - `POST /api/v1/auth/login`
+  - `GET /api/v1/auth/me`
+  - `POST /api/v1/auth/refresh`
+  - `POST /api/v1/auth/logout`
+- Trips:
+  - `GET /api/v1/trips?page=&size=`
+  - `POST /api/v1/trips`
+  - `GET /api/v1/trips/:id`
+  - `PATCH /api/v1/trips/:id`
+  - `DELETE /api/v1/trips/:id`
+- Planner:
+  - `GET /api/v1/trips/:id/planner`
+  - `POST /api/v1/nodes`
+  - `PATCH /api/v1/nodes/:id`
+  - `DELETE /api/v1/nodes/:id`
+- Posts:
+  - `POST /api/v1/posts`
+  - `GET /api/v1/posts`
+
+### Trạng thái migration hiện tại
+
+- Source hiện đã có `auth`, `trips`, `itinerary bridge`, và `budget-summary`.
+- Target dài hạn không còn là `TripItineraryDay -> TripItineraryActivity`.
+- Khi triển khai tiếp, ưu tiên:
+  1. align `Trip` với `visibility`, `budgetMode`, `manualBudget`
+  2. thêm `PlanNode`
+  3. chuyển planner sang API mới
+  4. chỉ sau đó mới mở rộng `posts/comments`
+
 ## Run Local
 
 1. Copy one of the env examples to a real env file:

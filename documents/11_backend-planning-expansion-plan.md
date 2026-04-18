@@ -2,18 +2,83 @@
 
 ## Mục tiêu
 
-Tài liệu này chốt hướng mở rộng backend cho phần `planning` theo yêu cầu mới của sản phẩm:
+Tài liệu này chốt hướng triển khai backend để bám DRD và user stories mới, với nguyên tắc:
 
-- một `trip` có thể có nhiều phần kế hoạch
-- mỗi phần có thể có thời gian, chi phí, ghi chú
-- mỗi phần có thể có ảnh qua `imageUrl`
-- một phần lớn có thể chứa phần nhỏ hơn
-- chưa làm upload ảnh ở phase này
-- chuẩn bị kiến trúc để sau này tích hợp AI mà không phá core model
+- `PlanNode` là target planning model
+- `Trip` vẫn là container cấp cao
+- `itinerary` hiện tại chỉ là bridge tạm thời
+- rollout phải additive, không big-bang rewrite
 
-## Trạng thái backend hiện tại
+## Target product snapshot
 
-Backend hiện đã có:
+### Trip
+
+```text
+Trip
+- id
+- userId
+- name
+- startDate
+- endDate
+- budgetMode            // auto | manual
+- manualBudgetAmount?
+- manualBudgetCurrency?
+- visibility            // private | public
+- createdAt
+- updatedAt
+```
+
+### PlanNode
+
+```text
+PlanNode
+- id
+- tripId
+- parentId?
+- type                  // section | day | location | activity | note
+- title
+- notes?
+- startAt?
+- endAt?
+- costAmount?
+- costCurrency?
+- imageUrl?
+- sortOrder
+- depth
+- createdAt
+- updatedAt
+```
+
+### Post
+
+```text
+Post
+- id
+- userId
+- tripId?
+- title
+- content
+- coverImageUrl?
+- visibility            // public
+- createdAt
+- updatedAt
+```
+
+### Comment
+
+```text
+Comment
+- id
+- postId
+- userId
+- content
+- createdAt
+- updatedAt
+```
+
+## Trạng thái source hiện tại
+
+Source backend đang có:
 
 - `auth`
 - `users`
@@ -21,15 +86,7 @@ Backend hiện đã có:
 - `itineraries`
 - `budgets`
 
-Những gì đã được mở rộng thêm:
-
-- `Trip` đã có `summaryNotes` và `coverImageUrl`
-- `Trip.destination` và `Trip.timezone` đã được nới thành nullable để không ép UI theo single-location flow
-- `itineraries` hiện đã support create/update/delete cho địa điểm chính và địa điểm con
-- `TripItineraryDay` và `TripItineraryActivity` hiện đã có thời gian, chi phí, ghi chú, và nhiều `imageUrls`
-- `budgets` đã bridge được planner 2 cấp hiện tại qua budget summary
-
-Model đang chạy thực tế:
+Planner hiện tại đang đi qua:
 
 ```text
 Trip
@@ -37,499 +94,415 @@ Trip
     -> TripItineraryActivity
 ```
 
-Model này đủ cho:
+Mô hình này usable cho planner 2 cấp, nhưng không aligned với DRD mới ở các điểm:
 
-- trip metadata tối giản
-- nhiều địa điểm chính trong một trip
-- địa điểm con trong từng địa điểm chính
-- notes/cost/time ở cả 2 cấp
-- nhiều ảnh URL ở cả 2 cấp
-- planner list-first hiện tại của frontend
-
-Model này chưa đủ cho:
-
-- node cha/con nhiều tầng
-- planner dạng outline/list có thể flatten
-- recursive planning không giới hạn
-- planning module tách biệt khỏi itinerary bridge
+- không recursive
+- không có `PlanNode`
+- chưa có `visibility`
+- chưa có `budgetMode/manualBudget`
+- chưa có `posts/comments`
 
 ## Quyết định kiến trúc
 
-## 1. Giữ `Trip` làm container cấp cao
+## 1. `PlanNode` là source of truth mục tiêu cho planning
 
-`Trip` không bị bỏ đi.
+Sau khi phase alignment hoàn tất, mọi logic planner mới phải đi qua `PlanNode`.
 
-`Trip` vẫn là:
+Không mở thêm capability lớn mới lên `TripItineraryDay` và `TripItineraryActivity`, trừ:
 
-- chủ sở hữu của một kế hoạch lớn
-- điểm neo quyền truy cập theo `userId`
-- nơi giữ metadata tổng
+- bug fix
+- migration support
+- fallback ngắn hạn
 
-`Trip` hiện đã được mở rộng với:
+## 2. `Trip` chỉ giữ metadata cấp cao
 
-- `summaryNotes nullable`
-- `coverImageUrl nullable`
-- `destination nullable`
-- `timezone nullable`
+`Trip` nên giữ:
 
-## 2. Bổ sung `planning` như module mới
+- ownership
+- tên chuyến đi
+- date range
+- budget mode
+- manual budget
+- visibility
 
-Không nên vá tiếp `itineraries` hiện tại để gánh toàn bộ yêu cầu mới.
+Không đưa chi tiết planner về lại `Trip`.
 
-Hướng phù hợp hơn là thêm module mới:
+## 3. Budget đọc theo rule của DRD
 
-- `planning`
+- `auto -> sum(PlanNode.costAmount)`
+- `manual -> manualBudget`
+- không conversion currency ở MVP
 
-Module này sẽ quản lý:
+Nếu nhiều currency cùng tồn tại trong `auto`, backend chỉ trả raw totals theo currency hoặc chốt một response rõ ràng, không tự conversion ngầm.
 
-- cây hoặc outline của kế hoạch
-- node cha/con
-- thời gian
-- chi phí
-- ghi chú
-- ảnh dạng URL
+## 4. Public trip và Post là hai lớp khác nhau
 
-## 3. Giữ `itineraries` hiện tại song song trong giai đoạn chuyển tiếp
+- `Trip.visibility` quyết định khả năng public read của trip/planner
+- `Post` là social surface riêng, mặc định public
 
-Không xoá ngay:
+Không dùng `Post` để thay thế public trip detail.
 
-- `TripItineraryDay`
-- `TripItineraryActivity`
+## 5. Migration phải additive
 
-Lý do:
+Trình tự đúng:
 
-- chúng đang là contract đã chạy
-- frontend hiện vẫn có thể nối dần theo contract cũ
-- migration sang model planner mới nên đi theo hướng additive trước
+1. Align trip contract
+2. Add `PlanNode`
+3. Add planner APIs
+4. FE chuyển sang planner APIs
+5. Freeze itinerary bridge
+6. Sau cùng mới cân nhắc cleanup
 
-## 4. Ảnh chỉ là URL trong phase đầu
+## Module boundary mục tiêu
 
-Backend phase đầu không giải quyết:
+## `auth`
 
-- upload binary
-- resize
-- object storage
-- CDN
+Chịu trách nhiệm:
 
-Backend chỉ cần:
-
-- nhận `imageUrl`
-- validate URL hợp lệ
-- lưu URL vào database
-- trả URL cho frontend
-
-## 5. Chừa seam cho AI từ bây giờ
-
-AI không được ghi trực tiếp vào core planning model.
-
-Phải tách 3 lớp:
-
-- `core planning data`
-- `external research data`
-- `AI suggestion data`
-
-## Data model mục tiêu
-
-## 1. Mở rộng `Trip`
-
-Trạng thái hiện tại:
-
-```text
-Trip
-  id
-  userId
-  name
-  destination nullable
-  summaryNotes nullable
-  coverImageUrl nullable
-  startDate
-  endDate
-  timezone nullable
-  budgetAmount
-  budgetCurrency
-  createdAt
-  updatedAt
-```
-
-Giải thích:
-
-- `destination` giữ vai trò compatibility field, không còn là phần bắt buộc trong primary UI
-- `timezone` là compatibility field nullable, không còn được hiển thị ở trip detail hiện tại
-- `summaryNotes` là ghi chú tổng của kế hoạch lớn
-- `coverImageUrl` là ảnh bìa tổng
-
-## 2. Thêm `PlanNode`
-
-Đề xuất:
-
-```text
-PlanNode
-  id
-  tripId
-  parentId nullable
-  type
-  title
-  notes nullable
-  locationLabel nullable
-  startAt nullable
-  endAt nullable
-  costAmount nullable
-  costCurrency nullable
-  coverImageUrl nullable
-  sortOrder
-  depth
-  createdAt
-  updatedAt
-```
-
-### `type` tối thiểu
-
-- `day`
-- `location`
-- `activity`
-- `note`
-- `section`
-
-### Trách nhiệm của `PlanNode`
-
-- biểu diễn một item trong planner
-- có thể là node gốc hoặc node con
-- có thể render theo tree hoặc flatten
-
-## 3. Thêm `PlanNodeImage`
-
-Đề xuất:
-
-```text
-PlanNodeImage
-  id
-  planNodeId
-  imageUrl
-  caption nullable
-  sortOrder
-  createdAt
-```
-
-## 4. Có thể thêm `TripImage` nếu cần gallery tổng
-
-Nếu product chốt cần nhiều ảnh ở cấp trip:
-
-```text
-TripImage
-  id
-  tripId
-  imageUrl
-  caption nullable
-  sortOrder
-  createdAt
-```
-
-Trong phase đầu có thể chỉ cần:
-
-- `Trip.coverImageUrl`
-
-## Module boundary đề xuất
+- register
+- login
+- refresh
+- logout
+- me
 
 ## `trips`
 
-Tiếp tục chịu trách nhiệm:
+Chịu trách nhiệm:
 
-- CRUD metadata cấp trip
-- ownership theo user
-- cover image URL cấp trip
-- summary notes cấp trip
+- trip CRUD
+- trip visibility
+- trip budget mode
+- ownership
 
 ## `planning`
 
 Chịu trách nhiệm:
 
-- CRUD `PlanNode`
-- quan hệ cha/con
+- `PlanNode` CRUD
+- tree rules
+- planner read model
 - ordering
-- image URL ở node
-- read model của planning workspace
+- validation parent/child
 
 ## `budgets`
 
-Tiếp tục tồn tại, nhưng nên chuẩn bị để:
+Chịu trách nhiệm:
 
-- tính ngân sách từ `PlanNode.costAmount`
-- hoặc gộp cả `PlanNode` và `TripItineraryActivity` trong giai đoạn chuyển tiếp
+- budget summary cho trip
+- tổng hợp cost từ `PlanNode`
+- resolve logic `auto/manual`
 
-## `itineraries`
+## `posts`
 
-Giữ ổn định trong giai đoạn hiện tại.
+Chịu trách nhiệm:
 
-Sau này sẽ có quyết định:
+- create post
+- list public posts
+- detail post
+- bridge optional từ trip sang post
 
-- map dần sang `PlanNode type=day/activity`
-- hoặc giữ làm read model cũ trong một thời gian
+## `comments`
 
-Bridge đang chạy thực tế cho frontend hiện tại:
+Chịu trách nhiệm:
 
-- `GET /api/v1/trips/:tripId/itinerary`
-- `POST /api/v1/trips/:tripId/itinerary/days`
-- `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId`
-- `DELETE /api/v1/trips/:tripId/itinerary/days/:dayId`
-- `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`
-- `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
-- `DELETE /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
-- `GET /api/v1/trips/:tripId/budget-summary`
+- create/list comment theo post
 
-## API roadmap
+Nếu sprint đầu của community thiếu năng lực, `comments` có thể là slice sau `posts`, nhưng phải được ghi rõ là deferred chứ không bỏ quên.
 
-## Slice 1: mở rộng `trips` với media và notes
+## API roadmap mục tiêu
+
+## Auth
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
+
+## Trips
+
+- `GET /api/v1/trips?page=&size=`
+- `POST /api/v1/trips`
+- `GET /api/v1/trips/:id`
+- `PATCH /api/v1/trips/:id`
+- `DELETE /api/v1/trips/:id`
+
+## Planner
+
+- `GET /api/v1/trips/:id/planner`
+- `POST /api/v1/nodes`
+- `PATCH /api/v1/nodes/:id`
+- `DELETE /api/v1/nodes/:id`
+
+## Posts
+
+- `POST /api/v1/posts`
+- `GET /api/v1/posts`
+- khuyến nghị thêm `GET /api/v1/posts/:postId`
+
+## Comments
+
+- khuyến nghị thêm:
+  - `GET /api/v1/posts/:postId/comments`
+  - `POST /api/v1/posts/:postId/comments`
+
+## Slice roadmap chi tiết
+
+## Slice 1 - Align `Trip` contract
 
 ### Mục tiêu
 
-- cho frontend hiển thị trip card và trip cover giàu hình ảnh hơn ngay
+Đưa `Trip` về đúng contract của DRD trước khi mở planner mới.
 
-### Việc cần làm
+### DB
 
-- [x] thêm field mới vào Prisma schema
-- [x] migration
-- [x] domain `Trip`
-- [x] DTO create/update/response
-- [x] service create/update
-- [x] repository mapping
-- [x] test unit/integration/e2e cho field mới
-- [x] nới `destination` và `timezone` thành nullable
+- thêm `visibility`
+- thêm `budgetMode`
+- thêm `manualBudgetAmount`
+- thêm `manualBudgetCurrency`
+- review lại `budgetAmount/budgetCurrency` cũ:
+  - giữ tạm cho compatibility
+  - hoặc migrate và deprecate có kiểm soát
 
-### Contract additive
+### Application
 
-Các endpoint cũ giữ nguyên:
+- update create trip
+- update list/detail trip
+- update patch trip
+- validate `manualBudget` theo `budgetMode`
 
-- `POST /api/v1/trips`
-- `GET /api/v1/trips`
-- `GET /api/v1/trips/:tripId`
-- `PATCH /api/v1/trips/:tripId`
+### HTTP
 
-Chỉ mở rộng payload:
+- update DTO request/response
+- update Swagger
 
-- `summaryNotes?: string`
-- `coverImageUrl?: string`
-- `destination?: string | null`
-- `timezone?: string | null`
+### Test
 
-Ghi chú:
+- unit rules cho trip budget mode
+- integration persistence cho trip fields mới
+- e2e create/update/list/detail aligned với contract mới
 
-- frontend hiện không còn gửi `destination` và `timezone` trong primary form
-- backend vẫn giữ hai field này để tương thích ngược và tránh breaking change không cần thiết
+## Slice 2 - Add `PlanNode` schema và repository
 
-## Slice 2: read API cho planning workspace
+### Mục tiêu
 
-### Endpoint đề xuất
+Đặt foundation cho planner recursive.
 
-- `GET /api/v1/trips/:tripId/planning`
+### DB
 
-### Response đề xuất
+- tạo bảng `plan_nodes`
+- index:
+  - `(trip_id, parent_id, sort_order)`
+  - `(trip_id, depth)`
+- foreign key:
+  - `trip_id -> trips.id`
+  - `parent_id -> plan_nodes.id`
 
-```text
+### Application
+
+- entity `PlanNode`
+- repository port
+- Prisma repository
+
+### Validation
+
+- `title` required
+- `costAmount >= 0`
+- `endAt >= startAt`
+- parent cùng trip
+- không cycle
+
+### Test
+
+- unit tests cho tree rules
+- integration tests cho Prisma mapping
+
+## Slice 3 - Planner read API
+
+### Endpoint
+
+- `GET /api/v1/trips/:id/planner`
+
+### Response khuyến nghị
+
+```json
 {
-  trip: { ...trip metadata... },
-  nodes: [ ...tree hoặc flattened tree... ]
+  "success": true,
+  "data": {
+    "trip": {},
+    "nodes": []
+  }
 }
 ```
 
 ### Yêu cầu
 
-- enforce ownership qua `tripId + userId`
-- trả node theo `sortOrder`
-- có đủ field để FE render dạng list
+- trả full tree
+- không paginate
+- sắp theo `sortOrder`
+- private/public read bám `Trip.visibility`
 
-## Slice 3: create/update/delete `PlanNode`
+### Test
 
-### Endpoint đề xuất
+- owner read private trip planner
+- guest không read private planner
+- guest read public planner
 
-- `POST /api/v1/trips/:tripId/planning/nodes`
-- `PATCH /api/v1/trips/:tripId/planning/nodes/:nodeId`
-- `DELETE /api/v1/trips/:tripId/planning/nodes/:nodeId`
+## Slice 4 - Planner write APIs
+
+### Endpoints
+
+- `POST /api/v1/nodes`
+- `PATCH /api/v1/nodes/:id`
+- `DELETE /api/v1/nodes/:id`
 
 ### Input tối thiểu
 
-- `parentId?: string | null`
+- `tripId`
+- `parentId`
 - `type`
 - `title`
-- `notes?: string | null`
-- `locationLabel?: string | null`
-- `startAt?: string | null`
-- `endAt?: string | null`
-- `costAmount?: number | null`
-- `costCurrency?: string | null`
-- `coverImageUrl?: string | null`
-- `sortOrder?: number`
+- `notes`
+- `startAt`
+- `endAt`
+- `costAmount`
+- `costCurrency`
+- `imageUrl`
+- `sortOrder`
 
-## Slice 4: quản lý ảnh URL của node
+### Rule
 
-### Endpoint đề xuất
+- chỉ owner của trip được mutate
+- `sortOrder` ổn định trong cùng parent
+- delete node phải chốt rõ:
+  - cascade children
+  - hoặc block khi có children
 
-- `POST /api/v1/trips/:tripId/planning/nodes/:nodeId/images`
-- `PATCH /api/v1/trips/:tripId/planning/nodes/:nodeId/images/:imageId`
-- `DELETE /api/v1/trips/:tripId/planning/nodes/:nodeId/images/:imageId`
+Khuyến nghị MVP:
 
-### Ghi chú
+- delete cascade có kiểm soát, nhưng phải ghi rõ trong API docs
 
-Phase đầu có thể hoãn slice này nếu product chấp nhận:
+### Test
 
-- chỉ dùng `coverImageUrl` ở `Trip`
-- chỉ dùng `coverImageUrl` ở `PlanNode`
+- create root node
+- create child node
+- update node
+- delete node có children
+- forbidden mutation trên trip không thuộc user
 
-## Slice 5: bridge với `budgets`
+## Slice 5 - Budget summary aligned với planner
 
-### Hướng đi
+### Mục tiêu
 
-Trong giai đoạn planner mới, `budgets` nên bắt đầu hỗ trợ:
+Không để budget tiếp tục phụ thuộc dài hạn vào itinerary bridge.
 
-- tổng chi phí từ `PlanNode`
-- đối chiếu với `Trip.budgetAmount`
+### Logic
 
-Có 2 hướng:
+- `auto`: sum `PlanNode.costAmount`
+- `manual`: dùng `Trip.manualBudgetAmount`
 
-### Hướng A
+### Quyết định cần chốt
 
-- `budgets` chỉ đọc từ `PlanNode` mới
+- response trả tổng theo từng currency hay chỉ một currency
+- nếu mixed currency trong `auto`, không conversion
 
-### Hướng B
+Khuyến nghị MVP:
 
-- `budgets` đọc cả `TripItineraryActivity` cũ và `PlanNode` mới trong thời gian chuyển tiếp
+- trả per-currency breakdown và total display hints
 
-Khuyến nghị hiện tại:
+### Test
 
-- nếu planner mới được dùng làm main flow, chuyển dần sang Hướng A
+- auto budget từ planner nodes
+- manual budget override
+- mixed currency case không conversion
 
-## Slice 6: future AI seam
-
-Chưa implement AI, nhưng nên có plan rõ:
-
-### `PlaceResearch`
-
-```text
-PlaceResearch
-  id
-  sourceName
-  sourceUrl
-  placeName
-  normalizedAddress
-  priceReference nullable
-  ratingReference nullable
-  reviewCount nullable
-  fetchedAt
-```
-
-### `AiPlanSuggestion`
-
-```text
-AiPlanSuggestion
-  id
-  tripId
-  inputContext
-  outputDraft
-  status
-  createdAt
-```
+## Slice 6 - Migration strategy từ itinerary bridge
 
 ### Nguyên tắc
 
-- AI suggestion phải là draft
-- chỉ convert thành `PlanNode` khi user xác nhận
+- additive first
+- không xóa bảng cũ sớm
+- không để FE gọi song song hai nguồn planner quá lâu
 
-## Migration strategy
+### Step
 
-## Giai đoạn 1
+1. Giữ `itinerary` để source hiện tại tiếp tục chạy
+2. Build `PlanNode` APIs hoàn chỉnh
+3. FE chuyển route `/app/trips/:tripId` sang planner APIs
+4. Freeze itinerary endpoints về bugfix-only
+5. Nếu cần, chạy data migration từ itinerary cũ sang plan nodes
+6. Chỉ cleanup khi production đã ổn định
 
-Chỉ mở rộng `Trip`:
+### Cần có
 
-- `summaryNotes`
-- `coverImageUrl`
-- `destination nullable`
-- `timezone nullable`
+- migration script hoặc one-off job
+- rollback plan nếu planner read/write có lỗi
+- checklist đối chiếu dữ liệu trước và sau migrate
 
-Không động vào `itineraries`
+## Slice 7 - Public trip sharing
 
-## Giai đoạn 2
+### Mục tiêu
 
-Thêm mới:
+Cho guest xem trip public và planner public.
 
-- `PlanNode`
-- `PlanNodeImage`
+### Scope
 
-Chưa xoá gì cả
+- public trip detail
+- public planner read
+- không cho guest mutate
 
-## Giai đoạn 3
+### Test
 
-Frontend bắt đầu dùng `planning` làm workspace chính.
+- private denied
+- public accessible
+- owner vẫn edit được
 
-`itineraries` cũ:
+## Slice 8 - Posts và comments
 
-- vẫn giữ để không gãy contract
-- nhưng không mở rộng thêm nghiệp vụ lớn mới
+### Mục tiêu
 
-## Giai đoạn 4
+Mở lớp social tối thiểu sau khi trip/planner đã ổn.
 
-Khi planner mới ổn định:
+### Posts
 
-- quyết định hợp nhất `itinerary day/activity` vào planning model
-- hoặc giữ backward compatibility một thời gian có kiểm soát
+- create post
+- list posts
+- detail post
+- optional bridge từ trip sang post
 
-## Validation và business rules cần có
+### Comments
 
-## Validation boundary
+- create comment
+- list comments theo post
+- authenticated-only
 
-- URL hợp lệ cho `coverImageUrl` và `imageUrl`
-- `title` không rỗng
-- `type` thuộc enum được hỗ trợ
-- `costAmount` không âm
-- `costCurrency` đúng 3 ký tự nếu có
-- `startAt <= endAt` nếu cả hai cùng có
+### Test
 
-## Business rules
+- post create/list/detail
+- comment create/list
+- permission rules
 
-- node con phải cùng `tripId` với node cha
-- user chỉ thao tác trên trip của mình
-- không tạo cycle trong cây cha/con
-- `sortOrder` phải ổn định trong cùng parent
-- `depth` phải được tính nhất quán
+## Validation matrix bắt buộc
 
-## Test strategy
+- `Trip.name` required
+- `Trip.startDate <= Trip.endDate`
+- `Trip.visibility` thuộc enum
+- `Trip.manualBudget >= 0`
+- `PlanNode.title` required
+- `PlanNode.type` thuộc enum
+- `PlanNode.parentId` cùng trip
+- `PlanNode.endAt >= PlanNode.startAt`
+- `PlanNode.costAmount >= 0`
+- `Post.content` required
+- `Comment.content` required
 
-## Unit
+## Definition of done cho planning expansion
 
-- rule validate node type
-- rule validate parent-child
-- rule detect cycle
-- rule validate thời gian và chi phí
+Một backend phase planner chỉ được coi là aligned khi:
 
-## Integration
-
-- Prisma mapping cho `Trip` mở rộng
-- Prisma mapping cho `PlanNode`
-- list planning read model
-- create/update/delete node
-
-## E2E
-
-- tạo trip với `coverImageUrl`
-- lấy trip detail có `coverImageUrl`
-- tạo planning node cấp gốc
-- tạo planning node cấp con
-- list planning workspace
-
-## Định nghĩa hoàn thành
-
-Backend expansion được xem là đúng hướng khi:
-
-- `Trip` support `summaryNotes` và `coverImageUrl`
-- có module `planning` độc lập
-- planner support nhiều node trong một trip
-- node support cha/con
-- node support thời gian, chi phí, ghi chú, ảnh URL
-- contract additive, không phá flow cũ
-- đã có seam rõ cho AI research/suggestion
-
-## Open questions cần chốt trước khi code
-
-1. `destination` có đổi tên ngữ nghĩa thành `destinationSummary` trong API không, hay giữ field cũ để tránh breaking change?
-2. `PlanNode` có cần recursive vô hạn thật không, hay giới hạn mềm 3-4 tầng là đủ?
-3. `Day` có là node bắt buộc trong planner không?
-4. Phase đầu có cần `PlanNodeImage` nhiều ảnh, hay chỉ cần `coverImageUrl` ở `PlanNode`?
-5. `budgets` sẽ tính từ planner mới ngay hay bridge với itinerary cũ trong một thời gian?
+- schema `PlanNode` đã có
+- trip contract đã có `visibility`, `budgetMode`, `manualBudget`
+- planner read/write APIs chạy end-to-end
+- budget summary đọc đúng theo rule DRD
+- FE có thể dùng planner APIs mà không cần dependency vào itinerary bridge cho flow chính
+- tests đã có ở mức unit, integration, và e2e cho flow chính
