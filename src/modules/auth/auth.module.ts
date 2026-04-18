@@ -10,6 +10,7 @@ import { UsersModule } from '../users/users.module';
 import { AUTH_TOKEN_SERVICE } from './application/ports/auth-token-service.port';
 import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier.port';
 import { LoginUserService } from './application/services/login-user.service';
+import { LogoutAuthSessionService } from './application/services/logout-auth-session.service';
 import { RefreshAuthSessionService } from './application/services/refresh-auth-session.service';
 import { RegisterAuthSessionService } from './application/services/register-auth-session.service';
 import { JwtAuthTokenService } from './infrastructure/security/jwt-auth-token.service';
@@ -25,6 +26,7 @@ import { PublicAuthRateLimitService } from './presentation/public-auth-rate-limi
     AccessTokenAuthGuard,
     JwtAuthTokenService,
     LoginUserService,
+    LogoutAuthSessionService,
     PublicAuthRateLimitMiddleware,
     PublicAuthRateLimitService,
     RefreshAuthSessionService,
@@ -48,6 +50,7 @@ export class AuthModule implements NestModule {
         { path: 'auth/register', method: RequestMethod.POST },
         { path: 'auth/login', method: RequestMethod.POST },
         { path: 'auth/refresh', method: RequestMethod.POST },
+        { path: 'auth/logout', method: RequestMethod.POST },
       );
   }
 }

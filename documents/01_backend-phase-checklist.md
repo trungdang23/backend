@@ -48,21 +48,21 @@
 - [ ] Chưa có `Trip.visibility`
 - [ ] Chưa có `budgetMode/manualBudget`
 - [ ] Chưa có `posts`
-- [ ] Chưa có `logout` endpoint đúng target
+- [x] Đã có `logout` endpoint đúng target
 
 ## Tổng quan phase
 
-| Phase | Mục tiêu                                        | Status      |
-| ----- | ----------------------------------------------- | ----------- |
-| 00    | Re-baseline tài liệu và contract theo DRD mới   | Completed   |
-| 01    | Foundation, ops, CI, deploy baseline            | Completed   |
-| 02    | Auth và session aligned với DRD                 | In Progress |
-| 03    | Trips aligned với DRD                           | Todo        |
-| 04    | Planner core trên `PlanNode`                    | Todo        |
-| 05    | Budget logic và migration khỏi itinerary bridge | Todo        |
-| 06    | Public trip sharing                             | Todo        |
-| 07    | Community minimal                               | Todo        |
-| 08    | Hardening, test, release readiness              | Todo        |
+| Phase | Mục tiêu                                        | Status    |
+| ----- | ----------------------------------------------- | --------- |
+| 00    | Re-baseline tài liệu và contract theo DRD mới   | Completed |
+| 01    | Foundation, ops, CI, deploy baseline            | Completed |
+| 02    | Auth và session aligned với DRD                 | Completed |
+| 03    | Trips aligned với DRD                           | Todo      |
+| 04    | Planner core trên `PlanNode`                    | Todo      |
+| 05    | Budget logic và migration khỏi itinerary bridge | Todo      |
+| 06    | Public trip sharing                             | Todo      |
+| 07    | Community minimal                               | Todo      |
+| 08    | Hardening, test, release readiness              | Todo      |
 
 ## Phase 00 - Re-baseline tài liệu và contract theo DRD mới
 
@@ -88,22 +88,22 @@ Status: `Completed`
 
 ## Phase 02 - Auth và session aligned với DRD
 
-Status: `In Progress`
+Status: `Completed`
 
 - [x] `POST /api/v1/auth/register`
 - [x] `POST /api/v1/auth/login`
 - [x] `GET /api/v1/auth/me`
 - [x] `POST /api/v1/auth/refresh`
-- [ ] `POST /api/v1/auth/logout`
+- [x] `POST /api/v1/auth/logout`
 - [x] Password hashing
 - [x] JWT access token validation
 - [x] Refresh token flow
 - [x] Rate limit cho public auth endpoints
 - [x] DTO và response envelope nhất quán
-- [ ] Xác nhận contract logout:
+- [x] Xác nhận contract logout:
   - xóa refresh token ở phía server nếu có persistence
   - hoặc chốt rõ MVP là stateless logout + clear token phía client
-- [ ] Bổ sung e2e test cho `logout`
+- [x] Bổ sung e2e test cho `logout`
 
 ## Phase 03 - Trips aligned với DRD
 

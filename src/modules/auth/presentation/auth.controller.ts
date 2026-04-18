@@ -10,6 +10,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import type { AuthenticatedUser } from '../application/authenticated-user';
 import { LoginUserService } from '../application/services/login-user.service';
+import { LogoutAuthSessionService } from '../application/services/logout-auth-session.service';
 import { RefreshAuthSessionService } from '../application/services/refresh-auth-session.service';
 import { RegisterAuthSessionService } from '../application/services/register-auth-session.service';
 import { Public } from './decorators/public.decorator';
@@ -17,6 +18,8 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthSessionResponseDto } from './dto/auth-session-response.dto';
 import { CurrentUserResponseDto } from './dto/current-user-response.dto';
 import { LoginRequestDto } from './dto/login-request.dto';
+import { LogoutRequestDto } from './dto/logout-request.dto';
+import { LogoutResponseDto } from './dto/logout-response.dto';
 import { RefreshAuthSessionResponseDto } from './dto/refresh-auth-session-response.dto';
 import { RefreshTokenRequestDto } from './dto/refresh-token-request.dto';
 import { RegisterRequestDto } from './dto/register-request.dto';
@@ -31,6 +34,7 @@ export class AuthController {
   constructor(
     private readonly registerAuthSession: RegisterAuthSessionService,
     private readonly loginUser: LoginUserService,
+    private readonly logoutAuthSession: LogoutAuthSessionService,
     private readonly refreshAuthSession: RefreshAuthSessionService,
     private readonly getUserProfile: GetUserProfileService,
   ) {}
@@ -63,6 +67,15 @@ export class AuthController {
     const tokens = await this.refreshAuthSession.execute(input);
 
     return RefreshAuthSessionResponseDto.from(tokens);
+  }
+
+  @Public()
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Body() input: LogoutRequestDto) {
+    const result = await this.logoutAuthSession.execute(input);
+
+    return LogoutResponseDto.from(result);
   }
 
   @Get('me')

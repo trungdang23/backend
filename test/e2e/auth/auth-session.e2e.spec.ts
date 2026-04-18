@@ -31,7 +31,7 @@ describe('Auth session e2e', () => {
     await app.close();
   });
 
-  it('registers, logs in, refreshes, and fetches the current user through HTTP', async () => {
+  it('registers, logs in, refreshes, logs out, and fetches the current user through HTTP', async () => {
     const registerResponse = await request(httpServer)
       .post('/api/v1/auth/register')
       .send({
@@ -108,5 +108,21 @@ describe('Auth session e2e', () => {
     expect(refreshResponse.statusCode).toBe(200);
     expect(refreshBody.success).toBe(true);
     expect(refreshBody.data.tokens.accessToken).toEqual(expect.any(String));
+
+    const logoutResponse = await request(httpServer)
+      .post('/api/v1/auth/logout')
+      .send({
+        refreshToken: loginBody.data.tokens.refreshToken,
+      });
+    const logoutBody = logoutResponse.body as {
+      success: boolean;
+      data: {
+        loggedOut: boolean;
+      };
+    };
+
+    expect(logoutResponse.statusCode).toBe(200);
+    expect(logoutBody.success).toBe(true);
+    expect(logoutBody.data.loggedOut).toBe(true);
   });
 });

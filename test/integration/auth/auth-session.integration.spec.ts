@@ -278,4 +278,60 @@ describe('Auth session integration', () => {
       sessionBody.data.tokens.refreshToken,
     );
   });
+
+  it('logs a user out with a valid refresh token', async () => {
+    const sessionResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/register',
+      body: {
+        email: 'logout@example.com',
+        password: 'password123',
+      },
+    });
+    const sessionBody = sessionResponse.body as {
+      data: {
+        tokens: {
+          refreshToken: string;
+        };
+      };
+    };
+
+    const response = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/logout',
+      body: {
+        refreshToken: sessionBody.data.tokens.refreshToken,
+      },
+    });
+    const body = response.body as {
+      success: boolean;
+      data: {
+        loggedOut: boolean;
+      };
+    };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.data.loggedOut).toBe(true);
+  });
+
+  it('rejects malformed logout requests', async () => {
+    const response = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/logout',
+      body: {
+        refreshToken: 'short-token',
+      },
+    });
+    const body = response.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('BAD_REQUEST');
+  });
 });

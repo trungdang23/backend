@@ -1,0 +1,153 @@
+# Backend Phase 02 Auth Completion Backlog
+
+## Mục tiêu
+
+Đóng nốt Phase 02 của backend để auth lifecycle aligned với target contract:
+
+- `register`
+- `login`
+- `me`
+- `refresh`
+- `logout`
+
+## Trạng thái
+
+- Status: `Completed`
+- Completed at: `2026-04-18`
+
+## Trạng thái hiện tại
+
+Đã có:
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/me`
+- `POST /api/v1/auth/refresh`
+- access token guard
+- JWT issue/verify
+- password hashing
+- auth e2e baseline
+
+Đã hoàn tất:
+
+- `POST /api/v1/auth/logout`
+- contract logout rõ ràng
+- tests cho logout
+- update docs cho full auth lifecycle
+
+## Quyết định cần chốt trước khi code
+
+## Auth logout strategy
+
+MVP phù hợp nhất hiện tại:
+
+- `stateless logout + clear token phía client`
+- backend cung cấp `POST /auth/logout` để đóng contract
+- endpoint trả `200`
+- backend validate request shape
+- backend không bắt buộc revoke refresh token vì hiện flow đang stateless
+
+Lý do:
+
+- bám target contract
+- chi phí thấp
+- không kéo Phase 02 sang bài toán token revocation store
+
+### Deferred rõ ràng
+
+Token revocation hoặc refresh token persistence sẽ để sang hardening phase sau.
+
+## Scope chi tiết
+
+## Slice BE-02A - Logout contract
+
+### Việc cần làm
+
+- [x] Tạo `LogoutRequestDto`
+- [x] Chốt request body:
+  - `refreshToken: string`
+- [x] Chốt response:
+  - `success: true`
+  - `data: { loggedOut: true }`
+- [x] Thêm app error code nếu cần cho invalid logout payload
+
+### File dự kiến
+
+- `src/modules/auth/presentation/dto/logout-request.dto.ts`
+- `src/modules/auth/presentation/dto/logout-response.dto.ts`
+
+## Slice BE-02B - Logout use case
+
+### Việc cần làm
+
+- [x] Tạo `LogoutAuthSessionService`
+- [x] Endpoint nhận request và trả success
+- [x] Nếu request không hợp lệ thì trả `4xx` đúng contract hiện tại
+- [x] Nếu user gửi refresh token rỗng hoặc malformed thì reject đúng contract
+
+### Lưu ý
+
+- Không cần DB write trong MVP stateless logout
+- Không cần blacklist token ở phase này
+- Service phải có comment hoặc doc note giải thích đây là contract-completion endpoint, chưa phải revoke flow
+
+### File dự kiến
+
+- `src/modules/auth/application/services/logout-auth-session.service.ts`
+- `src/modules/auth/presentation/auth.controller.ts`
+
+## Slice BE-02C - Swagger và docs
+
+### Việc cần làm
+
+- [x] Expose `POST /api/v1/auth/logout` trong Swagger
+- [x] Update `backend/README.md`
+- [x] Update `01_backend-phase-checklist.md` khi xong
+- [x] Ghi note deferred token revocation trong docs
+
+## Slice BE-02D - Tests
+
+### Unit
+
+- [x] DTO validation cho logout request
+- [x] Service trả success với input hợp lệ
+
+### Integration
+
+- [x] `POST /api/v1/auth/logout` trả `200` với payload hợp lệ
+- [x] Request malformed trả `4xx` đúng kỳ vọng
+
+### E2E
+
+- [x] register hoặc login để lấy refresh token
+- [x] gọi `POST /api/v1/auth/logout`
+- [x] assert response success
+- [x] ghi rõ rằng token cũ chưa bị revoke server-side trong phase này
+
+## Acceptance criteria
+
+- Có `POST /api/v1/auth/logout`
+- Swagger phản ánh endpoint mới
+- Response envelope đúng chuẩn
+- Có test unit/integration/e2e cho logout slice
+- Docs nêu rõ logout phase này là stateless
+
+## Implementation order đề xuất
+
+1. Tạo DTO request/response
+2. Tạo service logout
+3. Wire controller + module
+4. Thêm tests
+5. Cập nhật docs/checklist
+
+## Rủi ro cần tránh
+
+- Không giả vờ revoke token nếu backend chưa có token store
+- Không làm logout endpoint mập mờ kiểu `204` không body trong khi app đang bám response envelope chuẩn
+- Không để Phase 02 bị kéo sang bài toán session persistence server-side
+
+## Definition of done cho backlog này
+
+- `POST /api/v1/auth/logout` chạy end-to-end
+- unit/integration/e2e pass
+- docs của backend phản ánh rõ auth lifecycle hiện tại
