@@ -24,9 +24,13 @@ Phase này chưa xử lý:
 
 ## Trạng thái
 
-- Status: `Todo`
-- Date: `2026-04-18`
+- Status: `Implemented in source`
+- Date: `2026-04-20`
 - Owner area: `backend/src/modules/planning`
+- Ghi chú re-baseline:
+  - tài liệu này giữ backlog lịch sử của phase planner core
+  - source hiện tại đã có `PlanNode` schema, planning module, read/write APIs, và planner test coverage
+  - phần còn lại đã được tách sang `Phase 05` budget migration và `Phase 06` public trip sharing
 - Dependency chặn:
   - `Phase 03` đã hoàn tất cho `Trip.visibility` và `Trip.budgetMode`
   - phải chốt planner response shape với frontend trước khi code controller/DTO

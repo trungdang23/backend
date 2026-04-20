@@ -49,6 +49,16 @@ export class PrismaTripRepository implements TripRepositoryPort {
     return record === null ? null : toTrip(record);
   }
 
+  async findById(tripId: string): Promise<Trip | null> {
+    const record = await this.prisma.trip.findUnique({
+      where: {
+        id: tripId,
+      },
+    });
+
+    return record === null ? null : toTrip(record);
+  }
+
   async listByUser(
     input: ListTripsForUserInput,
   ): Promise<ListTripsForUserResult> {

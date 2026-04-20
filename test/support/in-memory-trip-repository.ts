@@ -48,6 +48,10 @@ export class InMemoryTripRepository implements TripRepositoryPort {
     return Promise.resolve(trip);
   }
 
+  findById(tripId: string): Promise<Trip | null> {
+    return Promise.resolve(this.trips.get(tripId) ?? null);
+  }
+
   listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult> {
     const filteredTrips = Array.from(this.trips.values())
       .filter((trip) => trip.userId === input.userId)

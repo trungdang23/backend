@@ -208,4 +208,62 @@ describe('Trips e2e', () => {
     expect(listAfterDeleteBody.data).toHaveLength(0);
     expect(listAfterDeleteBody.meta.totalElements).toBe(0);
   });
+
+  it('reads public trip detail without authentication', async () => {
+    const registerResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/register',
+      body: {
+        email: 'trips.public.e2e@example.com',
+        password: 'password123',
+        displayName: 'Public Traveler',
+      },
+    });
+    const registerBody = registerResponse.body as {
+      data: {
+        tokens: {
+          accessToken: string;
+        };
+      };
+    };
+
+    const createResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${registerBody.data.tokens.accessToken}`,
+      },
+      body: {
+        name: 'Public Sa Pa Draft',
+        startDate: '2026-12-01',
+        endDate: '2026-12-04',
+        budgetMode: 'manual',
+        manualBudgetAmount: 3900000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+    const createBody = createResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const detailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${createBody.data.id}`,
+    });
+    const detailBody = detailResponse.body as {
+      success: boolean;
+      data: {
+        id: string;
+        visibility: string;
+      };
+    };
+
+    expect(detailResponse.statusCode).toBe(200);
+    expect(detailBody.success).toBe(true);
+    expect(detailBody.data.id).toBe(createBody.data.id);
+    expect(detailBody.data.visibility).toBe('public');
+  });
 });

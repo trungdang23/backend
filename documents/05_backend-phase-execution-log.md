@@ -1,5 +1,14 @@
 # Backend Phase Execution Log
 
+## Re-baseline Note
+
+- Log này giữ lịch sử triển khai theo thứ tự implementation thật trong repo backend.
+- Sau lần re-baseline ngày `2026-04-20`, phase numbering hiện hành cho DRD-aligned roadmap phải bám `01_backend-phase-checklist.md`.
+- Từ mốc này:
+  - execution `Phase 04` tương ứng với checklist `Phase 03` (`trips`)
+  - execution `Phase 05` là bridge `itineraries/budgets`
+  - execution `Phase 06` tương ứng với checklist `Phase 04` (`planning` trên `PlanNode`)
+
 ## Phase 00
 
 Status: `Completed`
@@ -258,7 +267,7 @@ Status: `Completed`
 ### Ghi chú
 
 - Từ trạng thái hiện tại, frontend Phase 05 đã có thể bám contract `trips` thật thay vì tiếp tục giữ placeholder.
-- Phase backend tiếp theo nên tập trung vào `community` và phần hardening của các contract đã mở.
+- Theo lịch sử implementation ngay sau mốc này, backend tiếp tục mở bridge `itineraries/budgets`; còn ưu tiên DRD-aligned hiện hành phải bám `01_backend-phase-checklist.md`.
 
 ## Phase 05
 
@@ -309,4 +318,48 @@ Status: `Completed`
 ### Ghi chú
 
 - Budget summary hiện dùng tổng `activity.costAmount` theo cùng currency với `trip.budgetCurrency`; phase sau mới cần mở rộng nếu product cho phép multi-currency hoặc transaction-style budget ledger.
-- Từ trạng thái này, frontend Phase 06 có thể nối API thật cho timeline/day planner và budget summary mà không cần giữ placeholder backend-blocked nữa.
+- Từ trạng thái này, frontend phase bridge có thể nối API thật cho timeline/day planner và budget summary mà không cần giữ placeholder backend-blocked nữa.
+- Source hiện tại đã đi xa hơn phase bridge này: planner core trên `PlanNode` đã có source thật, còn budget summary cutover vẫn là phần việc mở của checklist `Phase 05`.
+
+## Phase 06
+
+Status: `Completed`
+
+### Mục tiêu
+
+- Hoàn thiện planner core trên `PlanNode` để flow planner chính không còn phụ thuộc `TripItineraryDay -> TripItineraryActivity`.
+- Mở planning module riêng với full read/write contract cho owner qua auth routes.
+
+### Nhật ký
+
+- `2026-04-18`: Bổ sung `PlanNodeType` và model `PlanNode` vào Prisma schema, cùng migration `20260418153000_add_plan_nodes`.
+- `2026-04-18`: Tạo `PlanningModule`, `PlanNode` domain model, repository port, Prisma repository, và `PlanningController`.
+- `2026-04-18`: Mở các endpoint `GET /api/v1/trips/:tripId/planner`, `POST /api/v1/nodes`, `PATCH /api/v1/nodes/:nodeId`, và `DELETE /api/v1/nodes/:nodeId`.
+- `2026-04-18`: Bổ sung service `GetTripPlannerService`, `CreatePlanNodeService`, `UpdatePlanNodeService`, `DeletePlanNodeService`, và in-memory repository cho test pipeline.
+- `2026-04-18`: Ghi nhận unit, integration, repository integration, và e2e coverage cho planner flow trên `PlanNode`.
+
+### Verification
+
+- File review đối chiếu `backend/db/schema.prisma` và migration `backend/db/migrations/20260418153000_add_plan_nodes/migration.sql`
+- File review đối chiếu `backend/src/modules/planning/**` với `backend/src/app/app.module.ts`
+- File review đối chiếu coverage hiện có:
+  - `backend/test/unit/modules/planning/domain/plan-node.spec.ts`
+  - `backend/test/integration/planning/prisma-plan-node.repository.integration.spec.ts`
+  - `backend/test/integration/planning/planning.integration.spec.ts`
+  - `backend/test/e2e/planning/planning.e2e.spec.ts`
+
+### Artifact
+
+- `backend/db/schema.prisma`
+- `backend/db/migrations/20260418153000_add_plan_nodes/migration.sql`
+- `backend/src/modules/planning/**`
+- `backend/test/support/in-memory-plan-node-repository.ts`
+- `backend/test/unit/modules/planning/domain/plan-node.spec.ts`
+- `backend/test/integration/planning/prisma-plan-node.repository.integration.spec.ts`
+- `backend/test/integration/planning/planning.integration.spec.ts`
+- `backend/test/e2e/planning/planning.e2e.spec.ts`
+
+### Ghi chú
+
+- Phase này tương ứng với checklist `Phase 04` sau re-baseline DRD.
+- Planner read/write owner flow hiện đã dùng `PlanNode` thật; phần còn lại chưa aligned là budget summary cutover và public sharing.

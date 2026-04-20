@@ -332,6 +332,105 @@ describe('Trips integration', () => {
 
     expect(detailAfterDeleteResponse.statusCode).toBe(404);
   });
+
+  it('serves public trip detail without auth and blocks private trips', async () => {
+    const traveler = await registerUser(expressApp, 'trips.public@example.com');
+
+    const publicTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Public Hoi An Storyboard',
+        startDate: '2026-10-02',
+        endDate: '2026-10-05',
+        budgetMode: 'manual',
+        manualBudgetAmount: 4200000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+    const publicTripBody = publicTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const privateTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Private Hue Draft',
+        startDate: '2026-11-12',
+        endDate: '2026-11-14',
+        budgetMode: 'manual',
+        manualBudgetAmount: 2800000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      },
+    });
+    const privateTripBody = privateTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const detailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${publicTripBody.data.id}`,
+    });
+    const detailBody = detailResponse.body as {
+      success: boolean;
+      data: {
+        id: string;
+        visibility: string;
+      };
+    };
+
+    expect(detailResponse.statusCode).toBe(200);
+    expect(detailBody.success).toBe(true);
+    expect(detailBody.data.id).toBe(publicTripBody.data.id);
+    expect(detailBody.data.visibility).toBe('public');
+
+    const privateDetailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${privateTripBody.data.id}`,
+    });
+    const privateDetailBody = privateDetailResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(privateDetailResponse.statusCode).toBe(403);
+    expect(privateDetailBody.success).toBe(false);
+    expect(privateDetailBody.error.code).toBe('FORBIDDEN');
+    expect(privateDetailBody.error.message).toBe('Trip is private.');
+
+    const missingDetailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/trips/trip-missing',
+    });
+    const missingDetailBody = missingDetailResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(missingDetailResponse.statusCode).toBe(404);
+    expect(missingDetailBody.success).toBe(false);
+    expect(missingDetailBody.error.code).toBe('NOT_FOUND');
+    expect(missingDetailBody.error.message).toBe('Trip not found.');
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {

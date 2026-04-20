@@ -83,10 +83,11 @@ Source backend đang có:
 - `auth`
 - `users`
 - `trips`
+- `planning`
 - `itineraries`
 - `budgets`
 
-Planner hiện tại đang đi qua:
+Flow planner legacy từng đi qua:
 
 ```text
 Trip
@@ -94,12 +95,17 @@ Trip
     -> TripItineraryActivity
 ```
 
-Mô hình này usable cho planner 2 cấp, nhưng không aligned với DRD mới ở các điểm:
+Source hiện tại đã có thêm flow planner mới trên:
 
-- không recursive
-- không có `PlanNode`
-- chưa có `visibility`
-- chưa có `budgetMode/manualBudget`
+```text
+Trip
+  -> PlanNode*
+```
+
+Phần còn chưa aligned hoàn toàn với DRD mới:
+
+- budget summary vẫn chưa đọc từ `PlanNode`
+- public trip read chưa có
 - chưa có `posts/comments`
 
 ## Quyết định kiến trúc
@@ -150,8 +156,14 @@ Trình tự đúng:
 2. Add `PlanNode`
 3. Add planner APIs
 4. FE chuyển sang planner APIs
-5. Freeze itinerary bridge
+5. Freeze itinerary bridge cho flow planner chính
 6. Sau cùng mới cân nhắc cleanup
+
+Checkpoint re-baseline hiện tại:
+
+- bước `1` đến `4` đã có source thật
+- bước `5` đang ở trạng thái partial vì budget summary vẫn còn đọc bridge
+- bước cleanup chưa nên làm trước khi budget/public sharing ổn định
 
 ## Module boundary mục tiêu
 

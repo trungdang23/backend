@@ -213,6 +213,125 @@ describe('Planning integration', () => {
     expect(plannerAfterDeleteBody.success).toBe(true);
     expect(plannerAfterDeleteBody.data.nodes).toHaveLength(0);
   });
+
+  it('serves a public planner without auth and blocks private planners', async () => {
+    const traveler = await registerUser(expressApp, 'planning.public@example.com');
+
+    const publicTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Public Planner',
+        startDate: '2026-09-01',
+        endDate: '2026-09-04',
+        budgetMode: 'manual',
+        manualBudgetAmount: 3200000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+    const publicTripBody = publicTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: publicTripBody.data.id,
+        type: 'day',
+        title: 'Public day one',
+        sortOrder: 0,
+      },
+    });
+
+    const privateTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Private Planner',
+        startDate: '2026-09-10',
+        endDate: '2026-09-12',
+        budgetMode: 'manual',
+        manualBudgetAmount: 2500000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      },
+    });
+    const privateTripBody = privateTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const plannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${publicTripBody.data.id}/planner`,
+    });
+    const plannerBody = plannerResponse.body as {
+      success: boolean;
+      data: {
+        trip: {
+          id: string;
+        };
+        nodes: Array<{
+          title: string;
+        }>;
+      };
+    };
+
+    expect(plannerResponse.statusCode).toBe(200);
+    expect(plannerBody.success).toBe(true);
+    expect(plannerBody.data.trip.id).toBe(publicTripBody.data.id);
+    expect(plannerBody.data.nodes.map((node) => node.title)).toEqual([
+      'Public day one',
+    ]);
+
+    const privatePlannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${privateTripBody.data.id}/planner`,
+    });
+    const privatePlannerBody = privatePlannerResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(privatePlannerResponse.statusCode).toBe(403);
+    expect(privatePlannerBody.success).toBe(false);
+    expect(privatePlannerBody.error.code).toBe('FORBIDDEN');
+    expect(privatePlannerBody.error.message).toBe('Trip is private.');
+
+    const missingPlannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/trips/trip-missing/planner',
+    });
+    const missingPlannerBody = missingPlannerResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(missingPlannerResponse.statusCode).toBe(404);
+    expect(missingPlannerBody.success).toBe(false);
+    expect(missingPlannerBody.error.code).toBe('NOT_FOUND');
+    expect(missingPlannerBody.error.message).toBe('Trip not found.');
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {

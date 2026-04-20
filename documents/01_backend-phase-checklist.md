@@ -3,7 +3,7 @@
 ## Scope
 
 - Checklist này tự chứa target contract backend cần đạt cho sản phẩm hiện tại.
-- Ngày chốt lại target contract: `2026-04-18`
+- Ngày chốt lại target contract: `2026-04-20`
 - `Status` phản ánh mức độ aligned với DRD mới, không chỉ phản ánh việc source đã có code.
 
 ## Quy ước trạng thái
@@ -43,10 +43,11 @@
 
 - [x] Có auth baseline thật
 - [x] Có trips CRUD baseline thật
-- [~] Có planner tạm theo `TripItineraryDay -> TripItineraryActivity`
-- [ ] Chưa có `PlanNode`
+- [x] Có planner core thật trên `PlanNode`
 - [x] Đã có `Trip.visibility`
 - [x] Đã có `budgetMode/manualBudget`
+- [~] Budget summary vẫn còn đọc từ itinerary bridge
+- [x] Đã có public trip read
 - [ ] Chưa có `posts`
 - [x] Đã có `logout` endpoint đúng target
 
@@ -58,9 +59,9 @@
 | 01    | Foundation, ops, CI, deploy baseline            | Completed |
 | 02    | Auth và session aligned với DRD                 | Completed |
 | 03    | Trips aligned với DRD                           | Completed |
-| 04    | Planner core trên `PlanNode`                    | Todo      |
-| 05    | Budget logic và migration khỏi itinerary bridge | Todo      |
-| 06    | Public trip sharing                             | Todo      |
+| 04    | Planner core trên `PlanNode`                    | Completed |
+| 05    | Budget logic và migration khỏi itinerary bridge | Partial   |
+| 06    | Public trip sharing                             | Completed |
 | 07    | Community minimal                               | Todo      |
 | 08    | Hardening, test, release readiness              | Todo      |
 
@@ -128,10 +129,10 @@ Status: `Completed`
 
 ## Phase 04 - Planner core trên `PlanNode`
 
-Status: `Todo`
+Status: `Completed`
 
-- [ ] Thêm schema `PlanNode`
-- [ ] Chốt field tối thiểu của `PlanNode`:
+- [x] Thêm schema `PlanNode`
+- [x] Chốt field tối thiểu của `PlanNode`:
   - `id`
   - `tripId`
   - `parentId`
@@ -147,59 +148,62 @@ Status: `Todo`
   - `depth`
   - `createdAt`
   - `updatedAt`
-- [ ] Chốt enum `type` tối thiểu:
+- [x] Chốt enum `type` tối thiểu:
   - `section`
   - `day`
   - `location`
   - `activity`
   - `note`
-- [ ] Tạo module `planning`
-- [ ] Tạo repository port + Prisma repository cho `PlanNode`
-- [ ] Tạo `GET /api/v1/trips/:id/planner`
-- [ ] Tạo `POST /api/v1/nodes`
-- [ ] Tạo `PATCH /api/v1/nodes/:id`
-- [ ] Tạo `DELETE /api/v1/nodes/:id`
-- [ ] Planner read model phải trả full tree, không paginate
-- [ ] Validate:
+- [x] Tạo module `planning`
+- [x] Tạo repository port + Prisma repository cho `PlanNode`
+- [x] Tạo `GET /api/v1/trips/:id/planner`
+- [x] Tạo `POST /api/v1/nodes`
+- [x] Tạo `PATCH /api/v1/nodes/:id`
+- [x] Tạo `DELETE /api/v1/nodes/:id`
+- [x] Planner read model phải trả full tree, không paginate
+- [x] Validate:
   - `title` required
   - `costAmount >= 0`
   - `sortOrder` required
   - `endAt >= startAt`
   - `parentId` cùng `tripId`
   - không tạo cycle
-- [ ] Permission:
+- [x] Permission:
   - owner-only cho create/update/delete
-  - planner read private/public tuỳ `Trip.visibility`
-- [ ] Bổ sung unit/integration/e2e tests cho planner
+  - auth read cho owner trên planner route hiện tại
+- [x] Bổ sung unit/integration/e2e tests cho planner
+- [~] Public planner read theo `Trip.visibility` được tách riêng sang `Phase 06`
 
 ## Phase 05 - Budget logic và migration khỏi itinerary bridge
 
-Status: `Todo`
+Status: `Partial`
 
 - [ ] Chuyển budget summary sang đọc từ `PlanNode`
+- [~] Budget summary baseline đã có, nhưng vẫn đang đọc từ itinerary bridge
 - [ ] Hỗ trợ:
   - `auto -> sum(costAmount)`
   - `manual -> manualBudget`
-- [ ] Chốt response budget summary cho frontend
-- [ ] Ghi rõ chiến lược chuyển tiếp:
-  - tiếp tục giữ `itinerary` để migrate
-  - không mở thêm nghiệp vụ mới lên `itinerary`
+- [~] Có response budget summary cho frontend, nhưng chưa phải contract `PlanNode`-based cuối cùng
+- [~] Chiến lược chuyển tiếp hiện tại:
+  - flow planner chính đã freeze khỏi itinerary bridge
+  - `itinerary` còn giữ cho budget/migration support
 - [ ] Thiết kế script hoặc strategy migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`
 - [ ] Chốt cutover plan:
-  - thời điểm FE ngừng gọi itinerary APIs
-  - thời điểm backend freeze itinerary APIs
+  - thời điểm backend ngừng đọc budget từ itinerary bridge
+  - thời điểm có thể cleanup legacy itinerary support
 - [ ] Bổ sung test đảm bảo budget không lệch sau migration
 
 ## Phase 06 - Public trip sharing
 
-Status: `Todo`
+Status: `Completed`
 
-- [ ] Public read cho trip có `visibility = public`
-- [ ] Guest đọc được trip public
-- [ ] Guest đọc được planner của trip public
-- [ ] Guest không đọc được trip private
-- [ ] Owner vẫn có full CRUD trên trip của mình
-- [ ] Có test permission cho public/private trip
+- [x] Chi tiết backlog tại `16_backend-phase-06-public-trip-sharing-backlog.md`
+- [x] Public read cho trip có `visibility = public`
+- [x] Guest đọc được trip public
+- [x] Guest đọc được planner của trip public
+- [x] Guest không đọc được trip private
+- [x] Owner vẫn có full CRUD trên trip của mình
+- [x] Có test permission cho public/private trip
 
 ## Phase 07 - Community minimal
 
@@ -256,20 +260,20 @@ Status: `Todo`
 
 ### Slice BE-B
 
-- [ ] `PlanNode` schema
-- [ ] `planning` module
-- [ ] planner read API
+- [x] `PlanNode` schema
+- [x] `planning` module
+- [x] planner read API
 
 ### Slice BE-C
 
-- [ ] node create/update/delete APIs
-- [ ] planner validation rules
-- [ ] planner permission tests
+- [x] node create/update/delete APIs
+- [x] planner validation rules
+- [x] planner permission tests
 
 ### Slice BE-D
 
-- [ ] budget mode logic
-- [ ] budget summary alignment
+- [~] budget mode logic
+- [~] budget summary alignment
 - [ ] migration strategy from itinerary
 
 ### Slice BE-E

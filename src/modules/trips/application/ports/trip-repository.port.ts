@@ -39,6 +39,7 @@ export interface ListTripsForUserResult {
 
 export interface TripRepositoryPort {
   create(input: CreateTripRecordInput): Promise<Trip>;
+  findById(tripId: string): Promise<Trip | null>;
   findByIdForUser(input: FindTripForUserInput): Promise<Trip | null>;
   listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult>;
   update(trip: Trip): Promise<Trip>;
