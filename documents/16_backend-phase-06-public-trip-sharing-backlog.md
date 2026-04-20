@@ -6,6 +6,7 @@
 
 Phase này tập trung vào:
 
+- public trip list API
 - public trip detail API
 - public planner read API
 - permission rules cho `public/private`
@@ -110,6 +111,16 @@ Public page có thể dùng:
 `GET /api/v1/trips/:tripId/budget-summary` vẫn là owner/auth contract ở phase này, tránh kéo thêm permission matrix vào cùng lúc.
 
 ## Contract backend cần bám sau Phase 06
+
+## Public trip list
+
+### Endpoint
+
+- `GET /api/v1/public/trips?page=0&size=20&sort=startDate,asc`
+
+### Response shape mục tiêu
+
+Giữ cùng shape list/meta hiện tại nhưng chỉ trả `visibility = public`.
 
 ## Public trip detail
 
@@ -223,6 +234,8 @@ Machine-readable error response phải giữ pattern hiện có của app.
 
 ### Việc cần làm
 
+- [x] Tạo controller public cho trip list
+- [x] Mount `GET /api/v1/public/trips`
 - [x] Tạo controller public cho trip detail
 - [x] Mount `GET /api/v1/public/trips/:tripId`
 - [x] Reuse `TripResponseDto` nếu không có blocker contract
@@ -280,6 +293,7 @@ Machine-readable error response phải giữ pattern hiện có của app.
 
 ### Integration
 
+- [x] `GET /api/v1/public/trips` trả list đúng shape
 - [x] `GET /api/v1/public/trips/:tripId` trả detail đúng shape
 - [x] `GET /api/v1/public/trips/:tripId/planner` trả planner đúng shape
 - [x] `404` khi trip không tồn tại
@@ -326,6 +340,7 @@ Phase này chỉ được gọi là done khi:
 
 - guest có thể đọc `trip detail` của trip public qua public endpoint
 - guest có thể đọc `planner` của trip public qua public endpoint
+- guest có thể discovery trip public qua public list endpoint
 - guest nhận `403` rõ ràng cho trip private
 - guest nhận `404` rõ ràng cho trip không tồn tại
 - owner-only CRUD routes hiện tại vẫn giữ nguyên auth boundary

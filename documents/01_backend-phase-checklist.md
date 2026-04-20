@@ -198,6 +198,7 @@ Status: `Partial`
 Status: `Completed`
 
 - [x] Chi tiết backlog tại `16_backend-phase-06-public-trip-sharing-backlog.md`
+- [x] Guest có public trip list để discovery
 - [x] Public read cho trip có `visibility = public`
 - [x] Guest đọc được trip public
 - [x] Guest đọc được planner của trip public

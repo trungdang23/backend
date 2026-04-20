@@ -431,6 +431,92 @@ describe('Trips integration', () => {
     expect(missingDetailBody.error.code).toBe('NOT_FOUND');
     expect(missingDetailBody.error.message).toBe('Trip not found.');
   });
+
+  it('lists only public trips without authentication', async () => {
+    const traveler = await registerUser(expressApp, 'trips.public.list@example.com');
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Public Da Lat',
+        startDate: '2026-05-01',
+        endDate: '2026-05-03',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1800000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Private Da Nang',
+        startDate: '2026-04-10',
+        endDate: '2026-04-12',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1500000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      },
+    });
+
+    const secondTraveler = await registerUser(
+      expressApp,
+      'trips.public.list.two@example.com',
+    );
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${secondTraveler.accessToken}`,
+      },
+      body: {
+        name: 'Public Hoi An',
+        startDate: '2026-06-11',
+        endDate: '2026-06-14',
+        budgetMode: 'manual',
+        manualBudgetAmount: 2600000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+
+    const listResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/trips?page=0&size=20&sort=startDate,asc',
+    });
+    const listBody = listResponse.body as {
+      success: boolean;
+      data: Array<{
+        name: string;
+        visibility: string;
+      }>;
+      meta: {
+        totalElements: number;
+      };
+    };
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listBody.success).toBe(true);
+    expect(listBody.data.map((trip) => trip.name)).toEqual([
+      'Public Da Lat',
+      'Public Hoi An',
+    ]);
+    expect(listBody.data.every((trip) => trip.visibility === 'public')).toBe(
+      true,
+    );
+    expect(listBody.meta.totalElements).toBe(2);
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {

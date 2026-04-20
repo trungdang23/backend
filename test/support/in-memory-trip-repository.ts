@@ -1,6 +1,7 @@
 import type {
   CreateTripRecordInput,
   FindTripForUserInput,
+  ListPublicTripsInput,
   ListTripsForUserInput,
   ListTripsForUserResult,
   TripRepositoryPort,
@@ -50,6 +51,19 @@ export class InMemoryTripRepository implements TripRepositoryPort {
 
   findById(tripId: string): Promise<Trip | null> {
     return Promise.resolve(this.trips.get(tripId) ?? null);
+  }
+
+  listPublic(input: ListPublicTripsInput): Promise<ListTripsForUserResult> {
+    const filteredTrips = Array.from(this.trips.values())
+      .filter((trip) => trip.visibility === 'public')
+      .sort(createTripComparator(input.sort));
+
+    const offset = input.page * input.size;
+
+    return Promise.resolve({
+      trips: filteredTrips.slice(offset, offset + input.size),
+      totalElements: filteredTrips.length,
+    });
   }
 
   listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult> {

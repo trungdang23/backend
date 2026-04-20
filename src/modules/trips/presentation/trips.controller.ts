@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -16,13 +15,6 @@ import { buildSuccessResponse } from '../../../app/http/api-response';
 import type { AuthenticatedUser } from '../../auth/application/authenticated-user';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
-import {
-  DEFAULT_TRIP_SORT,
-  TRIP_SORT_FIELDS,
-  type TripSort,
-  type TripSortDirection,
-  type TripSortField,
-} from '../application/trip-sort';
 import { CreateTripService } from '../application/services/create-trip.service';
 import { DeleteTripService } from '../application/services/delete-trip.service';
 import { GetTripDetailService } from '../application/services/get-trip-detail.service';
@@ -31,6 +23,7 @@ import { UpdateTripService } from '../application/services/update-trip.service';
 import { CreateTripRequestDto } from './dto/create-trip-request.dto';
 import { ListTripsQueryDto } from './dto/list-trips-query.dto';
 import { TripResponseDto } from './dto/trip-response.dto';
+import { formatTripSort, parseTripSort } from './trip-sort-query';
 import { UpdateTripRequestDto } from './dto/update-trip-request.dto';
 
 @ApiTags('trips')
@@ -150,35 +143,4 @@ export class TripsController {
 
     return TripResponseDto.from(trip);
   }
-}
-
-function parseTripSort(sortValue?: string): TripSort {
-  if (sortValue === undefined || sortValue.trim().length === 0) {
-    return DEFAULT_TRIP_SORT;
-  }
-
-  const [field, direction, ...rest] = sortValue.trim().split(',');
-
-  if (rest.length > 0) {
-    throw new BadRequestException(
-      'Sort must follow the format "<field>,<direction>".',
-    );
-  }
-
-  if (!TRIP_SORT_FIELDS.includes(field as TripSortField)) {
-    throw new BadRequestException('Trip sort field is not supported.');
-  }
-
-  if (direction !== 'asc' && direction !== 'desc') {
-    throw new BadRequestException('Trip sort direction must be asc or desc.');
-  }
-
-  return {
-    field: field as TripSortField,
-    direction: direction as TripSortDirection,
-  };
-}
-
-function formatTripSort(sort: TripSort): string {
-  return `${sort.field},${sort.direction}`;
 }

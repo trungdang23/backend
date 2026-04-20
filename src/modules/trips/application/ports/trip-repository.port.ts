@@ -32,6 +32,12 @@ export interface ListTripsForUserInput {
   sort: TripSort;
 }
 
+export interface ListPublicTripsInput {
+  page: number;
+  size: number;
+  sort: TripSort;
+}
+
 export interface ListTripsForUserResult {
   trips: Trip[];
   totalElements: number;
@@ -41,6 +47,7 @@ export interface TripRepositoryPort {
   create(input: CreateTripRecordInput): Promise<Trip>;
   findById(tripId: string): Promise<Trip | null>;
   findByIdForUser(input: FindTripForUserInput): Promise<Trip | null>;
+  listPublic(input: ListPublicTripsInput): Promise<ListTripsForUserResult>;
   listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult>;
   update(trip: Trip): Promise<Trip>;
   delete(input: FindTripForUserInput): Promise<Trip | null>;

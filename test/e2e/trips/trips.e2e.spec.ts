@@ -266,4 +266,65 @@ describe('Trips e2e', () => {
     expect(detailBody.data.id).toBe(createBody.data.id);
     expect(detailBody.data.visibility).toBe('public');
   });
+
+  it('lists public trips without authentication', async () => {
+    const registerResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/register',
+      body: {
+        email: 'trips.public.list.e2e@example.com',
+        password: 'password123',
+        displayName: 'Public List Traveler',
+      },
+    });
+    const registerBody = registerResponse.body as {
+      data: {
+        tokens: {
+          accessToken: string;
+        };
+      };
+    };
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${registerBody.data.tokens.accessToken}`,
+      },
+      body: {
+        name: 'Public Phu Quoc',
+        startDate: '2026-10-08',
+        endDate: '2026-10-11',
+        budgetMode: 'manual',
+        manualBudgetAmount: 4600000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'public',
+      },
+    });
+
+    const listResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/trips?page=0&size=20&sort=startDate,asc',
+    });
+    const listBody = listResponse.body as {
+      success: boolean;
+      data: Array<{
+        name: string;
+        visibility: string;
+      }>;
+      meta: {
+        totalElements: number;
+      };
+    };
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listBody.success).toBe(true);
+    expect(listBody.data.some((trip) => trip.name === 'Public Phu Quoc')).toBe(
+      true,
+    );
+    expect(listBody.data.every((trip) => trip.visibility === 'public')).toBe(
+      true,
+    );
+    expect(listBody.meta.totalElements).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -37,6 +37,10 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
   - `GET /api/v1/trips/:id`
   - `PATCH /api/v1/trips/:id`
   - `DELETE /api/v1/trips/:id`
+- Public trips:
+  - `GET /api/v1/public/trips?page=&size=`
+  - `GET /api/v1/public/trips/:id`
+  - `GET /api/v1/public/trips/:id/planner`
 - Planner:
   - `GET /api/v1/trips/:id/planner`
   - `POST /api/v1/nodes`

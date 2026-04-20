@@ -6,6 +6,7 @@ import { Trip } from '../../domain/trip';
 import type {
   CreateTripRecordInput,
   FindTripForUserInput,
+  ListPublicTripsInput,
   ListTripsForUserInput,
   ListTripsForUserResult,
   TripRepositoryPort,
@@ -57,6 +58,31 @@ export class PrismaTripRepository implements TripRepositoryPort {
     });
 
     return record === null ? null : toTrip(record);
+  }
+
+  async listPublic(
+    input: ListPublicTripsInput,
+  ): Promise<ListTripsForUserResult> {
+    const [records, totalElements] = await this.prisma.$transaction([
+      this.prisma.trip.findMany({
+        where: {
+          visibility: 'public',
+        },
+        orderBy: buildTripOrderBy(input.sort),
+        skip: input.page * input.size,
+        take: input.size,
+      }),
+      this.prisma.trip.count({
+        where: {
+          visibility: 'public',
+        },
+      }),
+    ]);
+
+    return {
+      trips: records.map((record) => toTrip(record)),
+      totalElements,
+    };
   }
 
   async listByUser(
