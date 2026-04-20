@@ -115,7 +115,7 @@ function resolveDisplayCurrency(
   }
 
   if (totalsByCurrency.length === 1) {
-    return totalsByCurrency[0]!.currency;
+    return totalsByCurrency[0].currency;
   }
 
   const compatibilityCurrencyTotal = totalsByCurrency.find(
