@@ -32,3 +32,8 @@
 - Run the smallest relevant backend checks after changes, such as unit tests, integration tests, or compile validation once scripts exist.
 - When changing API behavior, summarize the affected endpoints, payload shape, or contract assumptions in the final handoff.
 - If the backend package is not scaffolded yet, state that verification is limited to file review.
+
+## Backend Publishing
+
+- After finishing backend changes and relevant verification, commit the backend repo and push to `origin/main` automatically unless the user explicitly says not to push.
+- If the backend worktree has unrelated changes or failed verification that make a direct push unsafe, stop and explain the blocker instead of guessing.
