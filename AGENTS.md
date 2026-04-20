@@ -15,6 +15,7 @@
 ## Backend Rules
 
 - Structure code by domain or module once the service is scaffolded; avoid a flat folder of unrelated handlers.
+- Before implementing any backend task, write or update a task-specific backlog/checklist in the nearest relevant backend document so scope, rollout order, and deferred items are explicit.
 - Keep request validation at the boundary and keep business rules in service-layer code.
 - Use explicit data contracts for API input and output; do not leak persistence models directly to clients.
 - Prefer additive, backward-compatible API changes unless the task explicitly includes a breaking change.
