@@ -41,6 +41,10 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
   - `GET /api/v1/public/trips?page=&size=`
   - `GET /api/v1/public/trips/:id`
   - `GET /api/v1/public/trips/:id/planner`
+- Posts:
+  - `POST /api/v1/posts`
+  - `GET /api/v1/posts?page=&size=`
+  - `GET /api/v1/posts/:id`
 - Planner:
   - `GET /api/v1/trips/:id/planner`
   - `POST /api/v1/nodes`

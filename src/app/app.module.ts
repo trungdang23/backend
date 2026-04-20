@@ -6,6 +6,7 @@ import { BudgetsModule } from '../modules/budgets/budgets.module';
 import { HealthModule } from '../modules/health/health.module';
 import { ItinerariesModule } from '../modules/itineraries/itineraries.module';
 import { PlanningModule } from '../modules/planning/planning.module';
+import { PostsModule } from '../modules/posts/posts.module';
 import { TripsModule } from '../modules/trips/trips.module';
 import { UsersModule } from '../modules/users/users.module';
 import { PrismaModule } from '../shared/infrastructure/prisma/prisma.module';
@@ -32,6 +33,7 @@ import { RequestContextModule } from './request-context/request-context.module';
     HealthModule,
     ItinerariesModule,
     PlanningModule,
+    PostsModule,
     TripsModule,
     UsersModule,
   ],

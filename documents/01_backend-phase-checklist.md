@@ -48,7 +48,7 @@
 - [x] Đã có `budgetMode/manualBudget`
 - [~] Budget summary vẫn còn đọc từ itinerary bridge
 - [x] Đã có public trip read
-- [ ] Chưa có `posts`
+- [x] Đã có `posts`
 - [x] Đã có `logout` endpoint đúng target
 
 ## Tổng quan phase
@@ -62,7 +62,7 @@
 | 04    | Planner core trên `PlanNode`                    | Completed |
 | 05    | Budget logic và migration khỏi itinerary bridge | Partial   |
 | 06    | Public trip sharing                             | Completed |
-| 07    | Community minimal                               | Todo      |
+| 07    | Community minimal                               | Completed |
 | 08    | Hardening, test, release readiness              | Todo      |
 
 ## Phase 00 - Re-baseline tài liệu và contract theo DRD mới
@@ -208,9 +208,10 @@ Status: `Completed`
 
 ## Phase 07 - Community minimal
 
-Status: `Todo`
+Status: `Completed`
 
-- [ ] Tạo schema `Post`
+- [x] Chi tiết backlog tại `17_backend-phase-07-community-minimal-backlog.md`
+- [x] Tạo schema `Post`
 - [ ] Chốt field tối thiểu:
   - `userId`
   - `tripId?`
@@ -218,16 +219,16 @@ Status: `Todo`
   - `content`
   - `coverImageUrl?`
   - `visibility = public`
-- [ ] `POST /api/v1/posts`
-- [ ] `GET /api/v1/posts`
-- [ ] Khuyến nghị thêm `GET /api/v1/posts/:postId` dù DRD ngắn chưa ghi rõ
+- [x] `POST /api/v1/posts`
+- [x] `GET /api/v1/posts`
+- [x] Khuyến nghị thêm `GET /api/v1/posts/:postId` dù DRD ngắn chưa ghi rõ
 - [ ] Nếu mở comment trong cùng epic:
   - create comment
   - list comments theo post
   - validate authenticated-only
-- [ ] Nếu comment chưa làm kịp:
+- [x] Nếu comment chưa làm kịp:
   - ghi rõ deferred item trong phase log và roadmap
-- [ ] Bổ sung unit/integration tests cho posts
+- [x] Bổ sung unit/integration tests cho posts
 
 ## Phase 08 - Hardening, test, release readiness
 
