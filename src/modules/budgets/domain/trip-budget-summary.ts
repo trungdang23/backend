@@ -13,6 +13,14 @@ interface TripBudgetSummaryProps {
   totalDays: number;
   totalActivities: number;
   isOverBudget: boolean;
+  hasMixedCurrencies: boolean;
+  totalsByCurrency: TripBudgetSummaryCurrencyTotal[];
+}
+
+export interface TripBudgetSummaryCurrencyTotal {
+  currency: string;
+  plannedAmount: number;
+  nodeCount: number;
 }
 
 export interface TripBudgetSummaryInput {
@@ -22,6 +30,8 @@ export interface TripBudgetSummaryInput {
   totalPlannedAmount: number;
   totalDays: number;
   totalActivities: number;
+  hasMixedCurrencies?: boolean;
+  totalsByCurrency?: TripBudgetSummaryCurrencyTotal[];
 }
 
 export class TripBudgetSummary extends ValueObject<TripBudgetSummaryProps> {
@@ -45,6 +55,13 @@ export class TripBudgetSummary extends ValueObject<TripBudgetSummaryProps> {
       input.totalActivities,
       'Total activities',
     );
+    const totalsByCurrency = normalizeTotalsByCurrency(
+      input.totalsByCurrency ?? [],
+    );
+    const hasMixedCurrencies = normalizeBoolean(
+      input.hasMixedCurrencies ?? false,
+      'Has mixed currencies',
+    );
 
     return new TripBudgetSummary({
       tripId,
@@ -55,6 +72,8 @@ export class TripBudgetSummary extends ValueObject<TripBudgetSummaryProps> {
       totalDays,
       totalActivities,
       isOverBudget: totalPlannedAmount > totalBudgetAmount,
+      hasMixedCurrencies,
+      totalsByCurrency,
     });
   }
 
@@ -88,6 +107,14 @@ export class TripBudgetSummary extends ValueObject<TripBudgetSummaryProps> {
 
   get isOverBudget(): boolean {
     return this.value.isOverBudget;
+  }
+
+  get hasMixedCurrencies(): boolean {
+    return this.value.hasMixedCurrencies;
+  }
+
+  get totalsByCurrency(): TripBudgetSummaryCurrencyTotal[] {
+    return [...this.value.totalsByCurrency];
   }
 }
 
@@ -133,4 +160,25 @@ function normalizeCount(value: number, label: string): number {
   }
 
   return value;
+}
+
+function normalizeBoolean(value: boolean, label: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw new DomainError(`${label} must be a boolean.`);
+  }
+
+  return value;
+}
+
+function normalizeTotalsByCurrency(
+  value: TripBudgetSummaryCurrencyTotal[],
+): TripBudgetSummaryCurrencyTotal[] {
+  return value.map((entry) => ({
+    currency: normalizeCurrency(entry.currency),
+    plannedAmount: normalizeAmount(
+      entry.plannedAmount,
+      'Planned amount by currency',
+    ),
+    nodeCount: normalizeCount(entry.nodeCount, 'Node count by currency'),
+  }));
 }

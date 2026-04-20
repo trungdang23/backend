@@ -57,10 +57,10 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
 ### Trạng thái migration hiện tại
 
 - Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, và `budget-summary`.
-- `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; bridge hiện chủ yếu còn phục vụ budget summary hiện tại và migration support.
+- `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
 - Khi triển khai tiếp, ưu tiên:
-  1. chuyển budget summary sang đọc từ `PlanNode`
-  2. chỉ sau đó mới mở rộng `posts/comments`
+  1. hoàn tất runtime verification cho budget summary `PlanNode`-based và mixed-currency breakdown
+  2. chốt migration/cleanup plan cho legacy itinerary support
   3. hoàn tất hardening và release safety cho public/community flows
 
 ## Run Local

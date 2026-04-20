@@ -49,7 +49,7 @@ describe('Itineraries integration', () => {
     itineraryRepository.clear();
   });
 
-  it('adds itinerary days and activities, then calculates the trip budget summary', async () => {
+  it('adds, updates, and deletes itinerary days and activities through the legacy bridge routes', async () => {
     const traveler = await registerUser(expressApp, 'itinerary@example.com');
     const tripId = await createTrip(expressApp, traveler.accessToken);
 
@@ -147,30 +147,6 @@ describe('Itineraries integration', () => {
     expect(itineraryBody.data.days[0]?.activities[0]?.endsAt).toBe('21:00');
     expect(itineraryBody.data.days[0]?.activities[0]?.imageUrls).toHaveLength(1);
 
-    const budgetSummaryResponse = await dispatchRequest(expressApp, {
-      method: 'GET',
-      path: `/api/v1/trips/${tripId}/budget-summary`,
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-    });
-    const budgetSummaryBody = budgetSummaryResponse.body as {
-      success: boolean;
-      data: {
-        totalBudgetAmount: number;
-        totalPlannedAmount: number;
-        remainingAmount: number;
-        isOverBudget: boolean;
-      };
-    };
-
-    expect(budgetSummaryResponse.statusCode).toBe(200);
-    expect(budgetSummaryBody.success).toBe(true);
-    expect(budgetSummaryBody.data.totalBudgetAmount).toBe(1_000_000);
-    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(350_000);
-    expect(budgetSummaryBody.data.remainingAmount).toBe(650_000);
-    expect(budgetSummaryBody.data.isOverBudget).toBe(false);
-
     const updateActivityResponse = await dispatchRequest(expressApp, {
       method: 'PATCH',
       path: `/api/v1/trips/${tripId}/itinerary/days/${createDayBody.data.id}/activities/${createActivityBody.data.id}`,
@@ -199,27 +175,6 @@ describe('Itineraries integration', () => {
     });
 
     expect(updateDayResponse.statusCode).toBe(200);
-
-    const overBudgetResponse = await dispatchRequest(expressApp, {
-      method: 'GET',
-      path: `/api/v1/trips/${tripId}/budget-summary`,
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-    });
-    const overBudgetBody = overBudgetResponse.body as {
-      success: boolean;
-      data: {
-        totalPlannedAmount: number;
-        remainingAmount: number;
-        isOverBudget: boolean;
-      };
-    };
-
-    expect(overBudgetResponse.statusCode).toBe(200);
-    expect(overBudgetBody.data.totalPlannedAmount).toBe(1_375_000);
-    expect(overBudgetBody.data.remainingAmount).toBe(-375_000);
-    expect(overBudgetBody.data.isOverBudget).toBe(true);
 
     const deleteActivityResponse = await dispatchRequest(expressApp, {
       method: 'DELETE',

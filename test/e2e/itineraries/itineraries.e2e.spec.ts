@@ -41,7 +41,7 @@ describe('Itineraries e2e', () => {
     await app.close();
   });
 
-  it('adds an itinerary day and activity, then returns the budget summary through the HTTP app pipeline', async () => {
+  it('adds an itinerary day and activity through the HTTP app pipeline', async () => {
     const registerResponse = await dispatchRequest(expressApp, {
       method: 'POST',
       path: '/api/v1/auth/register',
@@ -124,30 +124,29 @@ describe('Itineraries e2e', () => {
 
     expect(createActivityResponse.statusCode).toBe(201);
 
-    const budgetSummaryResponse = await dispatchRequest(expressApp, {
+    const itineraryResponse = await dispatchRequest(expressApp, {
       method: 'GET',
-      path: `/api/v1/trips/${createTripBody.data.id}/budget-summary`,
+      path: `/api/v1/trips/${createTripBody.data.id}/itinerary`,
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
     });
-    const budgetSummaryBody = budgetSummaryResponse.body as {
+    const itineraryBody = itineraryResponse.body as {
       success: boolean;
       data: {
-        totalBudgetAmount: number;
-        totalPlannedAmount: number;
-        remainingAmount: number;
-        totalDays: number;
-        totalActivities: number;
+        days: Array<{
+          title: string;
+          activities: Array<{
+            title: string;
+          }>;
+        }>;
       };
     };
 
-    expect(budgetSummaryResponse.statusCode).toBe(200);
-    expect(budgetSummaryBody.success).toBe(true);
-    expect(budgetSummaryBody.data.totalBudgetAmount).toBe(2_000_000);
-    expect(budgetSummaryBody.data.totalPlannedAmount).toBe(550_000);
-    expect(budgetSummaryBody.data.remainingAmount).toBe(1_450_000);
-    expect(budgetSummaryBody.data.totalDays).toBe(1);
-    expect(budgetSummaryBody.data.totalActivities).toBe(1);
+    expect(itineraryResponse.statusCode).toBe(200);
+    expect(itineraryBody.success).toBe(true);
+    expect(itineraryBody.data.days).toHaveLength(1);
+    expect(itineraryBody.data.days[0]?.title).toBe('Hoi An center');
+    expect(itineraryBody.data.days[0]?.activities[0]?.title).toBe('Lantern Walk');
   });
 });

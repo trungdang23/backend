@@ -290,6 +290,8 @@ Status: `Completed`
   - `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`
   - `GET /api/v1/trips/:tripId/budget-summary`
 - `2026-04-17`: Bổ sung in-memory itinerary repository cho test app pipeline, unit test cho budget summary rule, Prisma repository integration, HTTP integration, và e2e cho itinerary/budget flow.
+- `2026-04-20`: Cutover `GetTripBudgetSummaryService` sang đọc `PlanNode`, đếm `day/activity` từ planner tree, và thêm additive mixed-currency breakdown qua `hasMixedCurrencies` + `totalsByCurrency`.
+- `2026-04-20`: Tách budget verification thành suite riêng ở `test/unit/modules/budgets`, `test/integration/budgets`, và `test/e2e/budgets`, đồng thời gỡ assertion budget khỏi suite `itineraries` để legacy bridge test quay về đúng scope.
 
 ### Verification
 
@@ -302,6 +304,8 @@ Status: `Completed`
 - `pnpm exec jest --config ./test/jest.integration.config.ts test/integration/itineraries/prisma-itinerary.repository.integration.spec.ts test/integration/itineraries/itineraries.integration.spec.ts --runInBand` pass
 - `pnpm exec jest --config ./test/jest.e2e.config.ts test/e2e/itineraries/itineraries.e2e.spec.ts --runInBand` pass
 - `pnpm lint` pass
+- `2026-04-20`: File review cho follow-up cutover `PlanNode` và budget-specific suites pass
+- `2026-04-20`: Runtime verify follow-up bị chặn vì shell hiện tại không có `node/pnpm` tương thích với `pnpm`-linked `node_modules`, nên chưa thể xác nhận lại `jest`/`nest build` trong session này
 
 ### Artifact
 
@@ -311,15 +315,19 @@ Status: `Completed`
 - `backend/src/modules/budgets/**`
 - `backend/test/support/in-memory-itinerary.repository.ts`
 - `backend/test/unit/modules/budgets/domain/trip-budget-summary.spec.ts`
+- `backend/test/unit/modules/budgets/application/services/get-trip-budget-summary.service.spec.ts`
+- `backend/test/integration/budgets/budgets.integration.spec.ts`
+- `backend/test/e2e/budgets/budgets.e2e.spec.ts`
 - `backend/test/integration/itineraries/prisma-itinerary.repository.integration.spec.ts`
 - `backend/test/integration/itineraries/itineraries.integration.spec.ts`
 - `backend/test/e2e/itineraries/itineraries.e2e.spec.ts`
 
 ### Ghi chú
 
-- Budget summary hiện dùng tổng `activity.costAmount` theo cùng currency với `trip.budgetCurrency`; phase sau mới cần mở rộng nếu product cho phép multi-currency hoặc transaction-style budget ledger.
+- Budget summary owner flow hiện đã đọc từ `PlanNode` thay vì itinerary bridge; top-level summary fields vẫn được giữ như compatibility layer cho frontend hiện tại.
+- Mixed-currency hiện không conversion ngầm; source đã trả additive breakdown theo từng currency, còn policy sâu hơn cho transaction ledger hoặc FX vẫn là phase sau.
 - Từ trạng thái này, frontend phase bridge có thể nối API thật cho timeline/day planner và budget summary mà không cần giữ placeholder backend-blocked nữa.
-- Source hiện tại đã đi xa hơn phase bridge này: planner core trên `PlanNode` đã có source thật, còn budget summary cutover vẫn là phần việc mở của checklist `Phase 05`.
+- Source hiện tại đã đi xa hơn phase bridge này: planner core và budget summary owner flow đều đã chạy trên `PlanNode`, còn phần việc mở của checklist `Phase 05` là runtime verify, migration strategy, và cleanup legacy support.
 
 ## Phase 06
 

@@ -178,20 +178,22 @@ Status: `Completed`
 
 Status: `Partial`
 
-- [ ] Chuyển budget summary sang đọc từ `PlanNode`
-- [~] Budget summary baseline đã có, nhưng vẫn đang đọc từ itinerary bridge
-- [ ] Hỗ trợ:
+- [x] Chi tiết backlog tại `18_backend-phase-05-budget-alignment-backlog.md`
+- [x] Chuyển budget summary sang đọc từ `PlanNode`
+- [x] Budget summary owner flow không còn đọc từ itinerary bridge
+- [x] Hỗ trợ:
   - `auto -> sum(costAmount)`
   - `manual -> manualBudget`
-- [~] Có response budget summary cho frontend, nhưng chưa phải contract `PlanNode`-based cuối cùng
+- [~] Có response budget summary `PlanNode`-based cho frontend owner flow, kèm additive mixed-currency breakdown
 - [~] Chiến lược chuyển tiếp hiện tại:
   - flow planner chính đã freeze khỏi itinerary bridge
   - `itinerary` còn giữ cho budget/migration support
+- [~] Source đã có suite budget riêng ở mức unit/integration/e2e, nhưng runtime verify còn bị chặn bởi môi trường shell hiện tại chưa có `node/pnpm` tương thích với `pnpm`-linked `node_modules`
 - [ ] Thiết kế script hoặc strategy migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`
 - [ ] Chốt cutover plan:
   - thời điểm backend ngừng đọc budget từ itinerary bridge
   - thời điểm có thể cleanup legacy itinerary support
-- [ ] Bổ sung test đảm bảo budget không lệch sau migration
+- [~] Bổ sung test đảm bảo budget không lệch sau migration
 
 ## Phase 06 - Public trip sharing
 
@@ -274,7 +276,7 @@ Status: `Todo`
 
 ### Slice BE-D
 
-- [~] budget mode logic
+- [x] budget mode logic
 - [~] budget summary alignment
 - [ ] migration strategy from itinerary
 
