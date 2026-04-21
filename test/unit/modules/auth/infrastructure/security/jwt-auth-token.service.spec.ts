@@ -19,10 +19,18 @@ describe('JwtAuthTokenService', () => {
       refreshTokenTtl: '7d',
       ...overrides,
     };
+    const app = {
+      name: 'journey-backend',
+      nodeEnv: 'test',
+    } as const;
 
     return {
       get(path: string) {
         switch (path) {
+          case 'app.name':
+            return app.name;
+          case 'app.nodeEnv':
+            return app.nodeEnv;
           case 'auth.jwtIssuer':
             return auth.jwtIssuer;
           case 'auth.accessTokenSecret':
@@ -55,11 +63,13 @@ describe('JwtAuthTokenService', () => {
       email: 'traveler@example.com',
       roles: ['traveler'],
     });
-    await expect(
-      service.verifyRefreshToken(tokens.refreshToken),
-    ).resolves.toEqual({
-      userId: 'user-01',
-    });
+    const refreshTokenSubject = await service.verifyRefreshToken(
+      tokens.refreshToken,
+    );
+
+    expect(refreshTokenSubject.userId).toBe('user-01');
+    expect(refreshTokenSubject.tokenId).toEqual(expect.any(String));
+    expect(refreshTokenSubject.expiresAt).toBeInstanceOf(Date);
   });
 
   it('rejects a refresh token when used as an access token', async () => {
@@ -97,6 +107,29 @@ describe('JwtAuthTokenService', () => {
     ).rejects.toBeInstanceOf(UnauthorizedException);
 
     dateNowSpy.mockRestore();
+  });
+
+  it('rejects refresh tokens after they have been revoked', async () => {
+    const service = new JwtAuthTokenService(createConfigService());
+    const tokens = await service.issueTokens({
+      userId: 'user-01',
+      email: 'traveler@example.com',
+      roles: ['traveler'],
+    });
+
+    const revokedRefreshTokenSubject = await service.revokeRefreshToken(
+      tokens.refreshToken,
+    );
+
+    expect(revokedRefreshTokenSubject.userId).toBe('user-01');
+    expect(revokedRefreshTokenSubject.tokenId).toEqual(expect.any(String));
+    expect(revokedRefreshTokenSubject.expiresAt).toBeInstanceOf(Date);
+    await expect(
+      service.verifyRefreshToken(tokens.refreshToken),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      service.revokeRefreshToken(tokens.refreshToken),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects unsupported ttl formats', () => {

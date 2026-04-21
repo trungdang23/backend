@@ -15,6 +15,38 @@
 - Status: `Completed`
 - Completed at: `2026-04-18`
 
+## Current pass - 2026-04-21
+
+### Trigger
+
+- Production smoke đã xác nhận refresh token cũ vẫn tiếp tục dùng được sau:
+  - `POST /api/v1/auth/logout`
+  - `POST /api/v1/auth/refresh`
+- Vấn đề này làm contract auth nhìn như đủ endpoint nhưng session invalidation chưa đúng kỳ vọng runtime.
+
+### Scope của lượt hardening này
+
+- Giữ nguyên contract HTTP hiện tại cho:
+  - `POST /api/v1/auth/refresh`
+  - `POST /api/v1/auth/logout`
+- Thêm revoke state cho refresh token trên runtime hiện tại mà không kéo thêm DB migration mới.
+- Đảm bảo refresh token cũ bị invalidate sau khi refresh thành công.
+- Đảm bảo refresh token đã logout không thể dùng lại.
+- Bổ sung unit/integration/e2e coverage cho cả hai behavior trên.
+- Cập nhật README/runbook để phản ánh nơi runtime lưu revoke state.
+
+### Rollout strategy
+
+- Dùng persisted revoke store theo `jti` của refresh token trên local filesystem.
+- State path sẽ bám app state directory hiện tại của máy chạy service, không tạo thêm dependency production mới.
+- Giải pháp này được chấp nhận cho deploy model single-machine/single-instance hiện tại.
+
+### Deferred sau lượt này
+
+- Session persistence hoặc multi-device session management trong database.
+- Cross-instance revoke propagation cho môi trường nhiều replica.
+- Admin/session introspection API.
+
 ## Trạng thái hiện tại
 
 Đã có:

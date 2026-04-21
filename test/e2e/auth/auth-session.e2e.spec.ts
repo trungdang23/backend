@@ -101,6 +101,7 @@ describe('Auth session e2e', () => {
       data: {
         tokens: {
           accessToken: string;
+          refreshToken: string;
         };
       };
     };
@@ -108,11 +109,20 @@ describe('Auth session e2e', () => {
     expect(refreshResponse.statusCode).toBe(200);
     expect(refreshBody.success).toBe(true);
     expect(refreshBody.data.tokens.accessToken).toEqual(expect.any(String));
+    expect(refreshBody.data.tokens.refreshToken).toEqual(expect.any(String));
+
+    const reusedRefreshResponse = await request(httpServer)
+      .post('/api/v1/auth/refresh')
+      .send({
+        refreshToken: loginBody.data.tokens.refreshToken,
+      });
+
+    expect(reusedRefreshResponse.statusCode).toBe(401);
 
     const logoutResponse = await request(httpServer)
       .post('/api/v1/auth/logout')
       .send({
-        refreshToken: loginBody.data.tokens.refreshToken,
+        refreshToken: refreshBody.data.tokens.refreshToken,
       });
     const logoutBody = logoutResponse.body as {
       success: boolean;
@@ -124,5 +134,13 @@ describe('Auth session e2e', () => {
     expect(logoutResponse.statusCode).toBe(200);
     expect(logoutBody.success).toBe(true);
     expect(logoutBody.data.loggedOut).toBe(true);
+
+    const refreshAfterLogoutResponse = await request(httpServer)
+      .post('/api/v1/auth/refresh')
+      .send({
+        refreshToken: refreshBody.data.tokens.refreshToken,
+      });
+
+    expect(refreshAfterLogoutResponse.statusCode).toBe(401);
   });
 });

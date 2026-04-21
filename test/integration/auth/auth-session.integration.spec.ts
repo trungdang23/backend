@@ -277,6 +277,24 @@ describe('Auth session integration', () => {
     expect(body.data.tokens.refreshToken).not.toBe(
       sessionBody.data.tokens.refreshToken,
     );
+
+    const reusedRefreshResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/refresh',
+      body: {
+        refreshToken: sessionBody.data.tokens.refreshToken,
+      },
+    });
+    const reusedRefreshBody = reusedRefreshResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(reusedRefreshResponse.statusCode).toBe(401);
+    expect(reusedRefreshBody.success).toBe(false);
+    expect(reusedRefreshBody.error.code).toBe('UNAUTHORIZED');
   });
 
   it('logs a user out with a valid refresh token', async () => {
@@ -313,6 +331,24 @@ describe('Auth session integration', () => {
     expect(response.statusCode).toBe(200);
     expect(body.success).toBe(true);
     expect(body.data.loggedOut).toBe(true);
+
+    const refreshAfterLogoutResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/auth/refresh',
+      body: {
+        refreshToken: sessionBody.data.tokens.refreshToken,
+      },
+    });
+    const refreshAfterLogoutBody = refreshAfterLogoutResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(refreshAfterLogoutResponse.statusCode).toBe(401);
+    expect(refreshAfterLogoutBody.success).toBe(false);
+    expect(refreshAfterLogoutBody.error.code).toBe('UNAUTHORIZED');
   });
 
   it('rejects malformed logout requests', async () => {

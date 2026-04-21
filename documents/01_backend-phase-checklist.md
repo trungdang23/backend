@@ -102,8 +102,9 @@ Status: `Completed`
 - [x] Rate limit cho public auth endpoints
 - [x] DTO và response envelope nhất quán
 - [x] Xác nhận contract logout:
-  - xóa refresh token ở phía server nếu có persistence
-  - hoặc chốt rõ MVP là stateless logout + clear token phía client
+  - refresh token bị revoke server-side khi `refresh` thành công
+  - refresh token bị revoke server-side khi `logout` thành công
+  - revoke state hiện được persist theo runtime state dir cho deploy model single-instance; DB-backed session store vẫn là bài toán scale phase sau
 - [x] Bổ sung e2e test cho `logout`
 
 ## Phase 03 - Trips aligned với DRD

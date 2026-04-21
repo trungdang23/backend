@@ -5,11 +5,13 @@ import type { AuthTokenService } from '../../../../../../src/modules/auth/applic
 
 describe('LogoutAuthSessionService', () => {
   it('returns a successful logout result for a valid refresh token', async () => {
-    const verifyRefreshToken = jest.fn().mockResolvedValue({
+    const revokeRefreshToken = jest.fn().mockResolvedValue({
       userId: 'user-01',
+      tokenId: 'refresh-token-01',
+      expiresAt: new Date('2026-04-21T10:00:00.000Z'),
     });
     const service = new LogoutAuthSessionService({
-      verifyRefreshToken,
+      revokeRefreshToken,
     } as unknown as AuthTokenService);
 
     const result = await service.execute({
@@ -19,12 +21,12 @@ describe('LogoutAuthSessionService', () => {
     expect(result).toEqual({
       loggedOut: true,
     });
-    expect(verifyRefreshToken).toHaveBeenCalledWith('valid-refresh-token');
+    expect(revokeRefreshToken).toHaveBeenCalledWith('valid-refresh-token');
   });
 
   it('rejects an invalid refresh token', async () => {
     const service = new LogoutAuthSessionService({
-      verifyRefreshToken: jest
+      revokeRefreshToken: jest
         .fn()
         .mockRejectedValue(
           new UnauthorizedException('Refresh token is invalid.'),

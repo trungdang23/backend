@@ -13,6 +13,7 @@ import type {
   AuthTokenService,
   RefreshTokenSubject,
 } from '../../application/ports/auth-token-service.port';
+import { RevokedRefreshTokenStore } from './revoked-refresh-token.store';
 
 type TokenKind = 'access' | 'refresh';
 
@@ -41,6 +42,7 @@ type RefreshTokenPayload = BaseTokenPayload;
 export class JwtAuthTokenService implements AuthTokenService {
   private readonly accessTokenLifetimeSeconds: number;
   private readonly refreshTokenLifetimeSeconds: number;
+  private readonly revokedRefreshTokenStore: RevokedRefreshTokenStore;
 
   constructor(
     private readonly configService: ConfigService<ApplicationConfig, true>,
@@ -52,6 +54,10 @@ export class JwtAuthTokenService implements AuthTokenService {
     this.refreshTokenLifetimeSeconds = this.parseDurationToSeconds(
       this.jwtRefreshTokenTtl,
       'JWT_REFRESH_TOKEN_TTL',
+    );
+    this.revokedRefreshTokenStore = new RevokedRefreshTokenStore(
+      this.appName,
+      this.nodeEnv,
     );
   }
 
@@ -105,18 +111,35 @@ export class JwtAuthTokenService implements AuthTokenService {
     });
   }
 
-  verifyRefreshToken(refreshToken: string): Promise<RefreshTokenSubject> {
-    return Promise.resolve().then(() => {
-      const payload = this.verifyToken<RefreshTokenPayload>(
-        refreshToken,
-        this.jwtRefreshTokenSecret,
-        'refresh',
-      );
+  async verifyRefreshToken(
+    refreshToken: string,
+  ): Promise<RefreshTokenSubject> {
+    const subject = this.parseRefreshToken(refreshToken);
+    const isRevoked = await this.revokedRefreshTokenStore.isRevoked(
+      subject.tokenId,
+    );
 
-      return {
-        userId: payload.sub,
-      };
-    });
+    if (isRevoked) {
+      throw new UnauthorizedException('Refresh token is invalid.');
+    }
+
+    return subject;
+  }
+
+  async revokeRefreshToken(
+    refreshToken: string,
+  ): Promise<RefreshTokenSubject> {
+    const subject = this.parseRefreshToken(refreshToken);
+    const hasConsumedToken = await this.revokedRefreshTokenStore.consume(
+      subject.tokenId,
+      subject.expiresAt,
+    );
+
+    if (!hasConsumedToken) {
+      throw new UnauthorizedException('Refresh token is invalid.');
+    }
+
+    return subject;
   }
 
   private signToken<TPayload extends BaseTokenPayload>(
@@ -200,6 +223,20 @@ export class JwtAuthTokenService implements AuthTokenService {
     return payload;
   }
 
+  private parseRefreshToken(refreshToken: string): RefreshTokenSubject {
+    const payload = this.verifyToken<RefreshTokenPayload>(
+      refreshToken,
+      this.jwtRefreshTokenSecret,
+      'refresh',
+    );
+
+    return {
+      userId: payload.sub,
+      tokenId: payload.jti,
+      expiresAt: new Date(payload.exp * 1000),
+    };
+  }
+
   private isAccessTokenPayload(
     payload: BaseTokenPayload,
   ): payload is AccessTokenPayload {
@@ -280,6 +317,14 @@ export class JwtAuthTokenService implements AuthTokenService {
 
   private get jwtIssuer(): string {
     return this.configService.get('auth.jwtIssuer', { infer: true });
+  }
+
+  private get appName(): string {
+    return this.configService.get('app.name', { infer: true });
+  }
+
+  private get nodeEnv(): ApplicationConfig['app']['nodeEnv'] {
+    return this.configService.get('app.nodeEnv', { infer: true });
   }
 
   private get jwtAccessTokenSecret(): string {

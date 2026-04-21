@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-- Date: `2026-04-14`
+- Date: `2026-04-21`
 - Status: `Accepted`
 - Scope: quản lý secret và runtime config cho repo `backend`
 
@@ -68,6 +68,7 @@
   - Slack token
 - Workflow deploy render `.env.production` từ GitHub configuration, ghi file đó trực tiếp vào `RUNTIME_ENV_PATH`, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
 - Khi `DATABASE_URL` trong env vừa render trỏ về `localhost` nhưng port chưa mở, workflow sẽ gọi `scripts/ensure-runtime-database.sh` để thử bật `docker compose up -d postgres` trước khi chạy migration.
+- Backend runtime hiện lưu refresh-token revoke state tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/revoked-refresh-tokens.json`; state này phải survive restart để `logout` và `refresh` không cho reuse token cũ sau deploy/restart.
 - Quyền truy cập vào máy deploy được chuyển từ mạng/SSH sang quyền của self-hosted runner service. Runner user vì vậy phải được coi như tài khoản production operator.
 
 ## Thiết lập trên GitHub
@@ -129,6 +130,7 @@
    - `DEPLOY_PATH`
    - thư mục cha của `RUNTIME_ENV_PATH`
    - state/log path mà `scripts/restart-production.sh` dùng
+   - file auth revoke state dưới `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/`
 3. Đảm bảo máy đích đã có `git`, `rsync`, `node`, `pnpm`, Docker/PostgreSQL runtime, và mọi phụ thuộc hệ thống cần cho build.
 4. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
 5. Đảm bảo service restart command của bạn thực sự dùng file env đó.
@@ -151,6 +153,7 @@
 - Kiểm tra `/api/v1/health`
 - Kiểm tra `pnpm status`
 - Kiểm tra log ứng dụng
+- Kiểm tra `logout` và `refresh` không cho reuse refresh token cũ nếu vừa chạy smoke auth
 - Kiểm tra migration đã apply
 - Kiểm tra không có file env thật nào bị track bởi git
 

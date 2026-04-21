@@ -25,8 +25,10 @@ describe('RefreshAuthSessionService', () => {
   it('reissues tokens for a valid refresh token subject', async () => {
     const repository = new InMemoryUserRepository();
     const user = seedUser(repository);
-    const verifyRefreshToken = jest.fn().mockResolvedValue({
+    const revokeRefreshToken = jest.fn().mockResolvedValue({
       userId: user.id,
+      tokenId: 'refresh-token-01',
+      expiresAt: new Date('2026-04-21T10:00:00.000Z'),
     });
     const issueTokens = jest.fn().mockResolvedValue({
       tokenType: 'Bearer',
@@ -38,7 +40,7 @@ describe('RefreshAuthSessionService', () => {
     const service = new RefreshAuthSessionService(
       repository as UserRepositoryPort,
       {
-        verifyRefreshToken,
+        revokeRefreshToken,
         issueTokens,
       } as unknown as AuthTokenService,
     );
@@ -48,7 +50,7 @@ describe('RefreshAuthSessionService', () => {
     });
 
     expect(result.accessToken).toBe('next-access-token');
-    expect(verifyRefreshToken).toHaveBeenCalledWith('valid-refresh-token');
+    expect(revokeRefreshToken).toHaveBeenCalledWith('valid-refresh-token');
     expect(issueTokens).toHaveBeenCalledWith({
       userId: user.id,
       email: user.email,
@@ -60,8 +62,10 @@ describe('RefreshAuthSessionService', () => {
     const service = new RefreshAuthSessionService(
       new InMemoryUserRepository() as UserRepositoryPort,
       {
-        verifyRefreshToken: jest.fn().mockResolvedValue({
+        revokeRefreshToken: jest.fn().mockResolvedValue({
           userId: 'missing-user',
+          tokenId: 'refresh-token-02',
+          expiresAt: new Date('2026-04-21T10:00:00.000Z'),
         }),
         issueTokens: jest.fn(),
       } as unknown as AuthTokenService,

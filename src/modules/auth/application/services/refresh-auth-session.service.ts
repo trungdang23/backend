@@ -30,7 +30,7 @@ export class RefreshAuthSessionService implements UseCase<
   ) {}
 
   async execute(input: RefreshAuthSessionInput): Promise<AuthTokens> {
-    const refreshTokenSubject = await this.authTokenService.verifyRefreshToken(
+    const refreshTokenSubject = await this.authTokenService.revokeRefreshToken(
       input.refreshToken,
     );
     const user = await this.userRepository.findById(refreshTokenSubject.userId);

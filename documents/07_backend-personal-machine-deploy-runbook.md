@@ -65,6 +65,7 @@ Các script này:
 
 - tự source file env tại `RUNTIME_ENV_PATH` hoặc `./.env.production`
 - ghi PID và log vào `${XDG_STATE_HOME:-$HOME/.local/state}/journey-backend`
+- dùng cùng state dir đó để persist refresh-token revoke state tại `auth/revoked-refresh-tokens.json`
 - clear `RUNNER_TRACKING_ID` trước khi detach backend runtime để process không bị self-hosted runner cleanup sau khi workflow kết thúc
 - dùng `curl` để xác minh `/api/v1/health` sau khi restart
 
@@ -75,6 +76,7 @@ Các script này:
 - `RUNTIME_ENV_PATH` phải là file path, không phải directory path.
 - Self-hosted runner phải online trên chính máy deploy.
 - Runner user phải có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và state dir của runtime scripts.
+- Nếu đổi `APP_NAME` hoặc `XDG_STATE_HOME`, phải giữ quyền ghi cho auth revoke state path tương ứng để logout/refresh rotation không bị fail runtime.
 - `push` vào `main` sẽ tự kích hoạt deploy; `Run workflow` vẫn được giữ để redeploy thủ công khi cần.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
 

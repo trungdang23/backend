@@ -27,7 +27,7 @@ export class LogoutAuthSessionService implements UseCase<
   async execute(
     input: LogoutAuthSessionInput,
   ): Promise<LogoutAuthSessionResult> {
-    await this.authTokenService.verifyRefreshToken(input.refreshToken);
+    await this.authTokenService.revokeRefreshToken(input.refreshToken);
 
     return {
       loggedOut: true,
