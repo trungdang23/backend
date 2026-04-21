@@ -6,6 +6,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common-production.sh"
 
 load_runtime_env
 
+readonly POSTGRES_CONTAINER_NAME="${POSTGRES_CONTAINER_NAME:-journey-backend-postgres}"
+
 if [ -z "${DATABASE_URL:-}" ]; then
   echo "DATABASE_URL is required to prepare the runtime database." >&2
   exit 1
@@ -70,7 +72,31 @@ local_database_target() {
 
 postgres_container_status() {
   docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
-    journey-backend-postgres 2>/dev/null || true
+    "${POSTGRES_CONTAINER_NAME}" 2>/dev/null || true
+}
+
+postgres_container_exists() {
+  docker inspect "${POSTGRES_CONTAINER_NAME}" >/dev/null 2>&1
+}
+
+ensure_existing_postgres_container() {
+  local container_status
+
+  if ! postgres_container_exists; then
+    return 1
+  fi
+
+  container_status="$(postgres_container_status)"
+
+  case "${container_status}" in
+    healthy | running)
+      echo "Found existing local PostgreSQL container ${POSTGRES_CONTAINER_NAME}; waiting for it to become reachable."
+      ;;
+    *)
+      echo "Found existing local PostgreSQL container ${POSTGRES_CONTAINER_NAME} with status ${container_status:-unknown}; starting it instead of creating a new compose service."
+      docker start "${POSTGRES_CONTAINER_NAME}" >/dev/null
+      ;;
+  esac
 }
 
 readarray -t database_endpoint < <(parse_database_url)
@@ -99,8 +125,12 @@ if [ ! -f "${APP_DIR}/docker-compose.yml" ]; then
   exit 1
 fi
 
-echo "Runtime database is unreachable at ${DATABASE_HOST}:${DATABASE_PORT}; attempting docker compose up -d postgres."
-(cd "${APP_DIR}" && docker compose up -d postgres)
+if ensure_existing_postgres_container; then
+  :
+else
+  echo "Runtime database is unreachable at ${DATABASE_HOST}:${DATABASE_PORT}; attempting docker compose up -d postgres."
+  (cd "${APP_DIR}" && docker compose up -d postgres)
+fi
 
 for _ in $(seq 1 30); do
   container_status="$(postgres_container_status)"

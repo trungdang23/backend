@@ -15,7 +15,8 @@
 ## Checklist hardening deploy `localhost`
 
 - [x] Xác định runtime database hiện tại có trỏ về `localhost` hay không từ chính `DATABASE_URL` đã render.
-- [x] Nếu `localhost:<port>` chưa mở, thử bật lại PostgreSQL local qua `docker compose up -d postgres` trước khi chạy migration.
+- [x] Khóa Compose project name là `backend` để dev path và deploy path không tách thành hai Docker Compose project khác nhau cho cùng local PostgreSQL.
+- [x] Nếu `localhost:<port>` chưa mở, ưu tiên reuse container `journey-backend-postgres` đã có trước khi thử `docker compose up -d postgres`.
 - [x] Không ép dùng Docker Compose khi `DATABASE_URL` đã reachable sẵn hoặc đang trỏ sang host khác.
 - [x] Fail sớm với thông báo vận hành rõ ràng nếu `DATABASE_URL` trỏ về `localhost` nhưng runner không thể làm DB sống lại.
 
@@ -46,7 +47,7 @@
 3. Sync source từ workspace checkout vào `DEPLOY_PATH`.
 4. Render file env tạm từ GitHub configuration.
 5. Ghi file env đó vào `RUNTIME_ENV_PATH`.
-6. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ thử `docker compose up -d postgres`.
+6. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ fallback sang `docker compose up -d postgres` khi container đó chưa tồn tại.
 7. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
 8. Source runtime env vừa ghi.
 9. Chạy `pnpm prisma:migrate:deploy`.
@@ -139,13 +140,15 @@ RUNTIME_DATABASE_URL=postgresql://journey:journey@localhost:5432/journey_prod_lo
 ```
 
 Để URL này dùng được, máy deploy phải có PostgreSQL local chạy ở `localhost:5432`.
-Workflow hiện sẽ tự kiểm tra port này trước migration; nếu port đang down nhưng `DATABASE_URL` vẫn là local, workflow sẽ thử bật lại service `postgres` bằng Docker Compose trong `DEPLOY_PATH`.
+Workflow hiện sẽ tự kiểm tra port này trước migration; nếu port đang down nhưng `DATABASE_URL` vẫn là local, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có. `docker compose up -d postgres` chỉ còn là fallback khi container đó chưa tồn tại.
 
 Trong setup hiện tại, PostgreSQL chạy qua:
 
 ```bash
 docker compose -f /mnt/c/TrungDang/journey/backend/docker-compose.yml up -d postgres
 ```
+
+Compose project name hiện được khóa là `backend`, nên lệnh ở dev path và workflow chạy trong `/home/trungdang/apps/journey-backend` sẽ nhìn cùng một Docker Compose project thay vì tạo project mới theo tên thư mục.
 
 ## Quy trình deploy lặp lại
 
@@ -217,6 +220,7 @@ Nguyên nhân:
 - `RUNTIME_DATABASE_URL` sai
 - PostgreSQL local chưa chạy
 - runner không chạy được `docker compose`
+- đang có container `journey-backend-postgres` từ path/project khác nên `docker compose up` va vào name conflict
 - migration chưa hợp lệ với DB hiện tại
 
 Khắc phục:
