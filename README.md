@@ -25,6 +25,7 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
 
 ### Contract mục tiêu
 
+Primary product contract:
 - Auth:
   - `POST /api/v1/auth/register`
   - `POST /api/v1/auth/login`
@@ -37,6 +38,8 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
   - `GET /api/v1/trips/:id`
   - `PATCH /api/v1/trips/:id`
   - `DELETE /api/v1/trips/:id`
+- Budget:
+  - `GET /api/v1/trips/:id/budget-summary`
 - Public trips:
   - `GET /api/v1/public/trips?page=&size=`
   - `GET /api/v1/public/trips/:id`
@@ -50,9 +53,16 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
   - `POST /api/v1/nodes`
   - `PATCH /api/v1/nodes/:id`
   - `DELETE /api/v1/nodes/:id`
-- Posts:
-  - `POST /api/v1/posts`
-  - `GET /api/v1/posts`
+
+Compatibility and migration bridge currently still live:
+- Itinerary:
+  - `GET /api/v1/trips/:id/itinerary`
+  - `POST /api/v1/trips/:id/itinerary/days`
+  - `PATCH /api/v1/trips/:id/itinerary/days/:dayId`
+  - `DELETE /api/v1/trips/:id/itinerary/days/:dayId`
+  - `POST /api/v1/trips/:id/itinerary/days/:dayId/activities`
+  - `PATCH /api/v1/trips/:id/itinerary/days/:dayId/activities/:activityId`
+  - `DELETE /api/v1/trips/:id/itinerary/days/:dayId/activities/:activityId`
 
 ### Trạng thái migration hiện tại
 

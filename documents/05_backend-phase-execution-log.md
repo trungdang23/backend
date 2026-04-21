@@ -9,6 +9,21 @@
   - execution `Phase 05` là bridge `itineraries/budgets`
   - execution `Phase 06` tương ứng với checklist `Phase 04` (`planning` trên `PlanNode`)
 
+## Documentation Sync
+
+Status: `Completed`
+
+### Checklist
+
+- [x] Đồng bộ root product docs với current source snapshot và package README
+- [x] Tách rõ `PlanNode` primary contract với itinerary compatibility bridge
+- [x] Chốt lại `comments` là deferred, chưa thuộc current implementation snapshot
+- [x] Dọn `backend/README.md` để tránh trùng lặp contract và giảm hiểu nhầm khi handoff
+
+### Nhật ký
+
+- `2026-04-21`: Đồng bộ lại `journey_drd.md`, `journey_drd_detail.md`, `journey_user_stories.md`, `journey_user_stories_detail.md`, `journey_data_model_markdown.md`, và `backend/README.md` để bám source hiện tại.
+
 ## Phase 00
 
 Status: `Completed`
