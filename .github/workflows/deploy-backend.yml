@@ -236,6 +236,7 @@ jobs:
           fi
           set -euo pipefail
           cd "${DEPLOY_PATH}"
+          bash ./scripts/ensure-runtime-database.sh
           pnpm install --frozen-lockfile
           pnpm prisma:generate
           pnpm build

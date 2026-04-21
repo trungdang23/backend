@@ -12,6 +12,13 @@
 - Giữ workflow deploy hiện tại của GitHub Actions.
 - Loại bỏ phụ thuộc vào `cloudflared access ssh` và mọi bước SSH trung gian.
 
+## Checklist hardening deploy `localhost`
+
+- [x] Xác định runtime database hiện tại có trỏ về `localhost` hay không từ chính `DATABASE_URL` đã render.
+- [x] Nếu `localhost:<port>` chưa mở, thử bật lại PostgreSQL local qua `docker compose up -d postgres` trước khi chạy migration.
+- [x] Không ép dùng Docker Compose khi `DATABASE_URL` đã reachable sẵn hoặc đang trỏ sang host khác.
+- [x] Fail sớm với thông báo vận hành rõ ràng nếu `DATABASE_URL` trỏ về `localhost` nhưng runner không thể làm DB sống lại.
+
 ## Kiến trúc deploy hiện tại
 
 - Workspace dev:
@@ -39,10 +46,11 @@
 3. Sync source từ workspace checkout vào `DEPLOY_PATH`.
 4. Render file env tạm từ GitHub configuration.
 5. Ghi file env đó vào `RUNTIME_ENV_PATH`.
-6. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
-7. Source runtime env vừa ghi.
-8. Chạy `pnpm prisma:migrate:deploy`.
-9. Chạy `SERVICE_RESTART_COMMAND`.
+6. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ thử `docker compose up -d postgres`.
+7. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
+8. Source runtime env vừa ghi.
+9. Chạy `pnpm prisma:migrate:deploy`.
+10. Chạy `SERVICE_RESTART_COMMAND`.
 
 ## Runtime script hiện có trong repo
 
@@ -50,6 +58,7 @@
 - `scripts/stop-production.sh`
 - `scripts/restart-production.sh`
 - `scripts/check-production-health.sh`
+- `scripts/ensure-runtime-database.sh`
 
 Các script này:
 
@@ -129,7 +138,8 @@ Workflow hiện đang dùng:
 RUNTIME_DATABASE_URL=postgresql://journey:journey@localhost:5432/journey_prod_local?schema=public
 ```
 
-Để URL này dùng được, máy deploy phải có PostgreSQL local đang chạy ở `localhost:5432`.
+Để URL này dùng được, máy deploy phải có PostgreSQL local chạy ở `localhost:5432`.
+Workflow hiện sẽ tự kiểm tra port này trước migration; nếu port đang down nhưng `DATABASE_URL` vẫn là local, workflow sẽ thử bật lại service `postgres` bằng Docker Compose trong `DEPLOY_PATH`.
 
 Trong setup hiện tại, PostgreSQL chạy qua:
 
@@ -206,11 +216,13 @@ Nguyên nhân:
 
 - `RUNTIME_DATABASE_URL` sai
 - PostgreSQL local chưa chạy
+- runner không chạy được `docker compose`
 - migration chưa hợp lệ với DB hiện tại
 
 Khắc phục:
 
 - kiểm tra `docker compose ps`
+- kiểm tra workflow log của `scripts/ensure-runtime-database.sh`
 - kiểm tra `RUNTIME_DATABASE_URL`
 - chạy lại sau khi DB local khỏe
 

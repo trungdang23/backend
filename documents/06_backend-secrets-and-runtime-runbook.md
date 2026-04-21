@@ -67,6 +67,7 @@
   - OpenAI API key
   - Slack token
 - Workflow deploy render `.env.production` từ GitHub configuration, ghi file đó trực tiếp vào `RUNTIME_ENV_PATH`, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
+- Khi `DATABASE_URL` trong env vừa render trỏ về `localhost` nhưng port chưa mở, workflow sẽ gọi `scripts/ensure-runtime-database.sh` để thử bật `docker compose up -d postgres` trước khi chạy migration.
 - Quyền truy cập vào máy deploy được chuyển từ mạng/SSH sang quyền của self-hosted runner service. Runner user vì vậy phải được coi như tài khoản production operator.
 
 ## Thiết lập trên GitHub
@@ -131,6 +132,7 @@
 3. Đảm bảo máy đích đã có `git`, `rsync`, `node`, `pnpm`, Docker/PostgreSQL runtime, và mọi phụ thuộc hệ thống cần cho build.
 4. Không cần tự tạo sẵn file env thật trên máy đích; workflow sẽ ghi file đó vào `RUNTIME_ENV_PATH`.
 5. Đảm bảo service restart command của bạn thực sự dùng file env đó.
+6. Nếu `RUNTIME_DATABASE_URL` đang dùng `localhost`, đảm bảo runner user chạy được `docker compose` trong repo deploy path để workflow có thể tự kéo PostgreSQL local lên lại khi cần.
 
 ## Quy trình deploy an toàn
 
@@ -141,7 +143,8 @@
 5. Nếu cần redeploy lại một ref cũ hoặc chạy lại sau khi runner lỗi, vào GitHub Actions của repo backend và dùng `Run workflow`.
 6. Workflow sync source từ workspace checkout vào `DEPLOY_PATH`.
 7. Workflow render `.env.production` từ GitHub Secrets/Variables và ghi file đó vào `RUNTIME_ENV_PATH`.
-8. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
+8. Workflow chạy `scripts/ensure-runtime-database.sh`; nếu runtime DB đang là `localhost` nhưng chưa reachable, workflow sẽ thử bật `postgres` bằng Docker Compose.
+9. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
 
 ## Kiểm tra sau deploy
 

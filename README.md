@@ -117,6 +117,7 @@ pnpm prisma:validate
 - Repo `backend` có workflow CI riêng tại `.github/workflows/backend-ci.yml`; merge vào repo backend sẽ chạy `pnpm prisma:generate`, `pnpm lint`, `pnpm test`, `pnpm build`, và `pnpm prisma:validate`.
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
 - Repo `backend` có workflow deploy tại `.github/workflows/deploy-backend.yml`; workflow này tự chạy khi `push` vào `main` và vẫn hỗ trợ `Run workflow` để redeploy thủ công khi cần. Workflow render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
+- Trên personal-machine deploy path hiện tại, workflow deploy sẽ gọi `scripts/ensure-runtime-database.sh` trước migration; nếu `DATABASE_URL` trỏ về `localhost` nhưng port chưa mở, workflow sẽ thử `docker compose up -d postgres` rồi mới chạy `prisma:migrate:deploy`.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
 - CORS cho frontend tách origin được điều khiển bằng `CORS_ALLOWED_ORIGINS`; các endpoint public của auth hiện có rate limiting theo IP với `AUTH_RATE_LIMIT_MAX_REQUESTS` và `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.
@@ -129,6 +130,7 @@ pnpm prisma:validate
   - `scripts/stop-production.sh`
   - `scripts/restart-production.sh`
   - `scripts/check-production-health.sh`
+- Repo cũng có `scripts/ensure-runtime-database.sh` để preflight runtime database cho deploy trên self-hosted runner trước khi apply migration.
 - Repo đã có bộ script Windows để start personal-machine server bằng một lệnh:
   - `scripts/windows/run-personal-server.ps1`
   - `scripts/windows/start-personal-server.ps1`

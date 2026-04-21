@@ -156,6 +156,7 @@ Status: `Completed`
 - `2026-04-14`: Bổ sung script dừng toàn bộ stack bằng một lệnh và thêm shortcut `pnpm up` / `pnpm down`.
 - `2026-04-14`: Thêm lệnh `pnpm status` để kiểm tra nhanh Docker, backend WSL, tunnel và public health.
 - `2026-04-14`: Chuyển deploy SSH từ tunnel tạm sang hostname ổn định `ssh.buicojourney.com` qua `Cloudflare Tunnel` + `Service Auth`, đồng thời cập nhật workflow deploy, runbook secrets/deploy, template `cloudflared` config, và status script để kiểm tra route SSH.
+- `2026-04-21`: Hardening deploy production để preflight `DATABASE_URL` trên self-hosted runner; nếu runtime DB local ở `localhost` đang down thì workflow sẽ thử bật `docker compose up -d postgres` trước khi chạy Prisma migration, còn remote DB hoặc local DB đã reachable thì được giữ nguyên flow cũ.
 - `2026-04-14`: Bắt đầu phase auth/users: thêm User repository + password hasher, use case register, endpoint `POST /api/v1/auth/register`, unit tests và integration tests.
 - `2026-04-14`: Hoàn thiện auth/users bằng JWT service thật với `access token + refresh token`, login flow, refresh flow, endpoint `GET /api/v1/auth/me`, DTO response riêng cho auth/user profile, và E2E test chạy qua HTTP thật với `supertest`.
 - `2026-04-14`: Chuẩn hóa auth token bằng claim `jti` để mỗi lần issue token là duy nhất, tránh va chạm token khi refresh xảy ra trong cùng giây.
@@ -195,6 +196,7 @@ Status: `Completed`
 - `backend/scripts/stop-production.sh`
 - `backend/scripts/restart-production.sh`
 - `backend/scripts/check-production-health.sh`
+- `backend/scripts/ensure-runtime-database.sh`
 - `backend/deploy/apache/api-backend-vhost.conf.example`
 - `backend/documents/08_backend-personal-machine-domain-runbook.md`
 - `backend/deploy/apache/api-buicojourney.com.conf`
