@@ -188,16 +188,16 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Thêm model `PlanNode` vào Prisma schema
-- [ ] Thêm enum `PlanNodeType`
-- [ ] Tạo migration additive
-- [ ] Thêm foreign key:
+- [x] Thêm model `PlanNode` vào Prisma schema
+- [x] Thêm enum `PlanNodeType`
+- [x] Tạo migration additive
+- [x] Thêm foreign key:
   - `tripId -> Trip.id`
   - `parentId -> PlanNode.id`
-- [ ] Thêm index:
+- [x] Thêm index:
   - `(tripId, parentId, sortOrder)`
   - `(tripId, depth)`
-- [ ] Chốt nullable rules cho:
+- [x] Chốt nullable rules cho:
   - `parentId`
   - `notes`
   - `startAt`
@@ -215,11 +215,11 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Tạo entity/domain model `PlanNode`
-- [ ] Tạo guard logic cho tree rules
-- [ ] Tạo repository port cho planner
-- [ ] Tạo Prisma repository đọc/ghi `PlanNode`
-- [ ] Tạo in-memory repository hoặc test double tương ứng cho unit/integration tests
+- [x] Tạo entity/domain model `PlanNode`
+- [x] Tạo guard logic cho tree rules
+- [x] Tạo repository port cho planner
+- [x] Tạo Prisma repository đọc/ghi `PlanNode`
+- [x] Tạo in-memory repository hoặc test double tương ứng cho unit/integration tests
 
 ### File dự kiến
 
@@ -232,12 +232,12 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Tạo `GetTripPlannerService`
-- [ ] Tạo endpoint `GET /api/v1/trips/:tripId/planner`
-- [ ] Trả full planner dataset, không paginate
-- [ ] Trả nodes sort ổn định theo tree order
-- [ ] Trả trip metadata tối thiểu đủ cho workspace header
-- [ ] Chốt error mapping cho:
+- [x] Tạo `GetTripPlannerService`
+- [x] Tạo endpoint `GET /api/v1/trips/:tripId/planner`
+- [x] Trả full planner dataset, không paginate
+- [x] Trả nodes sort ổn định theo tree order
+- [x] Trả trip metadata tối thiểu đủ cho workspace header
+- [x] Chốt error mapping cho:
   - trip không tồn tại
   - trip không thuộc user
   - planner read chưa sẵn
@@ -253,16 +253,16 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Tạo `POST /api/v1/nodes`
-- [ ] Tạo `PATCH /api/v1/nodes/:id`
-- [ ] Tạo `DELETE /api/v1/nodes/:id`
-- [ ] Create phải hỗ trợ:
+- [x] Tạo `POST /api/v1/nodes`
+- [x] Tạo `PATCH /api/v1/nodes/:id`
+- [x] Tạo `DELETE /api/v1/nodes/:id`
+- [x] Create phải hỗ trợ:
   - root node
   - child node
-- [ ] Update phải hỗ trợ metadata cơ bản của node
-- [ ] Delete phải cascade toàn subtree theo rule đã chốt
-- [ ] Chốt DTO request cho create/update
-- [ ] Chốt response shape sau mutation
+- [x] Update phải hỗ trợ metadata cơ bản của node
+- [x] Delete phải cascade toàn subtree theo rule đã chốt
+- [x] Chốt DTO request cho create/update
+- [x] Chốt response shape sau mutation
 
 ### File dự kiến
 
@@ -276,12 +276,12 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Tạo `PlanningModule`
-- [ ] Mount module vào `AppModule`
-- [ ] Dùng ownership rule theo `Trip.userId` cho create/update/delete
-- [ ] Ghi rõ trong code/doc rằng itinerary module đã bị freeze cho feature mới
-- [ ] Không thay budget summary logic trong cùng phase này
-- [ ] Không mở guest public read trong cùng phase này
+- [x] Tạo `PlanningModule`
+- [x] Mount module vào `AppModule`
+- [x] Dùng ownership rule theo `Trip.userId` cho create/update/delete
+- [x] Ghi rõ trong code/doc rằng itinerary module đã bị freeze cho feature mới
+- [x] Không thay budget summary logic trong cùng phase này
+- [x] Không mở guest public read trong cùng phase này
 
 ### File dự kiến
 
@@ -293,21 +293,21 @@ Phase 04 chỉ cần đảm bảo:
 
 ### Việc cần làm
 
-- [ ] Unit tests cho tree rules:
+- [x] Unit tests cho tree rules:
   - parent cùng trip
   - không cycle
   - depth đúng
   - time range đúng
   - cost non-negative
-- [ ] Integration tests cho Prisma mapping và query order
-- [ ] Integration tests cho planner read/write endpoints
-- [ ] E2E tests cho:
+- [x] Integration tests cho Prisma mapping và query order
+- [x] Integration tests cho planner read/write endpoints
+- [x] E2E tests cho:
   - create root node
   - create child node
   - update node
   - delete node có children
-- [ ] Update Swagger cho planner endpoints
-- [ ] Ghi rollback note:
+- [x] Update Swagger cho planner endpoints
+- [x] Ghi rollback note:
   - rollback chỉ ở mức controller/service wiring nếu cần
   - không drop schema mới trong rollout nóng
 

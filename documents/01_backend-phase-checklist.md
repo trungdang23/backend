@@ -46,7 +46,7 @@
 - [x] Có planner core thật trên `PlanNode`
 - [x] Đã có `Trip.visibility`
 - [x] Đã có `budgetMode/manualBudget`
-- [~] Budget summary vẫn còn đọc từ itinerary bridge
+- [~] Budget summary owner flow đã đọc từ `PlanNode`; phần còn lại là runtime verify, migration strategy, và cleanup legacy bridge
 - [x] Đã có public trip read
 - [x] Đã có `posts`
 - [x] Đã có `logout` endpoint đúng target
@@ -191,7 +191,7 @@ Status: `Partial`
 - [~] Source đã có suite budget riêng ở mức unit/integration/e2e, nhưng runtime verify còn bị chặn bởi môi trường shell hiện tại chưa có `node/pnpm` tương thích với `pnpm`-linked `node_modules`
 - [ ] Thiết kế script hoặc strategy migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`
 - [ ] Chốt cutover plan:
-  - thời điểm backend ngừng đọc budget từ itinerary bridge
+  - budget summary đã ngừng đọc itinerary bridge; phần còn lại là cleanup thời điểm và migration support cho dữ liệu lịch sử
   - thời điểm có thể cleanup legacy itinerary support
 - [~] Bổ sung test đảm bảo budget không lệch sau migration
 
@@ -214,7 +214,7 @@ Status: `Completed`
 
 - [x] Chi tiết backlog tại `17_backend-phase-07-community-minimal-backlog.md`
 - [x] Tạo schema `Post`
-- [ ] Chốt field tối thiểu:
+- [x] Chốt field tối thiểu:
   - `userId`
   - `tripId?`
   - `title`
@@ -258,9 +258,9 @@ Status: `Todo`
 
 ### Slice BE-A
 
-- [ ] Trip schema alignment
-- [ ] Trip DTO alignment
-- [ ] Trip tests alignment
+- [x] Trip schema alignment
+- [x] Trip DTO alignment
+- [x] Trip tests alignment
 
 ### Slice BE-B
 
@@ -282,15 +282,15 @@ Status: `Todo`
 
 ### Slice BE-E
 
-- [ ] public trip read
-- [ ] public planner read
-- [ ] visibility tests
+- [x] public trip read
+- [x] public planner read
+- [x] visibility tests
 
 ### Slice BE-F
 
-- [ ] posts create/list/detail
+- [x] posts create/list/detail
 - [ ] optional comments
-- [ ] social tests
+- [x] social tests
 
 ## Gợi ý cập nhật trạng thái
 

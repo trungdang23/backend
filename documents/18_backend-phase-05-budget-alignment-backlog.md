@@ -246,16 +246,16 @@ Nhưng phải chốt:
 
 ### Việc cần làm
 
-- [ ] Chốt lại semantics của `TripBudgetSummary` theo `PlanNode`
-- [ ] Bổ sung additive fields cho mixed currency:
+- [x] Chốt lại semantics của `TripBudgetSummary` theo `PlanNode`
+- [x] Bổ sung additive fields cho mixed currency:
   - `hasMixedCurrencies`
   - `totalsByCurrency`
-- [ ] Chốt rule `manual` vs `auto` cho top-level summary fields
-- [ ] Chốt rule tính:
+- [x] Chốt rule `manual` vs `auto` cho top-level summary fields
+- [x] Chốt rule tính:
   - `totalDays`
   - `totalActivities`
   - `nodeCount` trong breakdown
-- [ ] Ghi rõ deterministic fallback cho `currency` compatibility field
+- [x] Ghi rõ deterministic fallback cho `currency` compatibility field
 
 ### File dự kiến
 
@@ -266,12 +266,12 @@ Nhưng phải chốt:
 
 ### Việc cần làm
 
-- [ ] Bỏ dependency `ITINERARY_REPOSITORY` khỏi `GetTripBudgetSummaryService`
-- [ ] Inject `PLAN_NODE_REPOSITORY` hoặc abstraction aggregate phù hợp
-- [ ] Aggregate planned cost từ `PlanNode[]`
-- [ ] Đếm node `day/activity`
-- [ ] Giữ semantics `trip not found` và ownership như hiện tại
-- [ ] Không làm controller route đổi path hoặc auth policy
+- [x] Bỏ dependency `ITINERARY_REPOSITORY` khỏi `GetTripBudgetSummaryService`
+- [x] Inject `PLAN_NODE_REPOSITORY` hoặc abstraction aggregate phù hợp
+- [x] Aggregate planned cost từ `PlanNode[]`
+- [x] Đếm node `day/activity`
+- [x] Giữ semantics `trip not found` và ownership như hiện tại
+- [x] Không làm controller route đổi path hoặc auth policy
 
 ### File dự kiến
 
@@ -285,13 +285,13 @@ Nhưng phải chốt:
 
 ### Việc cần làm
 
-- [ ] Giữ success envelope của budget summary không đổi
-- [ ] Cập nhật Swagger example cho:
+- [x] Giữ success envelope của budget summary không đổi
+- [x] Cập nhật Swagger example cho:
   - manual
   - auto
   - mixed currency
-- [ ] Giữ frontend route hiện tại không phải đổi URL/query key
-- [ ] Ghi rõ additive fields mới là optional-compatible cho FE hiện tại
+- [x] Giữ frontend route hiện tại không phải đổi URL/query key
+- [x] Ghi rõ additive fields mới là optional-compatible cho FE hiện tại
 
 ### File dự kiến
 
@@ -302,27 +302,27 @@ Nhưng phải chốt:
 
 ### Unit
 
-- [ ] `TripBudgetSummary` tạo được summary manual hợp lệ
-- [ ] `TripBudgetSummary` tạo được summary auto với `remainingAmount = 0`
-- [ ] mixed currency breakdown không conversion
-- [ ] currency normalization vẫn đúng
-- [ ] over-budget chỉ xảy ra ở manual mode
+- [x] `TripBudgetSummary` tạo được summary manual hợp lệ
+- [x] `TripBudgetSummary` tạo được summary auto với `remainingAmount = 0`
+- [x] mixed currency breakdown không conversion
+- [x] currency normalization vẫn đúng
+- [x] over-budget chỉ xảy ra ở manual mode
 
 ### Integration
 
-- [ ] budget summary đọc từ `PlanNode`, không đọc itinerary bridge
-- [ ] `totalDays` đếm đúng node `day`
-- [ ] `totalActivities` đếm đúng node `activity`
-- [ ] manual mode trả `remainingAmount` đúng
-- [ ] auto mode trả `totalBudgetAmount = totalPlannedAmount`
-- [ ] mixed currency có `totalsByCurrency`
+- [x] budget summary đọc từ `PlanNode`, không đọc itinerary bridge
+- [x] `totalDays` đếm đúng node `day`
+- [x] `totalActivities` đếm đúng node `activity`
+- [x] manual mode trả `remainingAmount` đúng
+- [x] auto mode trả `totalBudgetAmount = totalPlannedAmount`
+- [x] mixed currency có `totalsByCurrency`
 
 ### E2E / HTTP contract
 
-- [ ] owner đọc được budget summary theo planner mới
-- [ ] trip không tồn tại trả đúng lỗi hiện tại
-- [ ] update planner node cost làm budget summary đổi theo
-- [ ] itinerary thay đổi không còn là nguồn làm budget summary đổi
+- [x] owner đọc được budget summary theo planner mới
+- [x] trip không tồn tại trả đúng lỗi hiện tại
+- [x] update planner node cost làm budget summary đổi theo
+- [x] itinerary thay đổi không còn là nguồn làm budget summary đổi
 
 ### File dự kiến
 
@@ -335,13 +335,13 @@ Nhưng phải chốt:
 
 ### Việc cần làm
 
-- [ ] Ghi rõ itinerary bridge sau phase này chỉ còn:
+- [x] Ghi rõ itinerary bridge sau phase này chỉ còn:
   - legacy endpoints
   - migration support
   - rollback ngắn hạn
-- [ ] Chốt rollback plan nếu budget cutover lệch số
-- [ ] Chốt migration note cho dữ liệu lịch sử chưa có `PlanNode` đủ cost
-- [ ] Chốt tiêu chí mở cleanup phase:
+- [x] Chốt rollback plan nếu budget cutover lệch số
+- [x] Chốt migration note cho dữ liệu lịch sử chưa có `PlanNode` đủ cost
+- [x] Chốt tiêu chí mở cleanup phase:
   - FE đã không còn coi budget summary là bridge dependency
   - budget tests tách riêng đã ổn định
   - smoke deploy không còn lệch số
@@ -351,6 +351,21 @@ Nhưng phải chốt:
 - `documents/01_backend-phase-checklist.md`
 - `documents/05_backend-phase-execution-log.md`
 - runbook hoặc migration note mới nếu cần ở `documents/`
+
+### Current note after re-baseline
+
+- Itinerary bridge sau `Phase 05` chỉ còn hợp lệ cho legacy endpoints, migration support, và rollback ngắn hạn.
+- Rollback plan hiện tại:
+  - không drop `TripItinerary*` tables hoặc endpoints trong phase này
+  - nếu budget summary lệch số trên deploy thật, ưu tiên rollback ở mức service/controller wiring thay vì sửa dữ liệu nóng
+  - so sánh lại `totalsByCurrency` và node cost trong planner trước khi mở cleanup phase
+- Migration note hiện tại:
+  - trip lịch sử chưa có `PlanNode` đủ `costAmount/costCurrency` sẽ chưa phản ánh đầy đủ budget summary mới
+  - cleanup legacy chỉ nên mở sau khi có migration helper hoặc runbook rõ ràng cho dữ liệu cũ
+- Tiêu chí mở cleanup phase:
+  - frontend owner/public flows không còn phụ thuộc itinerary bridge cho planner/budget semantics
+  - budget suite riêng ổn định ở unit/integration/e2e và smoke deploy
+  - đã có migration strategy hoặc runbook đủ an toàn cho trip lịch sử
 
 ## Definition of done cho Phase 05
 
