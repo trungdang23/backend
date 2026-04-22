@@ -196,6 +196,118 @@ describe('Budgets integration', () => {
       ],
     });
   });
+
+  it('recomputes the budget summary after planner node update and delete mutations', async () => {
+    const traveler = await registerUser(expressApp, 'budgets.mutation@example.com');
+    const tripId = await createTrip(expressApp, traveler.accessToken, {
+      name: 'Planner Budget Mutation',
+      budgetMode: 'manual',
+      manualBudgetAmount: 4_200_000,
+      manualBudgetCurrency: 'VND',
+    });
+
+    await createPlanNode(expressApp, traveler.accessToken, {
+      tripId,
+      type: 'day',
+      title: 'Ngày 1 ở Huế',
+      costAmount: 600_000,
+      costCurrency: 'VND',
+      sortOrder: 0,
+    });
+    const childNodeId = await createPlanNode(expressApp, traveler.accessToken, {
+      tripId,
+      type: 'activity',
+      title: 'Workshop ngoại tệ',
+      costAmount: 25,
+      costCurrency: 'USD',
+      sortOrder: 1,
+    });
+
+    const initialBudgetSummary = await getBudgetSummary(
+      expressApp,
+      traveler.accessToken,
+      tripId,
+    );
+
+    expect(initialBudgetSummary).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 600_000,
+      remainingAmount: 3_600_000,
+      totalDays: 1,
+      totalActivities: 1,
+      isOverBudget: false,
+      hasMixedCurrencies: true,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 600_000,
+          nodeCount: 1,
+        },
+        {
+          currency: 'USD',
+          plannedAmount: 25,
+          nodeCount: 1,
+        },
+      ],
+    });
+
+    await updatePlanNode(expressApp, traveler.accessToken, childNodeId, {
+      title: 'Bữa tối sông Hương',
+      costAmount: 200_000,
+      costCurrency: 'VND',
+    });
+
+    const updatedBudgetSummary = await getBudgetSummary(
+      expressApp,
+      traveler.accessToken,
+      tripId,
+    );
+
+    expect(updatedBudgetSummary).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 800_000,
+      remainingAmount: 3_400_000,
+      totalDays: 1,
+      totalActivities: 1,
+      isOverBudget: false,
+      hasMixedCurrencies: false,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 800_000,
+          nodeCount: 2,
+        },
+      ],
+    });
+
+    await deletePlanNode(expressApp, traveler.accessToken, childNodeId);
+
+    const budgetSummaryAfterDelete = await getBudgetSummary(
+      expressApp,
+      traveler.accessToken,
+      tripId,
+    );
+
+    expect(budgetSummaryAfterDelete).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 600_000,
+      remainingAmount: 3_600_000,
+      totalDays: 1,
+      totalActivities: 0,
+      isOverBudget: false,
+      hasMixedCurrencies: false,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 600_000,
+          nodeCount: 1,
+        },
+      ],
+    });
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {
@@ -276,6 +388,88 @@ async function createPlanNode(
     },
     body,
   });
+  const responseBody = response.body as {
+    data: {
+      id: string;
+    };
+  };
 
   expect(response.statusCode).toBe(201);
+
+  return responseBody.data.id;
+}
+
+async function updatePlanNode(
+  expressApp: Express,
+  accessToken: string,
+  nodeId: string,
+  body: {
+    title?: string;
+    costAmount?: number | null;
+    costCurrency?: string | null;
+  },
+) {
+  const response = await dispatchRequest(expressApp, {
+    method: 'PATCH',
+    path: `/api/v1/nodes/${nodeId}`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+    body,
+  });
+
+  expect(response.statusCode).toBe(200);
+}
+
+async function deletePlanNode(
+  expressApp: Express,
+  accessToken: string,
+  nodeId: string,
+) {
+  const response = await dispatchRequest(expressApp, {
+    method: 'DELETE',
+    path: `/api/v1/nodes/${nodeId}`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  expect(response.statusCode).toBe(204);
+}
+
+async function getBudgetSummary(
+  expressApp: Express,
+  accessToken: string,
+  tripId: string,
+) {
+  const budgetSummaryResponse = await dispatchRequest(expressApp, {
+    method: 'GET',
+    path: `/api/v1/trips/${tripId}/budget-summary`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const budgetSummaryBody = budgetSummaryResponse.body as {
+    success: boolean;
+    data: {
+      currency: string;
+      totalBudgetAmount: number;
+      totalPlannedAmount: number;
+      remainingAmount: number;
+      totalDays: number;
+      totalActivities: number;
+      isOverBudget: boolean;
+      hasMixedCurrencies: boolean;
+      totalsByCurrency: Array<{
+        currency: string;
+        plannedAmount: number;
+        nodeCount: number;
+      }>;
+    };
+  };
+
+  expect(budgetSummaryResponse.statusCode).toBe(200);
+  expect(budgetSummaryBody.success).toBe(true);
+
+  return budgetSummaryBody.data;
 }

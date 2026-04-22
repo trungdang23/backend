@@ -45,6 +45,21 @@ Phase này chưa xử lý:
   - `Phase 08 BE`
   - cleanup quyết đoán hơn cho itinerary bridge
 
+## Focused hardening sub-slice - 2026-04-21
+
+- Scope của lượt này:
+  - khóa regression `budget-summary` sau planner mutation thật
+  - verify summary recompute đúng sau `PATCH /api/v1/nodes/:nodeId`
+  - verify summary recompute đúng sau `DELETE /api/v1/nodes/:nodeId`
+  - giữ mixed-currency/additive breakdown không drift khi mutation làm đổi currency set
+- File owner của lượt này:
+  - `test/integration/budgets/budgets.integration.spec.ts`
+  - `test/e2e/budgets/budgets.e2e.spec.ts`
+- Deferred rõ trong lượt này:
+  - public budget summary endpoint riêng
+  - browser/runtime verify trên deploy thật
+  - cleanup legacy itinerary bridge
+
 ## Quyết định rollout cần chốt
 
 ## 1. Giữ nguyên endpoint, đổi source of truth phía sau

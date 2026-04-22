@@ -258,4 +258,218 @@ describe('Budgets e2e', () => {
       ],
     });
   });
+
+  it('recomputes the summary after planner node update and delete mutations through the HTTP app pipeline', async () => {
+    const registerResponse = await request(httpServer)
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'budgets.mutation.e2e@example.com',
+        password: 'password123',
+        displayName: 'Budget Mutation E2E',
+      });
+    const registerBody = registerResponse.body as {
+      data: {
+        tokens: {
+          accessToken: string;
+        };
+      };
+    };
+
+    const accessToken = registerBody.data.tokens.accessToken;
+
+    const tripResponse = await request(httpServer)
+      .post('/api/v1/trips')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        name: 'Budget Mutation Trip',
+        startDate: '2026-08-15',
+        endDate: '2026-08-18',
+        budgetMode: 'manual',
+        manualBudgetAmount: 4_200_000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      });
+    const tripBody = tripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    await request(httpServer)
+      .post('/api/v1/nodes')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        tripId: tripBody.data.id,
+        type: 'day',
+        title: 'Ngày 1 ở Huế',
+        costAmount: 600_000,
+        costCurrency: 'VND',
+        sortOrder: 0,
+      })
+      .expect(201);
+
+    const createChildResponse = await request(httpServer)
+      .post('/api/v1/nodes')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Workshop ngoại tệ',
+        costAmount: 25,
+        costCurrency: 'USD',
+        sortOrder: 1,
+      })
+      .expect(201);
+    const createChildBody = createChildResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const initialBudgetSummaryResponse = await request(httpServer)
+      .get(`/api/v1/trips/${tripBody.data.id}/budget-summary`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    const initialBudgetSummaryBody = initialBudgetSummaryResponse.body as {
+      success: boolean;
+      data: {
+        currency: string;
+        totalBudgetAmount: number;
+        totalPlannedAmount: number;
+        remainingAmount: number;
+        totalDays: number;
+        totalActivities: number;
+        isOverBudget: boolean;
+        hasMixedCurrencies: boolean;
+        totalsByCurrency: Array<{
+          currency: string;
+          plannedAmount: number;
+          nodeCount: number;
+        }>;
+      };
+    };
+
+    expect(initialBudgetSummaryResponse.statusCode).toBe(200);
+    expect(initialBudgetSummaryBody.success).toBe(true);
+    expect(initialBudgetSummaryBody.data).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 600_000,
+      remainingAmount: 3_600_000,
+      totalDays: 1,
+      totalActivities: 1,
+      isOverBudget: false,
+      hasMixedCurrencies: true,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 600_000,
+          nodeCount: 1,
+        },
+        {
+          currency: 'USD',
+          plannedAmount: 25,
+          nodeCount: 1,
+        },
+      ],
+    });
+
+    await request(httpServer)
+      .patch(`/api/v1/nodes/${createChildBody.data.id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        title: 'Bữa tối sông Hương',
+        costAmount: 200_000,
+        costCurrency: 'VND',
+      })
+      .expect(200);
+
+    const updatedBudgetSummaryResponse = await request(httpServer)
+      .get(`/api/v1/trips/${tripBody.data.id}/budget-summary`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    const updatedBudgetSummaryBody = updatedBudgetSummaryResponse.body as {
+      success: boolean;
+      data: {
+        currency: string;
+        totalBudgetAmount: number;
+        totalPlannedAmount: number;
+        remainingAmount: number;
+        totalDays: number;
+        totalActivities: number;
+        isOverBudget: boolean;
+        hasMixedCurrencies: boolean;
+        totalsByCurrency: Array<{
+          currency: string;
+          plannedAmount: number;
+          nodeCount: number;
+        }>;
+      };
+    };
+
+    expect(updatedBudgetSummaryResponse.statusCode).toBe(200);
+    expect(updatedBudgetSummaryBody.success).toBe(true);
+    expect(updatedBudgetSummaryBody.data).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 800_000,
+      remainingAmount: 3_400_000,
+      totalDays: 1,
+      totalActivities: 1,
+      isOverBudget: false,
+      hasMixedCurrencies: false,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 800_000,
+          nodeCount: 2,
+        },
+      ],
+    });
+
+    await request(httpServer)
+      .delete(`/api/v1/nodes/${createChildBody.data.id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(204);
+
+    const budgetSummaryAfterDeleteResponse = await request(httpServer)
+      .get(`/api/v1/trips/${tripBody.data.id}/budget-summary`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    const budgetSummaryAfterDeleteBody = budgetSummaryAfterDeleteResponse.body as {
+      success: boolean;
+      data: {
+        currency: string;
+        totalBudgetAmount: number;
+        totalPlannedAmount: number;
+        remainingAmount: number;
+        totalDays: number;
+        totalActivities: number;
+        isOverBudget: boolean;
+        hasMixedCurrencies: boolean;
+        totalsByCurrency: Array<{
+          currency: string;
+          plannedAmount: number;
+          nodeCount: number;
+        }>;
+      };
+    };
+
+    expect(budgetSummaryAfterDeleteResponse.statusCode).toBe(200);
+    expect(budgetSummaryAfterDeleteBody.success).toBe(true);
+    expect(budgetSummaryAfterDeleteBody.data).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 4_200_000,
+      totalPlannedAmount: 600_000,
+      remainingAmount: 3_600_000,
+      totalDays: 1,
+      totalActivities: 0,
+      isOverBudget: false,
+      hasMixedCurrencies: false,
+      totalsByCurrency: [
+        {
+          currency: 'VND',
+          plannedAmount: 600_000,
+          nodeCount: 1,
+        },
+      ],
+    });
+  });
 });
