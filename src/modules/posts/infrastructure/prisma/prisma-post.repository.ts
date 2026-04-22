@@ -6,6 +6,8 @@ import type {
   CreatePostRecordInput,
   ListPublicPostsInput,
   ListPublicPostsResult,
+  ListUserPostsInput,
+  ListUserPostsResult,
   PostRepositoryPort,
 } from '../../application/ports/post-repository.port';
 import { Post } from '../../domain/post';
@@ -52,6 +54,29 @@ export class PrismaPostRepository implements PostRepositoryPort {
       this.prisma.post.count({
         where: {
           visibility: 'public',
+        },
+      }),
+    ]);
+
+    return {
+      posts: records.map((record) => toPost(record)),
+      totalElements,
+    };
+  }
+
+  async listByUser(input: ListUserPostsInput): Promise<ListUserPostsResult> {
+    const [records, totalElements] = await this.prisma.$transaction([
+      this.prisma.post.findMany({
+        where: {
+          userId: input.userId,
+        },
+        orderBy: buildPostOrderBy(input.sort),
+        skip: input.page * input.size,
+        take: input.size,
+      }),
+      this.prisma.post.count({
+        where: {
+          userId: input.userId,
         },
       }),
     ]);

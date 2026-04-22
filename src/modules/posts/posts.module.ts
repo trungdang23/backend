@@ -8,6 +8,7 @@ import { POST_REPOSITORY } from './application/ports/post-repository.port';
 import { CreatePostService } from './application/services/create-post.service';
 import { GetPostDetailService } from './application/services/get-post-detail.service';
 import { ListPublicPostsService } from './application/services/list-public-posts.service';
+import { ListUserPostsService } from './application/services/list-user-posts.service';
 import { PostReadModelHydratorService } from './application/services/post-read-model-hydrator.service';
 import { PrismaPostRepository } from './infrastructure/prisma/prisma-post.repository';
 import { PostsController } from './presentation/posts.controller';
@@ -19,6 +20,7 @@ import { PostsController } from './presentation/posts.controller';
     CreatePostService,
     GetPostDetailService,
     ListPublicPostsService,
+    ListUserPostsService,
     PostReadModelHydratorService,
     {
       provide: POST_REPOSITORY,

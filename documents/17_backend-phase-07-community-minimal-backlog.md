@@ -136,6 +136,21 @@ Phase này không mở comment API.
 
 Điều này phải được ghi rõ trong docs/test để tránh FE dựng UI nửa vời rồi gọi endpoint chưa tồn tại.
 
+## 7. Profile surface có thể cần read API riêng cho bài viết của owner
+
+Sau khi `community` đã có public feed, `profile` của user vẫn cần một route auth-only để lấy đúng các bài viết do chính owner đã đăng mà không phải lọc lại từ public feed phía frontend.
+
+Khuyến nghị tối thiểu:
+
+- `GET /api/v1/posts/mine?page=0&size=12&sort=createdAt,desc`
+
+Route này:
+
+- cần auth
+- chỉ trả bài viết của current user
+- giữ cùng read model và `meta` như `GET /api/v1/posts`
+- không mở thêm edit/delete trong cùng lượt này
+
 ## Contract backend cần bám sau Phase 07
 
 ## Create post
@@ -258,6 +273,16 @@ Machine-readable error response phải giữ pattern hiện có của app.
   - `create-post`
   - `list-public-posts`
   - `get-post-detail`
+
+## Slice BE-07D - Owner post listing for profile
+
+### Việc cần làm
+
+- [x] thêm repository method để list post theo `userId` với pagination và sort hiện tại
+- [x] thêm service `list-user-posts`
+- [x] mount `GET /api/v1/posts/mine`
+- [x] giữ cùng `PostResponseDto` và meta format như public list
+- [x] thêm test integration cho controller và repository
 - [x] Tạo read model builder để hydrate `author` và `trip`
 - [x] Không để controller map trực tiếp từ Prisma entity ra HTTP
 

@@ -267,6 +267,59 @@ describe('Posts integration', () => {
     expect(detailBody.error.code).toBe('NOT_FOUND');
     expect(detailBody.error.message).toBe('Post not found.');
   });
+
+  it('lists only posts created by the authenticated user on the mine route', async () => {
+    const owner = await registerUser(expressApp, 'posts.mine.owner@example.com');
+    const otherUser = await registerUser(expressApp, 'posts.mine.other@example.com');
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/posts',
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+      body: {
+        title: 'Bài viết của tôi',
+        content: 'Bài này phải hiện trong tab cá nhân.',
+      },
+    });
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/posts',
+      headers: {
+        authorization: `Bearer ${otherUser.accessToken}`,
+      },
+      body: {
+        title: 'Bài viết của người khác',
+        content: 'Bài này không được hiện trong mine của owner.',
+      },
+    });
+
+    const mineResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/posts/mine?page=0&size=12&sort=createdAt,desc',
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+    });
+    const mineBody = mineResponse.body as {
+      success: boolean;
+      data: Array<{
+        title: string;
+        userId: string;
+      }>;
+      meta: {
+        totalElements: number;
+      };
+    };
+
+    expect(mineResponse.statusCode).toBe(200);
+    expect(mineBody.success).toBe(true);
+    expect(mineBody.meta.totalElements).toBe(1);
+    expect(mineBody.data).toHaveLength(1);
+    expect(mineBody.data[0]?.title).toBe('Bài viết của tôi');
+    expect(mineBody.data[0]?.userId).toBe(owner.userId);
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {

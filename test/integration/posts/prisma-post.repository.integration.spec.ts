@@ -109,4 +109,56 @@ describe('PrismaPostRepository integration', () => {
       'Older post',
     ]);
   });
+
+  it('lists only posts owned by the requested user', async () => {
+    const owner = await prisma.user.create({
+      data: {
+        email: 'posts-owner-filter@example.com',
+        passwordHash: 'hashed-password',
+      },
+    });
+    const otherUser = await prisma.user.create({
+      data: {
+        email: 'posts-other-filter@example.com',
+        passwordHash: 'hashed-password',
+      },
+    });
+
+    await repository.create({
+      userId: owner.id,
+      title: 'Owner newer post',
+      content: 'Owned by current user.',
+      visibility: 'public',
+    });
+    await repository.create({
+      userId: otherUser.id,
+      title: 'Other user post',
+      content: 'Should not appear.',
+      visibility: 'public',
+    });
+    await repository.create({
+      userId: owner.id,
+      title: 'Owner older post',
+      content: 'Still belongs to current user.',
+      visibility: 'public',
+    });
+
+    const result = await repository.listByUser({
+      userId: owner.id,
+      page: 0,
+      size: 10,
+      sort: {
+        field: 'createdAt',
+        direction: 'desc',
+      },
+    });
+
+    expect(result.totalElements).toBe(2);
+    expect(result.posts).toHaveLength(2);
+    expect(result.posts.every((post) => post.userId === owner.id)).toBe(true);
+    expect(result.posts.map((post) => post.title).sort()).toEqual([
+      'Owner newer post',
+      'Owner older post',
+    ]);
+  });
 });

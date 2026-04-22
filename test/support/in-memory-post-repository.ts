@@ -2,6 +2,8 @@ import type {
   CreatePostRecordInput,
   ListPublicPostsInput,
   ListPublicPostsResult,
+  ListUserPostsInput,
+  ListUserPostsResult,
   PostRepositoryPort,
 } from '../../src/modules/posts/application/ports/post-repository.port';
 import type { PostSort } from '../../src/modules/posts/application/post-sort';
@@ -36,6 +38,18 @@ export class InMemoryPostRepository implements PostRepositoryPort {
   listPublic(input: ListPublicPostsInput): Promise<ListPublicPostsResult> {
     const filteredPosts = Array.from(this.posts.values())
       .filter((post) => post.visibility === 'public')
+      .sort(createPostComparator(input.sort));
+    const offset = input.page * input.size;
+
+    return Promise.resolve({
+      posts: filteredPosts.slice(offset, offset + input.size),
+      totalElements: filteredPosts.length,
+    });
+  }
+
+  listByUser(input: ListUserPostsInput): Promise<ListUserPostsResult> {
+    const filteredPosts = Array.from(this.posts.values())
+      .filter((post) => post.userId === input.userId)
       .sort(createPostComparator(input.sort));
     const offset = input.page * input.size;
 
