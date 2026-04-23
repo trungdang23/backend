@@ -83,6 +83,7 @@ model PlanNode {
   parentId     String?      @map("parent_id")
   parent       PlanNode?    @relation("PlanNodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children     PlanNode[]   @relation("PlanNodeHierarchy")
+  stickers     PlanNodeSticker[]
   type         PlanNodeType
   title        String
   notes        String?
@@ -99,6 +100,23 @@ model PlanNode {
   @@index([tripId, parentId, sortOrder])
   @@index([tripId, depth])
   @@map("plan_nodes")
+}
+
+model PlanNodeSticker {
+  id         String   @id @default(cuid())
+  nodeId     String   @map("node_id")
+  node       PlanNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  stickerKey String   @map("sticker_key")
+  x          Int
+  y          Int
+  rotation   Int      @default(0)
+  scale      Int      @default(100)
+  zIndex     Int      @default(0) @map("z_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([nodeId, zIndex])
+  @@map("plan_node_stickers")
 }
 
 model TripItineraryDay {

@@ -5,7 +5,7 @@ import { createRequest, createResponse } from 'node-mocks-http';
 
 export interface DispatchRequestOptions {
   headers?: Record<string, string>;
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   path: string;
   body?: unknown;
 }

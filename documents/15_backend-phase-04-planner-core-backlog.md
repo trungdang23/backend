@@ -22,6 +22,29 @@ Phase này chưa xử lý:
 - reorder nâng cao hoặc drag-and-drop semantics
 - migration dữ liệu từ itinerary bridge sang `PlanNode`
 
+## Slice BE-04E - Plan node sticker coordinates
+
+### Mục tiêu
+
+Mở rộng planner core để mỗi `PlanNode` có thể lưu danh sách sticker được đặt tự do trong khung hoạt động bằng tọa độ chuẩn hóa, phục vụ bước activity canvas của frontend.
+
+### Quyết định dữ liệu
+
+- Sticker gắn với `PlanNode`, không gắn trực tiếp với `Trip`, để một hoạt động/ngày/ghi chú có layout riêng.
+- Tọa độ `x` và `y` lưu dạng số nguyên `0..10000`, tương ứng `0%..100%` trong khung render. Cách này ổn định hơn pixel tuyệt đối khi UI responsive.
+- `rotation`, `scale`, và `zIndex` được lưu cùng placement để editor có thể mở rộng mà không đổi contract.
+
+### Scope của lượt triển khai này
+
+- [x] thêm model Prisma `PlanNodeSticker`
+- [x] thêm migration additive cho bảng `plan_node_stickers`
+- [x] thêm domain/repository/service cho list và replace sticker theo node
+- [x] thêm endpoint:
+  - `GET /api/v1/nodes/:nodeId/stickers`
+  - `PUT /api/v1/nodes/:nodeId/stickers`
+- [x] kiểm tra ownership thông qua `PlanNode.tripId -> Trip.userId`
+- [x] thêm integration/e2e coverage cho save/load tọa độ
+
 ## Trạng thái
 
 - Status: `Implemented in source`
