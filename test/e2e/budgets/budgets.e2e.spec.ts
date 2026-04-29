@@ -104,6 +104,8 @@ describe('Budgets e2e', () => {
         tripId: tripBody.data.id,
         type: 'activity',
         title: 'Dinner',
+        startAt: '2026-08-01T18:00',
+        endAt: '2026-08-01T20:00',
         costAmount: 350_000,
         costCurrency: 'VND',
         sortOrder: 1,
@@ -205,6 +207,8 @@ describe('Budgets e2e', () => {
         tripId: tripBody.data.id,
         type: 'activity',
         title: 'Museum pass',
+        startAt: '2026-08-10T09:00',
+        endAt: '2026-08-10T11:00',
         costAmount: 25,
         costCurrency: 'USD',
         sortOrder: 1,
@@ -315,6 +319,8 @@ describe('Budgets e2e', () => {
         tripId: tripBody.data.id,
         type: 'activity',
         title: 'Workshop ngoại tệ',
+        startAt: '2026-08-15T09:00',
+        endAt: '2026-08-15T11:00',
         costAmount: 25,
         costCurrency: 'USD',
         sortOrder: 1,
@@ -433,24 +439,25 @@ describe('Budgets e2e', () => {
     const budgetSummaryAfterDeleteResponse = await request(httpServer)
       .get(`/api/v1/trips/${tripBody.data.id}/budget-summary`)
       .set('Authorization', `Bearer ${accessToken}`);
-    const budgetSummaryAfterDeleteBody = budgetSummaryAfterDeleteResponse.body as {
-      success: boolean;
-      data: {
-        currency: string;
-        totalBudgetAmount: number;
-        totalPlannedAmount: number;
-        remainingAmount: number;
-        totalDays: number;
-        totalActivities: number;
-        isOverBudget: boolean;
-        hasMixedCurrencies: boolean;
-        totalsByCurrency: Array<{
+    const budgetSummaryAfterDeleteBody =
+      budgetSummaryAfterDeleteResponse.body as {
+        success: boolean;
+        data: {
           currency: string;
-          plannedAmount: number;
-          nodeCount: number;
-        }>;
+          totalBudgetAmount: number;
+          totalPlannedAmount: number;
+          remainingAmount: number;
+          totalDays: number;
+          totalActivities: number;
+          isOverBudget: boolean;
+          hasMixedCurrencies: boolean;
+          totalsByCurrency: Array<{
+            currency: string;
+            plannedAmount: number;
+            nodeCount: number;
+          }>;
+        };
       };
-    };
 
     expect(budgetSummaryAfterDeleteResponse.statusCode).toBe(200);
     expect(budgetSummaryAfterDeleteBody.success).toBe(true);

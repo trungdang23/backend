@@ -38,7 +38,8 @@ describe('Budgets integration', () => {
 
     expressApp = app.getHttpAdapter().getInstance() as Express;
     tripRepository = app.get<InMemoryTripRepository>(TRIP_REPOSITORY);
-    planNodeRepository = app.get<InMemoryPlanNodeRepository>(PLAN_NODE_REPOSITORY);
+    planNodeRepository =
+      app.get<InMemoryPlanNodeRepository>(PLAN_NODE_REPOSITORY);
   });
 
   afterAll(async () => {
@@ -51,7 +52,10 @@ describe('Budgets integration', () => {
   });
 
   it('returns a manual budget summary from planner nodes instead of the itinerary bridge', async () => {
-    const traveler = await registerUser(expressApp, 'budgets.manual@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'budgets.manual@example.com',
+    );
     const tripId = await createTrip(expressApp, traveler.accessToken, {
       name: 'Planner Budget Manual',
       budgetMode: 'manual',
@@ -198,7 +202,10 @@ describe('Budgets integration', () => {
   });
 
   it('recomputes the budget summary after planner node update and delete mutations', async () => {
-    const traveler = await registerUser(expressApp, 'budgets.mutation@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'budgets.mutation@example.com',
+    );
     const tripId = await createTrip(expressApp, traveler.accessToken, {
       name: 'Planner Budget Mutation',
       budgetMode: 'manual',
@@ -375,18 +382,28 @@ async function createPlanNode(
     tripId: string;
     type: string;
     title: string;
+    startAt?: string;
+    endAt?: string;
     costAmount: number;
     costCurrency: string;
     sortOrder: number;
   },
 ) {
+  const requestBody =
+    body.type === 'activity'
+      ? {
+          startAt: '2026-07-12T09:00',
+          endAt: '2026-07-12T10:00',
+          ...body,
+        }
+      : body;
   const response = await dispatchRequest(expressApp, {
     method: 'POST',
     path: '/api/v1/nodes',
     headers: {
       authorization: `Bearer ${accessToken}`,
     },
-    body,
+    body: requestBody,
   });
   const responseBody = response.body as {
     data: {

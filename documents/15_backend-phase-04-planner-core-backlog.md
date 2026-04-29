@@ -22,6 +22,21 @@ Phase này chưa xử lý:
 - reorder nâng cao hoặc drag-and-drop semantics
 - migration dữ liệu từ itinerary bridge sang `PlanNode`
 
+## Slice BE-04F - Activity schedule constraints
+
+### Mục tiêu
+
+Siết rule thời gian ở backend cho planner activity để dữ liệu lưu từ bước 2 luôn nằm trong khoảng chuyến đi và không bị trùng giờ với activity khác.
+
+### Scope của lượt triển khai này
+
+- [x] bắt buộc `activity` có đủ `startAt` và `endAt`
+- [x] kiểm tra thời gian activity nằm trong `Trip.startDate..Trip.endDate`
+- [x] bắt buộc `activity.endAt` phải sau `activity.startAt`
+- [x] chặn activity bị overlap với activity khác trong cùng chuyến đi
+- [x] dùng cùng rule cho `POST /api/v1/nodes` và `PATCH /api/v1/nodes/:nodeId`
+- [x] thêm integration coverage cho create/update activity
+
 ## Slice BE-04E - Plan node sticker coordinates
 
 ### Mục tiêu

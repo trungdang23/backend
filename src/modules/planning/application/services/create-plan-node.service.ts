@@ -11,6 +11,7 @@ import {
   type PlanNodeRepositoryPort,
 } from '../ports/plan-node-repository.port';
 import { rethrowPlanningDomainError } from './map-planning-domain-error';
+import { validateActivitySchedule } from './validate-activity-schedule';
 
 export interface CreatePlanNodeInput {
   userId: string;
@@ -28,9 +29,10 @@ export interface CreatePlanNodeInput {
 }
 
 @Injectable()
-export class CreatePlanNodeService
-  implements UseCase<CreatePlanNodeInput, PlanNode>
-{
+export class CreatePlanNodeService implements UseCase<
+  CreatePlanNodeInput,
+  PlanNode
+> {
   constructor(
     @Inject(TRIP_REPOSITORY)
     private readonly tripRepository: TripRepositoryPort,
@@ -77,6 +79,18 @@ export class CreatePlanNodeService
         sortOrder: input.sortOrder,
         depth,
       });
+
+      if (node.type === 'activity') {
+        const existingNodes = await this.planNodeRepository.listByTrip({
+          tripId: trip.id,
+        });
+
+        validateActivitySchedule({
+          trip,
+          node,
+          existingNodes,
+        });
+      }
 
       return await this.planNodeRepository.create(node);
     } catch (error) {

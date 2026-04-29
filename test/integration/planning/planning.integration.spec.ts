@@ -15,6 +15,14 @@ import { InMemoryPlanNodeStickerRepository } from '../../support/in-memory-plan-
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
 import { InMemoryUserRepository } from '../../support/in-memory-user-repository';
 
+interface ErrorResponseBody {
+  success: boolean;
+  error: {
+    code: string;
+    message: string;
+  };
+}
+
 describe('Planning integration', () => {
   let app: INestApplication;
   let expressApp: Express;
@@ -43,7 +51,8 @@ describe('Planning integration', () => {
 
     expressApp = app.getHttpAdapter().getInstance() as Express;
     tripRepository = app.get<InMemoryTripRepository>(TRIP_REPOSITORY);
-    planNodeRepository = app.get<InMemoryPlanNodeRepository>(PLAN_NODE_REPOSITORY);
+    planNodeRepository =
+      app.get<InMemoryPlanNodeRepository>(PLAN_NODE_REPOSITORY);
     planNodeStickerRepository = app.get<InMemoryPlanNodeStickerRepository>(
       PLAN_NODE_STICKER_REPOSITORY,
     );
@@ -123,6 +132,8 @@ describe('Planning integration', () => {
         parentId: rootNodeBody.data.id,
         type: 'activity',
         title: 'Night market walk',
+        startAt: '2026-07-12T18:00',
+        endAt: '2026-07-12T20:00',
         costAmount: 150000,
         costCurrency: 'vnd',
         sortOrder: 0,
@@ -223,6 +234,233 @@ describe('Planning integration', () => {
     expect(plannerAfterDeleteBody.data.nodes).toHaveLength(0);
   });
 
+  it('rejects activity schedule values outside the trip range or overlapping another activity', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'planning.schedule@example.com',
+    );
+
+    const tripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Timed Planner',
+        startDate: '2026-07-12',
+        endDate: '2026-07-15',
+        budgetMode: 'manual',
+        manualBudgetAmount: 3500000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      },
+    });
+    const tripBody = tripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const missingTimeResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Untimed activity',
+        sortOrder: 0,
+      },
+    });
+    const missingTimeBody = missingTimeResponse.body as ErrorResponseBody;
+
+    expect(missingTimeResponse.statusCode).toBe(400);
+    expect(missingTimeBody.success).toBe(false);
+    expect(missingTimeBody.error.code).toBe('BAD_REQUEST');
+    expect(missingTimeBody.error.message).toBe(
+      'Activity start and end times are required.',
+    );
+
+    const outsideRangeResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Outside trip range',
+        startAt: '2026-07-16T09:00',
+        endAt: '2026-07-16T10:00',
+        sortOrder: 1,
+      },
+    });
+    const outsideRangeBody = outsideRangeResponse.body as ErrorResponseBody;
+
+    expect(outsideRangeResponse.statusCode).toBe(400);
+    expect(outsideRangeBody.error.code).toBe('BAD_REQUEST');
+    expect(outsideRangeBody.error.message).toBe(
+      'Activity time must be within the trip date range.',
+    );
+
+    const equalTimeResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Zero length activity',
+        startAt: '2026-07-13T09:00',
+        endAt: '2026-07-13T09:00',
+        sortOrder: 2,
+      },
+    });
+    const equalTimeBody = equalTimeResponse.body as ErrorResponseBody;
+
+    expect(equalTimeResponse.statusCode).toBe(400);
+    expect(equalTimeBody.error.code).toBe('BAD_REQUEST');
+    expect(equalTimeBody.error.message).toBe(
+      'Activity end time must be after start time.',
+    );
+
+    const backwardsTimeResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Backwards activity',
+        startAt: '2026-07-13T11:00',
+        endAt: '2026-07-13T10:00',
+        sortOrder: 3,
+      },
+    });
+    const backwardsTimeBody = backwardsTimeResponse.body as ErrorResponseBody;
+
+    expect(backwardsTimeResponse.statusCode).toBe(400);
+    expect(backwardsTimeBody.error.code).toBe('BAD_REQUEST');
+
+    const morningActivityResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Morning cafe',
+        startAt: '2026-07-13T09:00',
+        endAt: '2026-07-13T10:00',
+        sortOrder: 4,
+      },
+    });
+    const morningActivityBody = morningActivityResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    expect(morningActivityResponse.statusCode).toBe(201);
+
+    const overlappingCreateResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Overlapping museum',
+        startAt: '2026-07-13T09:30',
+        endAt: '2026-07-13T10:30',
+        sortOrder: 5,
+      },
+    });
+    const overlappingCreateBody =
+      overlappingCreateResponse.body as ErrorResponseBody;
+
+    expect(overlappingCreateResponse.statusCode).toBe(400);
+    expect(overlappingCreateBody.error.code).toBe('BAD_REQUEST');
+    expect(overlappingCreateBody.error.message).toBe(
+      'Activity time overlaps another activity in this trip.',
+    );
+
+    const adjacentActivityResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: tripBody.data.id,
+        type: 'activity',
+        title: 'Adjacent brunch',
+        startAt: '2026-07-13T10:00',
+        endAt: '2026-07-13T11:00',
+        sortOrder: 6,
+      },
+    });
+    const adjacentActivityBody = adjacentActivityResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    expect(adjacentActivityResponse.statusCode).toBe(201);
+
+    const overlappingUpdateResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/nodes/${adjacentActivityBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        startAt: '2026-07-13T09:45',
+        endAt: '2026-07-13T10:45',
+      },
+    });
+    const overlappingUpdateBody =
+      overlappingUpdateResponse.body as ErrorResponseBody;
+
+    expect(overlappingUpdateResponse.statusCode).toBe(400);
+    expect(overlappingUpdateBody.error.code).toBe('BAD_REQUEST');
+    expect(overlappingUpdateBody.error.message).toBe(
+      'Activity time overlaps another activity in this trip.',
+    );
+
+    const outsideRangeUpdateResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/nodes/${morningActivityBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        startAt: '2026-07-16T09:00',
+        endAt: '2026-07-16T10:00',
+      },
+    });
+    const outsideRangeUpdateBody =
+      outsideRangeUpdateResponse.body as ErrorResponseBody;
+
+    expect(outsideRangeUpdateResponse.statusCode).toBe(400);
+    expect(outsideRangeUpdateBody.error.code).toBe('BAD_REQUEST');
+    expect(outsideRangeUpdateBody.error.message).toBe(
+      'Activity time must be within the trip date range.',
+    );
+  });
+
   it('saves and lists sticker coordinates for a planner node', async () => {
     const traveler = await registerUser(
       expressApp,
@@ -261,6 +499,8 @@ describe('Planning integration', () => {
         tripId: tripBody.data.id,
         type: 'activity',
         title: 'Cafe hopping',
+        startAt: '2026-10-01T09:00',
+        endAt: '2026-10-01T11:00',
         sortOrder: 0,
       },
     });
@@ -349,7 +589,10 @@ describe('Planning integration', () => {
   });
 
   it('serves a public planner without auth and blocks private planners', async () => {
-    const traveler = await registerUser(expressApp, 'planning.public@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'planning.public@example.com',
+    );
 
     const publicTripResponse = await dispatchRequest(expressApp, {
       method: 'POST',
