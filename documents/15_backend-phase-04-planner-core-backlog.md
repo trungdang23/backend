@@ -41,7 +41,9 @@ Siết rule thời gian ở backend cho planner activity để dữ liệu lưu 
 
 ### Mục tiêu
 
-Mở rộng planner core để mỗi `PlanNode` có thể lưu danh sách sticker được đặt tự do trong khung hoạt động bằng tọa độ chuẩn hóa, phục vụ bước activity canvas của frontend.
+Mở rộng planner core để mỗi `PlanNode` có thể lưu danh sách sticker được đặt tự do bằng tọa độ chuẩn hóa.
+
+Re-baseline: flow tạo hoạt động hiện tại không cần sticker hoặc activity canvas. Phần `PlanNodeSticker` đã có trong source nên được xem là legacy/experimental support cho dữ liệu cũ hoặc thử nghiệm planner trước đây, không phải yêu cầu của activity creation hiện tại. Sticker/freeform interaction thuộc phạm vi `journal`.
 
 ### Quyết định dữ liệu
 
@@ -59,6 +61,7 @@ Mở rộng planner core để mỗi `PlanNode` có thể lưu danh sách sticke
   - `PUT /api/v1/nodes/:nodeId/stickers`
 - [x] kiểm tra ownership thông qua `PlanNode.tripId -> Trip.userId`
 - [x] thêm integration/e2e coverage cho save/load tọa độ
+- [x] ghi rõ `PlanNodeSticker` không còn là requirement của flow tạo activity hiện tại
 
 ## Trạng thái
 
