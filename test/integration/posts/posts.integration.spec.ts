@@ -265,6 +265,79 @@ describe('Posts integration', () => {
     expect(createBody.error.message).toBe('Trip not found.');
   });
 
+  it('rejects creating a post linked to another user public trip', async () => {
+    const owner = await registerUser(
+      expressApp,
+      'posts.trip-owner@example.com',
+    );
+    const otherTraveler = await registerUser(
+      expressApp,
+      'posts.trip-non-owner@example.com',
+    );
+
+    const tripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+      body: {
+        name: 'Owner Public Trip',
+        startDate: '2026-09-01',
+        endDate: '2026-09-05',
+        budgetMode: 'auto',
+        visibility: 'public',
+      },
+    });
+    const tripBody = tripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const createResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/posts',
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+      body: {
+        title: 'Không được mượn trip người khác',
+        content: 'Trip public vẫn không thuộc quyền sở hữu của user này.',
+        tripId: tripBody.data.id,
+      },
+    });
+    const createBody = createResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(createResponse.statusCode).toBe(404);
+    expect(createBody.success).toBe(false);
+    expect(createBody.error.code).toBe('TRIP_NOT_FOUND');
+    expect(createBody.error.message).toBe('Trip not found.');
+
+    const listResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/posts?page=0&size=12&sort=createdAt,desc',
+    });
+    const listBody = listResponse.body as {
+      success: boolean;
+      data: unknown[];
+      meta: {
+        totalElements: number;
+      };
+    };
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listBody.success).toBe(true);
+    expect(listBody.data).toHaveLength(0);
+    expect(listBody.meta.totalElements).toBe(0);
+  });
+
   it('requires auth for create and returns 404 for a missing post detail', async () => {
     const createResponse = await dispatchRequest(expressApp, {
       method: 'POST',

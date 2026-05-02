@@ -9,7 +9,10 @@ import { PLAN_NODE_REPOSITORY } from '../../../src/modules/planning/application/
 import { PLAN_NODE_STICKER_REPOSITORY } from '../../../src/modules/planning/application/ports/plan-node-sticker-repository.port';
 import { TRIP_REPOSITORY } from '../../../src/modules/trips/application/ports/trip-repository.port';
 import { USER_REPOSITORY } from '../../../src/modules/users/application/ports/user-repository.port';
-import { dispatchRequest } from '../../support/dispatch-request';
+import {
+  dispatchRequest,
+  type DispatchRequestResult,
+} from '../../support/dispatch-request';
 import { InMemoryPlanNodeRepository } from '../../support/in-memory-plan-node-repository';
 import { InMemoryPlanNodeStickerRepository } from '../../support/in-memory-plan-node-sticker-repository';
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
@@ -588,6 +591,173 @@ describe('Planning integration', () => {
     );
   });
 
+  it('rejects planner and sticker access from a non-owner', async () => {
+    const owner = await registerUser(expressApp, 'planning.owner@example.com');
+    const otherTraveler = await registerUser(
+      expressApp,
+      'planning.non-owner@example.com',
+    );
+    const tripId = await createTrip(expressApp, owner.accessToken, {
+      name: 'Owner Planner Only',
+      visibility: 'private',
+    });
+    const nodeId = await createPlanNode(expressApp, owner.accessToken, {
+      tripId,
+      type: 'activity',
+      title: 'Owner breakfast',
+      startAt: '2026-10-01T08:00',
+      endAt: '2026-10-01T09:00',
+      sortOrder: 0,
+    });
+
+    const saveStickersResponse = await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/nodes/${nodeId}/stickers`,
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+      body: {
+        stickers: [
+          {
+            stickerKey: 'sun',
+            x: 1000,
+            y: 2000,
+            zIndex: 1,
+          },
+        ],
+      },
+    });
+
+    expect(saveStickersResponse.statusCode).toBe(200);
+
+    const deniedPlannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/planner`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+    });
+
+    expectTripNotFound(deniedPlannerResponse);
+
+    const deniedCreateResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+      body: {
+        tripId,
+        type: 'day',
+        title: 'Unauthorized day',
+        sortOrder: 1,
+      },
+    });
+
+    expectTripNotFound(deniedCreateResponse);
+
+    const deniedUpdateResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/nodes/${nodeId}`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+      body: {
+        title: 'Unauthorized title',
+      },
+    });
+
+    expectTripNotFound(deniedUpdateResponse);
+
+    const deniedDeleteResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/nodes/${nodeId}`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+    });
+
+    expectTripNotFound(deniedDeleteResponse);
+
+    const deniedGetStickersResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/nodes/${nodeId}/stickers`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+    });
+
+    expectTripNotFound(deniedGetStickersResponse);
+
+    const deniedSaveStickersResponse = await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/nodes/${nodeId}/stickers`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+      body: {
+        stickers: [
+          {
+            stickerKey: 'moon',
+            x: 3000,
+            y: 4000,
+            zIndex: 1,
+          },
+        ],
+      },
+    });
+
+    expectTripNotFound(deniedSaveStickersResponse);
+
+    const ownerPlannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/planner`,
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+    });
+    const ownerPlannerBody = ownerPlannerResponse.body as {
+      success: boolean;
+      data: {
+        nodes: Array<{
+          title: string;
+        }>;
+      };
+    };
+
+    expect(ownerPlannerResponse.statusCode).toBe(200);
+    expect(ownerPlannerBody.success).toBe(true);
+    expect(ownerPlannerBody.data.nodes.map((node) => node.title)).toEqual([
+      'Owner breakfast',
+    ]);
+
+    const ownerStickersResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/nodes/${nodeId}/stickers`,
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+    });
+    const ownerStickersBody = ownerStickersResponse.body as {
+      success: boolean;
+      data: Array<{
+        stickerKey: string;
+        x: number;
+        y: number;
+      }>;
+    };
+
+    expect(ownerStickersResponse.statusCode).toBe(200);
+    expect(ownerStickersBody.success).toBe(true);
+    expect(ownerStickersBody.data).toEqual([
+      expect.objectContaining({
+        stickerKey: 'sun',
+        x: 1000,
+        y: 2000,
+      }),
+    ]);
+  });
+
   it('serves a public planner without auth and blocks private planners', async () => {
     const traveler = await registerUser(
       expressApp,
@@ -741,4 +911,77 @@ async function registerUser(expressApp: Express, email: string) {
     userId: body.data.user.id,
     accessToken: body.data.tokens.accessToken,
   };
+}
+
+async function createTrip(
+  expressApp: Express,
+  accessToken: string,
+  body: {
+    name: string;
+    visibility: 'private' | 'public';
+  },
+) {
+  const response = await dispatchRequest(expressApp, {
+    method: 'POST',
+    path: '/api/v1/trips',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+    body: {
+      name: body.name,
+      startDate: '2026-10-01',
+      endDate: '2026-10-03',
+      budgetMode: 'auto',
+      visibility: body.visibility,
+    },
+  });
+  const responseBody = response.body as {
+    data: {
+      id: string;
+    };
+  };
+
+  expect(response.statusCode).toBe(201);
+
+  return responseBody.data.id;
+}
+
+async function createPlanNode(
+  expressApp: Express,
+  accessToken: string,
+  body: {
+    tripId: string;
+    type: string;
+    title: string;
+    startAt?: string;
+    endAt?: string;
+    sortOrder: number;
+  },
+) {
+  const response = await dispatchRequest(expressApp, {
+    method: 'POST',
+    path: '/api/v1/nodes',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+    body,
+  });
+  const responseBody = response.body as {
+    data: {
+      id: string;
+    };
+  };
+
+  expect(response.statusCode).toBe(201);
+
+  return responseBody.data.id;
+}
+
+function expectTripNotFound(response: DispatchRequestResult) {
+  const body = response.body as ErrorResponseBody;
+
+  expect(response.statusCode).toBe(404);
+  expect(body.success).toBe(false);
+  expect(body.error.code).toBe('TRIP_NOT_FOUND');
+  expect(body.error.message).toBe('Trip not found.');
 }

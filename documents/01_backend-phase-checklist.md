@@ -261,6 +261,29 @@ Status: `In progress`
   - cleanup legacy itinerary bridge
   - production smoke thật sau deploy
 
+### Focused hardening slice 08-B - ownership and authorization
+
+- Scope của lượt này:
+  - [x] chỉ bổ sung backend integration coverage cho owner-only APIs
+  - [x] không thay đổi frontend/UI hoặc flow UI hiện tại
+  - [x] không thêm yêu cầu sticker vào flow tạo hoạt động; `PlanNodeSticker` chỉ còn là legacy/experimental endpoint cần được giữ an toàn quyền truy cập
+- Target cases trong lượt này:
+  - [x] non-owner không được update/delete trip của owner khác
+  - [x] non-owner không được đọc planner private, tạo node bằng trip của owner khác, update/delete node của owner khác
+  - [x] non-owner không được đọc/ghi sticker của node thuộc owner khác khi legacy endpoint còn tồn tại
+  - [x] non-owner không được đọc budget summary của trip owner khác
+  - [x] non-owner không được tạo post gắn với trip của owner khác, kể cả trip public
+- Verification:
+  - [x] targeted integration tests cho trips/planning/budgets/posts
+  - [x] backend lint
+  - [x] backend build
+  - [x] full backend unit suite
+- Deferred rõ:
+  - xóa hẳn legacy sticker endpoints chỉ thực hiện khi FE/contract xác nhận không còn caller
+  - comment endpoints
+  - cleanup legacy itinerary bridge
+  - production smoke thật sau deploy
+
 - [ ] Rà lại tất cả response envelopes theo DRD
 - [x] Rà app error code:
   - [x] `AUTH_INVALID_CREDENTIALS`
@@ -268,7 +291,7 @@ Status: `In progress`
   - [x] `TRIP_NOT_FOUND`
   - [x] `NODE_VALIDATION_ERROR`
   - [x] `PERMISSION_DENIED`
-- [ ] Rà ownership và authorization cho auth/trips/planner/posts
+- [x] Rà ownership và authorization cho auth/trips/planner/posts
 - [ ] Rà validation toàn bộ DTO chính
 - [ ] Rà Swagger cho auth/trips/planner/posts
 - [ ] Rà migration rollback notes

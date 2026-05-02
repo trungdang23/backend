@@ -315,6 +315,53 @@ describe('Budgets integration', () => {
       ],
     });
   });
+
+  it('rejects budget summary reads from a non-owner', async () => {
+    const owner = await registerUser(expressApp, 'budgets.owner@example.com');
+    const otherTraveler = await registerUser(
+      expressApp,
+      'budgets.non-owner@example.com',
+    );
+    const tripId = await createTrip(expressApp, owner.accessToken, {
+      name: 'Owner Budget Only',
+      budgetMode: 'manual',
+      manualBudgetAmount: 2_500_000,
+      manualBudgetCurrency: 'VND',
+    });
+
+    const deniedBudgetSummaryResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/budget-summary`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+    });
+    const deniedBudgetSummaryBody = deniedBudgetSummaryResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(deniedBudgetSummaryResponse.statusCode).toBe(404);
+    expect(deniedBudgetSummaryBody.success).toBe(false);
+    expect(deniedBudgetSummaryBody.error.code).toBe('TRIP_NOT_FOUND');
+    expect(deniedBudgetSummaryBody.error.message).toBe('Trip not found.');
+
+    const ownerBudgetSummary = await getBudgetSummary(
+      expressApp,
+      owner.accessToken,
+      tripId,
+    );
+
+    expect(ownerBudgetSummary).toMatchObject({
+      currency: 'VND',
+      totalBudgetAmount: 2_500_000,
+      totalPlannedAmount: 0,
+      remainingAmount: 2_500_000,
+    });
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {

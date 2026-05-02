@@ -333,6 +333,100 @@ describe('Trips integration', () => {
     expect(detailAfterDeleteResponse.statusCode).toBe(404);
   });
 
+  it('rejects update and delete attempts from a non-owner', async () => {
+    const owner = await registerUser(expressApp, 'trips.owner@example.com');
+    const otherTraveler = await registerUser(
+      expressApp,
+      'trips.non-owner@example.com',
+    );
+
+    const createResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+      body: {
+        name: 'Owner Only Ha Giang',
+        startDate: '2026-12-01',
+        endDate: '2026-12-06',
+        budgetMode: 'manual',
+        manualBudgetAmount: 6500000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'private',
+      },
+    });
+    const createBody = createResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    const deniedUpdateResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/trips/${createBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+      body: {
+        name: 'Hijacked Trip',
+        visibility: 'public',
+      },
+    });
+    const deniedUpdateBody = deniedUpdateResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(deniedUpdateResponse.statusCode).toBe(404);
+    expect(deniedUpdateBody.success).toBe(false);
+    expect(deniedUpdateBody.error.code).toBe('TRIP_NOT_FOUND');
+    expect(deniedUpdateBody.error.message).toBe('Trip not found.');
+
+    const deniedDeleteResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${createBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${otherTraveler.accessToken}`,
+      },
+    });
+    const deniedDeleteBody = deniedDeleteResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(deniedDeleteResponse.statusCode).toBe(404);
+    expect(deniedDeleteBody.success).toBe(false);
+    expect(deniedDeleteBody.error.code).toBe('TRIP_NOT_FOUND');
+    expect(deniedDeleteBody.error.message).toBe('Trip not found.');
+
+    const ownerDetailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${createBody.data.id}`,
+      headers: {
+        authorization: `Bearer ${owner.accessToken}`,
+      },
+    });
+    const ownerDetailBody = ownerDetailResponse.body as {
+      success: boolean;
+      data: {
+        name: string;
+        visibility: string;
+      };
+    };
+
+    expect(ownerDetailResponse.statusCode).toBe(200);
+    expect(ownerDetailBody.success).toBe(true);
+    expect(ownerDetailBody.data.name).toBe('Owner Only Ha Giang');
+    expect(ownerDetailBody.data.visibility).toBe('private');
+  });
+
   it('serves public trip detail without auth and blocks private trips', async () => {
     const traveler = await registerUser(expressApp, 'trips.public@example.com');
 
