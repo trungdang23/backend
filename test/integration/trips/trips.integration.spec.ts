@@ -225,7 +225,7 @@ describe('Trips integration', () => {
 
     expect(missingResponse.statusCode).toBe(404);
     expect(missingBody.success).toBe(false);
-    expect(missingBody.error.code).toBe('NOT_FOUND');
+    expect(missingBody.error.code).toBe('TRIP_NOT_FOUND');
     expect(missingBody.error.message).toBe('Trip not found.');
   });
 
@@ -411,7 +411,7 @@ describe('Trips integration', () => {
 
     expect(privateDetailResponse.statusCode).toBe(403);
     expect(privateDetailBody.success).toBe(false);
-    expect(privateDetailBody.error.code).toBe('FORBIDDEN');
+    expect(privateDetailBody.error.code).toBe('PERMISSION_DENIED');
     expect(privateDetailBody.error.message).toBe('Trip is private.');
 
     const missingDetailResponse = await dispatchRequest(expressApp, {
@@ -428,12 +428,15 @@ describe('Trips integration', () => {
 
     expect(missingDetailResponse.statusCode).toBe(404);
     expect(missingDetailBody.success).toBe(false);
-    expect(missingDetailBody.error.code).toBe('NOT_FOUND');
+    expect(missingDetailBody.error.code).toBe('TRIP_NOT_FOUND');
     expect(missingDetailBody.error.message).toBe('Trip not found.');
   });
 
   it('lists only public trips without authentication', async () => {
-    const traveler = await registerUser(expressApp, 'trips.public.list@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'trips.public.list@example.com',
+    );
 
     await dispatchRequest(expressApp, {
       method: 'POST',

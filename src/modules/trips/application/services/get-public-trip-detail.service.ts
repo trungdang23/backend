@@ -1,10 +1,9 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import {
+  permissionDeniedException,
+  tripNotFoundException,
+} from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import { Trip } from '../../domain/trip';
 import {
@@ -23,11 +22,11 @@ export class GetPublicTripDetailService implements UseCase<string, Trip> {
     const trip = await this.tripRepository.findById(tripId);
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     if (trip.visibility !== 'public') {
-      throw new ForbiddenException('Trip is private.');
+      throw permissionDeniedException('Trip is private.');
     }
 
     return trip;

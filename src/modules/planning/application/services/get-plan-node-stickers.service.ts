@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import { tripNotFoundException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   TRIP_REPOSITORY,
@@ -21,9 +22,10 @@ export interface GetPlanNodeStickersInput {
 }
 
 @Injectable()
-export class GetPlanNodeStickersService
-  implements UseCase<GetPlanNodeStickersInput, PlanNodeSticker[]>
-{
+export class GetPlanNodeStickersService implements UseCase<
+  GetPlanNodeStickersInput,
+  PlanNodeSticker[]
+> {
   constructor(
     @Inject(TRIP_REPOSITORY)
     private readonly tripRepository: TripRepositoryPort,
@@ -46,7 +48,7 @@ export class GetPlanNodeStickersService
     });
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     return this.planNodeStickerRepository.listByNodeId(node.id);

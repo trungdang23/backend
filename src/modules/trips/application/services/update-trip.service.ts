@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 
+import { tripNotFoundException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import { Trip } from '../../domain/trip';
 import {
@@ -65,7 +61,7 @@ export class UpdateTripService implements UseCase<UpdateTripInput, Trip> {
     });
 
     if (existingTrip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     try {

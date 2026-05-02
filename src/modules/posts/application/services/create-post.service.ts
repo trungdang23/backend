@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 
+import { tripNotFoundException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import type { PostReadModel } from '../post-read-model';
 import {
@@ -28,7 +24,10 @@ export interface CreatePostInput {
 }
 
 @Injectable()
-export class CreatePostService implements UseCase<CreatePostInput, PostReadModel> {
+export class CreatePostService implements UseCase<
+  CreatePostInput,
+  PostReadModel
+> {
   constructor(
     @Inject(POST_REPOSITORY)
     private readonly postRepository: PostRepositoryPort,
@@ -47,7 +46,7 @@ export class CreatePostService implements UseCase<CreatePostInput, PostReadModel
       });
 
       if (trip === null) {
-        throw new NotFoundException('Trip not found.');
+        throw tripNotFoundException();
       }
 
       if (trip.visibility !== 'public') {

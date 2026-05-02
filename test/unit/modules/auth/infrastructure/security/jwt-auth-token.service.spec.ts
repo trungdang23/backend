@@ -102,9 +102,17 @@ describe('JwtAuthTokenService', () => {
 
     dateNowSpy.mockReturnValue(new Date('2026-04-14T10:00:02.000Z').getTime());
 
+    await expect(service.verifyAccessToken(tokens.accessToken)).rejects.toThrow(
+      UnauthorizedException,
+    );
     await expect(
       service.verifyAccessToken(tokens.accessToken),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({
+      response: {
+        code: 'AUTH_TOKEN_EXPIRED',
+        message: 'Token has expired.',
+      },
+    });
 
     dateNowSpy.mockRestore();
   });

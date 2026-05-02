@@ -1,5 +1,6 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { authInvalidCredentialsException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   PASSWORD_HASHER,
@@ -38,7 +39,7 @@ export class LoginUserService implements UseCase<LoginUserInput, AuthSession> {
     const user = await this.userRepository.findByEmail(normalizedEmail);
 
     if (user === null) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw authInvalidCredentialsException();
     }
 
     const passwordMatches = await this.passwordHasher.verify(
@@ -47,7 +48,7 @@ export class LoginUserService implements UseCase<LoginUserInput, AuthSession> {
     );
 
     if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw authInvalidCredentialsException();
     }
 
     const profile = toUserProfile(user);

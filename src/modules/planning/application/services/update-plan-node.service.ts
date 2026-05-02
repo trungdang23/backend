@@ -1,10 +1,9 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import {
+  nodeValidationException,
+  tripNotFoundException,
+} from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   TRIP_REPOSITORY,
@@ -57,11 +56,11 @@ export class UpdatePlanNodeService implements UseCase<
     });
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     if (!hasAnyDefinedValue(input)) {
-      throw new BadRequestException(
+      throw nodeValidationException(
         'At least one field must be provided to update a plan node.',
       );
     }

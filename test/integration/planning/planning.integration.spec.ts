@@ -279,7 +279,7 @@ describe('Planning integration', () => {
 
     expect(missingTimeResponse.statusCode).toBe(400);
     expect(missingTimeBody.success).toBe(false);
-    expect(missingTimeBody.error.code).toBe('BAD_REQUEST');
+    expect(missingTimeBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(missingTimeBody.error.message).toBe(
       'Activity start and end times are required.',
     );
@@ -302,7 +302,7 @@ describe('Planning integration', () => {
     const outsideRangeBody = outsideRangeResponse.body as ErrorResponseBody;
 
     expect(outsideRangeResponse.statusCode).toBe(400);
-    expect(outsideRangeBody.error.code).toBe('BAD_REQUEST');
+    expect(outsideRangeBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(outsideRangeBody.error.message).toBe(
       'Activity time must be within the trip date range.',
     );
@@ -325,7 +325,7 @@ describe('Planning integration', () => {
     const equalTimeBody = equalTimeResponse.body as ErrorResponseBody;
 
     expect(equalTimeResponse.statusCode).toBe(400);
-    expect(equalTimeBody.error.code).toBe('BAD_REQUEST');
+    expect(equalTimeBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(equalTimeBody.error.message).toBe(
       'Activity end time must be after start time.',
     );
@@ -348,7 +348,7 @@ describe('Planning integration', () => {
     const backwardsTimeBody = backwardsTimeResponse.body as ErrorResponseBody;
 
     expect(backwardsTimeResponse.statusCode).toBe(400);
-    expect(backwardsTimeBody.error.code).toBe('BAD_REQUEST');
+    expect(backwardsTimeBody.error.code).toBe('NODE_VALIDATION_ERROR');
 
     const morningActivityResponse = await dispatchRequest(expressApp, {
       method: 'POST',
@@ -392,7 +392,7 @@ describe('Planning integration', () => {
       overlappingCreateResponse.body as ErrorResponseBody;
 
     expect(overlappingCreateResponse.statusCode).toBe(400);
-    expect(overlappingCreateBody.error.code).toBe('BAD_REQUEST');
+    expect(overlappingCreateBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(overlappingCreateBody.error.message).toBe(
       'Activity time overlaps another activity in this trip.',
     );
@@ -435,7 +435,7 @@ describe('Planning integration', () => {
       overlappingUpdateResponse.body as ErrorResponseBody;
 
     expect(overlappingUpdateResponse.statusCode).toBe(400);
-    expect(overlappingUpdateBody.error.code).toBe('BAD_REQUEST');
+    expect(overlappingUpdateBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(overlappingUpdateBody.error.message).toBe(
       'Activity time overlaps another activity in this trip.',
     );
@@ -455,7 +455,7 @@ describe('Planning integration', () => {
       outsideRangeUpdateResponse.body as ErrorResponseBody;
 
     expect(outsideRangeUpdateResponse.statusCode).toBe(400);
-    expect(outsideRangeUpdateBody.error.code).toBe('BAD_REQUEST');
+    expect(outsideRangeUpdateBody.error.code).toBe('NODE_VALIDATION_ERROR');
     expect(outsideRangeUpdateBody.error.message).toBe(
       'Activity time must be within the trip date range.',
     );
@@ -689,7 +689,7 @@ describe('Planning integration', () => {
 
     expect(privatePlannerResponse.statusCode).toBe(403);
     expect(privatePlannerBody.success).toBe(false);
-    expect(privatePlannerBody.error.code).toBe('FORBIDDEN');
+    expect(privatePlannerBody.error.code).toBe('PERMISSION_DENIED');
     expect(privatePlannerBody.error.message).toBe('Trip is private.');
 
     const missingPlannerResponse = await dispatchRequest(expressApp, {
@@ -706,7 +706,7 @@ describe('Planning integration', () => {
 
     expect(missingPlannerResponse.statusCode).toBe(404);
     expect(missingPlannerBody.success).toBe(false);
-    expect(missingPlannerBody.error.code).toBe('NOT_FOUND');
+    expect(missingPlannerBody.error.code).toBe('TRIP_NOT_FOUND');
     expect(missingPlannerBody.error.message).toBe('Trip not found.');
   });
 });

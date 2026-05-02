@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import { tripNotFoundException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   TRIP_REPOSITORY,
@@ -16,9 +17,10 @@ export interface DeletePlanNodeInput {
 }
 
 @Injectable()
-export class DeletePlanNodeService
-  implements UseCase<DeletePlanNodeInput, void>
-{
+export class DeletePlanNodeService implements UseCase<
+  DeletePlanNodeInput,
+  void
+> {
   constructor(
     @Inject(TRIP_REPOSITORY)
     private readonly tripRepository: TripRepositoryPort,
@@ -39,7 +41,7 @@ export class DeletePlanNodeService
     });
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     await this.planNodeRepository.delete(node.id);

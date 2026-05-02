@@ -235,15 +235,39 @@ Status: `Completed`
 
 ## Phase 08 - Hardening, test, release readiness
 
-Status: `Todo`
+Status: `In progress`
+
+### Focused hardening slice 08-A - application error codes
+
+- Scope của lượt này:
+  - [x] chuẩn hóa các app error code đã nêu trong checklist cho auth/trips/planner/public permission flow
+  - giữ nguyên success envelope, endpoint path, và payload data hiện tại
+  - không thay đổi frontend/UI hoặc contract route frontend
+- Target code trong lượt này:
+  - [x] `AUTH_INVALID_CREDENTIALS`
+  - [x] `AUTH_TOKEN_EXPIRED`
+  - [x] `TRIP_NOT_FOUND`
+  - [x] `NODE_VALIDATION_ERROR`
+  - [x] `PERMISSION_DENIED`
+- Verification:
+  - [x] targeted unit tests cho auth/error filter
+  - [x] targeted integration tests cho auth/trips/planning/posts
+  - [x] backend lint
+  - [x] backend build
+  - [x] full backend unit suite
+  - [x] Prisma schema validate với `DATABASE_URL` local test
+- Deferred rõ:
+  - comment endpoints
+  - cleanup legacy itinerary bridge
+  - production smoke thật sau deploy
 
 - [ ] Rà lại tất cả response envelopes theo DRD
-- [ ] Rà app error code:
-  - `AUTH_INVALID_CREDENTIALS`
-  - `AUTH_TOKEN_EXPIRED`
-  - `TRIP_NOT_FOUND`
-  - `NODE_VALIDATION_ERROR`
-  - `PERMISSION_DENIED`
+- [x] Rà app error code:
+  - [x] `AUTH_INVALID_CREDENTIALS`
+  - [x] `AUTH_TOKEN_EXPIRED`
+  - [x] `TRIP_NOT_FOUND`
+  - [x] `NODE_VALIDATION_ERROR`
+  - [x] `PERMISSION_DENIED`
 - [ ] Rà ownership và authorization cho auth/trips/planner/posts
 - [ ] Rà validation toàn bộ DTO chính
 - [ ] Rà Swagger cho auth/trips/planner/posts

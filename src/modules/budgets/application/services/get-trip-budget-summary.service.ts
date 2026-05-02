@@ -1,5 +1,6 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
+import { tripNotFoundException } from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   PLAN_NODE_REPOSITORY,
@@ -21,9 +22,10 @@ export interface GetTripBudgetSummaryInput {
 }
 
 @Injectable()
-export class GetTripBudgetSummaryService
-  implements UseCase<GetTripBudgetSummaryInput, TripBudgetSummary>
-{
+export class GetTripBudgetSummaryService implements UseCase<
+  GetTripBudgetSummaryInput,
+  TripBudgetSummary
+> {
   constructor(
     @Inject(TRIP_REPOSITORY)
     private readonly tripRepository: TripRepositoryPort,
@@ -31,16 +33,14 @@ export class GetTripBudgetSummaryService
     private readonly planNodeRepository: PlanNodeRepositoryPort,
   ) {}
 
-  async execute(
-    input: GetTripBudgetSummaryInput,
-  ): Promise<TripBudgetSummary> {
+  async execute(input: GetTripBudgetSummaryInput): Promise<TripBudgetSummary> {
     const trip = await this.tripRepository.findByIdForUser({
       tripId: input.tripId,
       userId: input.userId,
     });
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     const planNodes = await this.planNodeRepository.listByTrip({
@@ -134,11 +134,17 @@ function sortTotalsByCurrency(
   displayCurrency: string,
 ): TripBudgetSummaryCurrencyTotal[] {
   return [...totalsByCurrency].sort((left, right) => {
-    if (left.currency === displayCurrency && right.currency !== displayCurrency) {
+    if (
+      left.currency === displayCurrency &&
+      right.currency !== displayCurrency
+    ) {
       return -1;
     }
 
-    if (right.currency === displayCurrency && left.currency !== displayCurrency) {
+    if (
+      right.currency === displayCurrency &&
+      left.currency !== displayCurrency
+    ) {
       return 1;
     }
 

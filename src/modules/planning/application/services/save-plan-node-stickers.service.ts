@@ -1,10 +1,9 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import {
+  nodeValidationException,
+  tripNotFoundException,
+} from '../../../../app/errors/app-exceptions';
 import type { UseCase } from '../../../../shared/application/use-case';
 import {
   TRIP_REPOSITORY,
@@ -41,9 +40,10 @@ export interface SavePlanNodeStickersInput {
 }
 
 @Injectable()
-export class SavePlanNodeStickersService
-  implements UseCase<SavePlanNodeStickersInput, PlanNodeSticker[]>
-{
+export class SavePlanNodeStickersService implements UseCase<
+  SavePlanNodeStickersInput,
+  PlanNodeSticker[]
+> {
   constructor(
     @Inject(TRIP_REPOSITORY)
     private readonly tripRepository: TripRepositoryPort,
@@ -66,11 +66,11 @@ export class SavePlanNodeStickersService
     });
 
     if (trip === null) {
-      throw new NotFoundException('Trip not found.');
+      throw tripNotFoundException();
     }
 
     if (input.stickers.length > MAX_PLAN_NODE_STICKERS) {
-      throw new BadRequestException(
+      throw nodeValidationException(
         `A plan node can have at most ${MAX_PLAN_NODE_STICKERS} stickers.`,
       );
     }

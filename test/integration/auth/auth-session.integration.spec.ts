@@ -187,7 +187,7 @@ describe('Auth session integration', () => {
 
     expect(response.statusCode).toBe(401);
     expect(body.success).toBe(false);
-    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
     expect(body.error.message).toBe('Invalid email or password.');
   });
 

@@ -1,5 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
-
+import { nodeValidationException } from '../../../../app/errors/app-exceptions';
 import type { Trip } from '../../../trips/domain/trip';
 import type { PlanNode } from '../../domain/plan-node';
 
@@ -32,7 +31,7 @@ export function validateActivitySchedule(
     !isDateWithinTrip(input.trip, activityRange.startDate) ||
     !isDateWithinTrip(input.trip, activityRange.endDate)
   ) {
-    throw new BadRequestException(
+    throw nodeValidationException(
       'Activity time must be within the trip date range.',
     );
   }
@@ -52,7 +51,7 @@ export function validateActivitySchedule(
   });
 
   if (hasOverlap) {
-    throw new BadRequestException(
+    throw nodeValidationException(
       'Activity time overlaps another activity in this trip.',
     );
   }
@@ -60,14 +59,14 @@ export function validateActivitySchedule(
 
 function getActivityTimeRange(node: PlanNode): ActivityTimeRange {
   if (node.startAt === null || node.endAt === null) {
-    throw new BadRequestException('Activity start and end times are required.');
+    throw nodeValidationException('Activity start and end times are required.');
   }
 
   const startAt = parseDateTimeForPlanner(node.startAt, 'Activity start time');
   const endAt = parseDateTimeForPlanner(node.endAt, 'Activity end time');
 
   if (endAt <= startAt) {
-    throw new BadRequestException(
+    throw nodeValidationException(
       'Activity end time must be after start time.',
     );
   }
@@ -84,7 +83,7 @@ function parseDateTimeForPlanner(value: string, label: string): number {
   const match = ISO_DATE_TIME_PARTS_REGEX.exec(value);
 
   if (match === null) {
-    throw new BadRequestException(
+    throw nodeValidationException(
       `${label} must be a valid ISO date-time string.`,
     );
   }
@@ -119,7 +118,7 @@ function parseDateTimeForPlanner(value: string, label: string): number {
     normalizedDate.getUTCSeconds() !== second ||
     normalizedDate.getUTCMilliseconds() !== millisecond
   ) {
-    throw new BadRequestException(
+    throw nodeValidationException(
       `${label} must be a valid ISO date-time string.`,
     );
   }

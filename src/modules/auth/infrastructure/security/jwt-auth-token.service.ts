@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 
 import type { ApplicationConfig } from '../../../../app/config/app-config';
+import { authTokenExpiredException } from '../../../../app/errors/app-exceptions';
 import type { AuthenticatedUser } from '../../application/authenticated-user';
 import type { AuthTokens } from '../../application/auth-tokens';
 import type {
@@ -111,9 +112,7 @@ export class JwtAuthTokenService implements AuthTokenService {
     });
   }
 
-  async verifyRefreshToken(
-    refreshToken: string,
-  ): Promise<RefreshTokenSubject> {
+  async verifyRefreshToken(refreshToken: string): Promise<RefreshTokenSubject> {
     const subject = this.parseRefreshToken(refreshToken);
     const isRevoked = await this.revokedRefreshTokenStore.isRevoked(
       subject.tokenId,
@@ -126,9 +125,7 @@ export class JwtAuthTokenService implements AuthTokenService {
     return subject;
   }
 
-  async revokeRefreshToken(
-    refreshToken: string,
-  ): Promise<RefreshTokenSubject> {
+  async revokeRefreshToken(refreshToken: string): Promise<RefreshTokenSubject> {
     const subject = this.parseRefreshToken(refreshToken);
     const hasConsumedToken = await this.revokedRefreshTokenStore.consume(
       subject.tokenId,
@@ -205,7 +202,7 @@ export class JwtAuthTokenService implements AuthTokenService {
     }
 
     if (payload.exp <= Math.floor(Date.now() / 1000)) {
-      throw new UnauthorizedException('Token has expired.');
+      throw authTokenExpiredException();
     }
 
     if (!payload.sub || typeof payload.sub !== 'string') {

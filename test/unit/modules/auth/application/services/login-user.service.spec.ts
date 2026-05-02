@@ -1,5 +1,3 @@
-import { UnauthorizedException } from '@nestjs/common';
-
 import { LoginUserService } from '../../../../../../src/modules/auth/application/services/login-user.service';
 import type { AuthTokenService } from '../../../../../../src/modules/auth/application/ports/auth-token-service.port';
 import type { PasswordHasherPort } from '../../../../../../src/modules/users/application/ports/password-hasher.port';
@@ -85,7 +83,12 @@ describe('LoginUserService', () => {
         email: 'missing@example.com',
         password: 'password123',
       }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({
+      response: {
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      },
+    });
   });
 
   it('rejects invalid password', async () => {
@@ -106,6 +109,11 @@ describe('LoginUserService', () => {
         email: 'traveler@example.com',
         password: 'wrong-password',
       }),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({
+      response: {
+        code: 'AUTH_INVALID_CREDENTIALS',
+        message: 'Invalid email or password.',
+      },
+    });
   });
 });

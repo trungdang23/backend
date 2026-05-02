@@ -180,7 +180,10 @@ describe('Posts integration', () => {
   });
 
   it('rejects a linked trip that is still private', async () => {
-    const traveler = await registerUser(expressApp, 'posts.private@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'posts.private@example.com',
+    );
 
     const tripResponse = await dispatchRequest(expressApp, {
       method: 'POST',
@@ -230,6 +233,38 @@ describe('Posts integration', () => {
     );
   });
 
+  it('returns the trip error code when creating a post for a missing trip', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'posts.missing-trip@example.com',
+    );
+
+    const createResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/posts',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        title: 'Trip không tồn tại',
+        content: 'Bài viết này không nên được tạo.',
+        tripId: 'trip-missing',
+      },
+    });
+    const createBody = createResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+        message: string;
+      };
+    };
+
+    expect(createResponse.statusCode).toBe(404);
+    expect(createBody.success).toBe(false);
+    expect(createBody.error.code).toBe('TRIP_NOT_FOUND');
+    expect(createBody.error.message).toBe('Trip not found.');
+  });
+
   it('requires auth for create and returns 404 for a missing post detail', async () => {
     const createResponse = await dispatchRequest(expressApp, {
       method: 'POST',
@@ -269,8 +304,14 @@ describe('Posts integration', () => {
   });
 
   it('lists only posts created by the authenticated user on the mine route', async () => {
-    const owner = await registerUser(expressApp, 'posts.mine.owner@example.com');
-    const otherUser = await registerUser(expressApp, 'posts.mine.other@example.com');
+    const owner = await registerUser(
+      expressApp,
+      'posts.mine.owner@example.com',
+    );
+    const otherUser = await registerUser(
+      expressApp,
+      'posts.mine.other@example.com',
+    );
 
     await dispatchRequest(expressApp, {
       method: 'POST',
