@@ -386,6 +386,35 @@ describe('Journal integration', () => {
     expect(privateBody.success).toBe(false);
     expect(privateBody.error.code).toBe('PERMISSION_DENIED');
   });
+
+  it('rejects obsolete link-only journal visibility', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'journal.visibility.invalid@example.com',
+    );
+    const tripId = await createTrip(expressApp, traveler.accessToken);
+
+    const response = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        visibility: 'unlisted',
+      },
+    });
+    const body = response.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('BAD_REQUEST');
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {
@@ -414,7 +443,7 @@ async function registerUser(expressApp: Express, email: string) {
 async function createTrip(
   expressApp: Express,
   accessToken: string,
-  visibility: 'private' | 'unlisted' | 'public' = 'private',
+  visibility: 'private' | 'public' = 'private',
 ) {
   const response = await dispatchRequest(expressApp, {
     method: 'POST',

@@ -35,15 +35,28 @@ Them persistence contract toi gian cho `journal` theo huong `PostgreSQL + JSONB`
 
 ### Muc tieu
 
-Mo read-only journal route cho guest de frontend co the chia se nhat ky ca nhan bang link public/unlisted, dong thoi giu owner mutation trong namespace auth-only hien co. Journal share phai doc lap voi `Trip.visibility` de user co the share nhat ky ma khong share ke hoach.
+Mo read-only journal route cho guest de frontend co the chia se nhat ky ca nhan bang trang public, dong thoi giu owner mutation trong namespace auth-only hien co. Journal share phai doc lap voi `Trip.visibility` de user co the share nhat ky ma khong share ke hoach.
 
 ### Scope cua luot trien khai nay
 
 - [x] them `GET /api/v1/public/trips/:tripId/journal`
-- [x] them `visibility: private | unlisted | public` rieng cho `trip_journals`
+- [x] them `visibility: private | public` rieng cho `trip_journals`
 - [x] them `PATCH /api/v1/trips/:tripId/journal` de owner doi rieng che do chia se nhat ky
-- [x] public journal read chi can journal `visibility = public | unlisted`
+- [x] public journal read chi can journal `visibility = public`
 - [x] trip `visibility = private` van co the doc public journal neu journal da duoc share
 - [x] them `GET /api/v1/public/journals` cho community discovery, chi list journal `visibility = public`
 - [x] journal `visibility = private` tiep tuc tra permission denied
 - [x] them integration coverage cho public journal read
+
+## Follow-up two-mode journal visibility
+
+### Muc tieu
+
+Dong bo journal share voi product direction moi: chi co `private` va `public`.
+
+### Scope
+
+- [x] `TripJournal.visibility` chi nhan `private | public`
+- [x] public journal read/list chi doc journal `public`
+- [x] du lieu journal `unlisted` cu duoc migrate sang `public`
+- [x] them DB check constraint cho `trip_journals.visibility`

@@ -65,9 +65,6 @@ Rule phase này:
   - guest đọc được trip detail
   - guest đọc được planner
   - trip xuất hiện trong public discovery list
-- `visibility = unlisted`:
-  - guest đọc được trip detail/planner/journal bằng link trực tiếp
-  - trip không xuất hiện trong public discovery list
 - `visibility = private`:
   - guest bị chặn
 - trip không tồn tại:
@@ -124,7 +121,7 @@ Public page có thể dùng:
 
 ### Response shape mục tiêu
 
-Giữ cùng shape list/meta hiện tại nhưng chỉ trả `visibility = public`; `unlisted` chỉ xem bằng link trực tiếp.
+Giữ cùng shape list/meta hiện tại nhưng chỉ trả `visibility = public`.
 
 ## Public trip detail
 
@@ -323,8 +320,8 @@ Machine-readable error response phải giữ pattern hiện có của app.
 ## Validation matrix của phase này
 
 - `Trip.visibility` phải thuộc enum hợp lệ
-- public detail đọc được khi `visibility = public | unlisted`
-- public planner đọc được khi `visibility = public | unlisted`
+- public detail đọc được khi `visibility = public`
+- public planner đọc được khi `visibility = public`
 - public list discovery chỉ trả `visibility = public`
 - owner auth routes hiện có không bị nới quyền ngoài ý muốn
 - public route không được mutate state hệ thống
@@ -334,7 +331,7 @@ Machine-readable error response phải giữ pattern hiện có của app.
 
 ### Mục tiêu
 
-Cho user đã đăng nhập tạo một kế hoạch riêng trong tài khoản từ một kế hoạch public/unlisted đang xem, để public planner không chỉ là read-only inspiration.
+Cho user đã đăng nhập tạo một kế hoạch riêng trong tài khoản từ một kế hoạch public đang xem, để public planner không chỉ là read-only inspiration.
 
 ### Scope
 
@@ -343,6 +340,20 @@ Cho user đã đăng nhập tạo một kế hoạch riêng trong tài khoản t
 - [x] copy planner `PlanNode` gồm ghi chú, thời gian, ảnh, và chi phí/ngân sách node
 - [x] giữ public read endpoints hiện tại không mutate state
 - [x] thêm integration coverage cho copy public planner
+
+## Follow-up two-mode public sharing
+
+### Mục tiêu
+
+Thu gọn contract chia sẻ trip/planner về đúng hai trạng thái `private` và `public`; không còn chế độ link-only/unlisted.
+
+### Scope
+
+- [x] `Trip.visibility` chỉ nhận `private | public`
+- [x] public trip detail/planner/copy chỉ đọc được khi `visibility = public`
+- [x] dữ liệu `unlisted` cũ được migrate sang `public`
+- [x] thêm DB check constraint để chặn visibility ngoài `private | public`
+- [x] cập nhật integration coverage cho public/private và invalid visibility
 
 ## Deferred rõ ràng sau phase này
 

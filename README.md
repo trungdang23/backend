@@ -18,7 +18,7 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
 ### Nghiệp vụ mục tiêu
 
 - `planner-first`
-- trip có `visibility: private | unlisted | public`
+- trip có `visibility: private | public`
 - trip có `budgetMode: auto | manual`
 - planner dùng `PlanNode` tree
 - journal scene lưu bằng `PostgreSQL JSONB`
@@ -77,8 +77,8 @@ Compatibility and migration bridge currently still live:
 ### Trạng thái migration hiện tại
 
 - Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, và journal scene persistence tối giản bằng `trip_journals`.
-- `Trip.visibility = unlisted` mở read-only link trực tiếp cho public trip/planner nhưng không xuất hiện trong public trip discovery list.
-- `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public/unlisted journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
+- `Trip.visibility = public` mở read-only public trip/planner và xuất hiện trong public trip discovery list; `private` bị chặn ở public route.
+- `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
 - Khi triển khai tiếp, ưu tiên:
   1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật

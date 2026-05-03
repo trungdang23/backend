@@ -117,6 +117,19 @@ describe('Trip domain entity', () => {
     expect(trip.visibility).toBe('private');
   });
 
+  it('rejects obsolete link-only visibility', () => {
+    expect(() =>
+      Trip.create({
+        userId: 'user-01',
+        name: 'Trip',
+        startDate: '2026-06-10',
+        endDate: '2026-06-14',
+        budgetMode: 'auto',
+        visibility: 'unlisted',
+      }),
+    ).toThrow('Trip visibility must be private or public.');
+  });
+
   it('rejects a manual trip without a manual budget', () => {
     expect(() =>
       Trip.create({
