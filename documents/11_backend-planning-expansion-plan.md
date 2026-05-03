@@ -86,6 +86,7 @@ Source backend đang có:
 - `planning`
 - `itineraries`
 - `budgets`
+- `posts`
 
 Flow planner legacy từng đi qua:
 
@@ -102,11 +103,17 @@ Trip
   -> PlanNode*
 ```
 
-Phần còn chưa aligned hoàn toàn với DRD mới:
+Phần đã aligned sau re-baseline hiện tại:
 
-- budget summary vẫn chưa đọc từ `PlanNode`
-- public trip read chưa có
-- chưa có `posts/comments`
+- budget summary owner flow đã đọc từ `PlanNode`
+- public trip list/detail và public planner read đã có source thật
+- `posts` minimal đã có create/list/detail và owner listing `GET /posts/mine`
+
+Phần còn chưa aligned hoàn toàn với roadmap mới:
+
+- `itinerary` vẫn còn là compatibility/migration bridge, chưa có migration helper hoặc cleanup plan cuối cùng
+- `comments` vẫn deferred
+- chưa có `journal` persistence/API riêng cho hướng Digital Scrapbook
 
 ## Quyết định kiến trúc
 
@@ -161,9 +168,9 @@ Trình tự đúng:
 
 Checkpoint re-baseline hiện tại:
 
-- bước `1` đến `4` đã có source thật
-- bước `5` đang ở trạng thái partial vì budget summary vẫn còn đọc bridge
-- bước cleanup chưa nên làm trước khi budget/public sharing ổn định
+- bước `1` đến `5` đã có source thật
+- public sharing và posts minimal đã có source thật
+- bước cleanup itinerary chưa nên làm trước khi có migration helper/runbook cho dữ liệu lịch sử và frontend không còn phụ thuộc bridge
 
 ## Module boundary mục tiêu
 
@@ -250,7 +257,8 @@ Nếu sprint đầu của community thiếu năng lực, `comments` có thể l�
 
 - `POST /api/v1/posts`
 - `GET /api/v1/posts`
-- khuyến nghị thêm `GET /api/v1/posts/:postId`
+- `GET /api/v1/posts/:postId`
+- `GET /api/v1/posts/mine`
 
 ## Comments
 
@@ -352,7 +360,8 @@ Nếu sprint đầu của community thiếu năng lực, `comments` có thể l�
 - trả full tree
 - không paginate
 - sắp theo `sortOrder`
-- private/public read bám `Trip.visibility`
+- owner read đi qua auth route
+- public read đi qua namespace riêng `/api/v1/public/trips/:tripId/planner` và bám `Trip.visibility`
 
 ### Test
 
@@ -427,6 +436,7 @@ Khuyến nghị MVP:
 - auto budget từ planner nodes
 - manual budget override
 - mixed currency case không conversion
+- mutation planner node làm summary recompute đúng
 
 ## Slice 6 - Migration strategy từ itinerary bridge
 
@@ -440,7 +450,7 @@ Khuyến nghị MVP:
 
 1. Giữ `itinerary` để source hiện tại tiếp tục chạy
 2. Build `PlanNode` APIs hoàn chỉnh
-3. FE chuyển route `/app/trips/:tripId` sang planner APIs
+3. FE chuyển planner owner flow sang planner APIs
 4. Freeze itinerary endpoints về bugfix-only
 5. Nếu cần, chạy data migration từ itinerary cũ sang plan nodes
 6. Chỉ cleanup khi production đã ổn định
@@ -459,6 +469,7 @@ Cho guest xem trip public và planner public.
 
 ### Scope
 
+- public trip list
 - public trip detail
 - public planner read
 - không cho guest mutate
@@ -481,6 +492,7 @@ Mở lớp social tối thiểu sau khi trip/planner đã ổn.
 - list posts
 - detail post
 - optional bridge từ trip sang post
+- owner listing cho profile qua `GET /posts/mine`
 
 ### Comments
 
@@ -517,4 +529,5 @@ Một backend phase planner chỉ được coi là aligned khi:
 - planner read/write APIs chạy end-to-end
 - budget summary đọc đúng theo rule DRD
 - FE có thể dùng planner APIs mà không cần dependency vào itinerary bridge cho flow chính
+- public trip/planner và posts minimal đã có test coverage
 - tests đã có ở mức unit, integration, và e2e cho flow chính

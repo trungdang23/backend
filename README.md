@@ -69,7 +69,7 @@ Compatibility and migration bridge currently still live:
 - Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, và `budget-summary`.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
 - Khi triển khai tiếp, ưu tiên:
-  1. hoàn tất runtime verification cho budget summary `PlanNode`-based và mixed-currency breakdown
+  1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật
   2. chốt migration/cleanup plan cho legacy itinerary support
   3. hoàn tất hardening và release safety cho public/community flows
 
@@ -173,8 +173,8 @@ pnpm prisma:validate
   - `RUNTIME_JWT_ISSUER`
   - `RUNTIME_JWT_ACCESS_TOKEN_TTL`
   - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
-- `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
-- `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
+  - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
+  - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
 - Self-hosted runner phải chạy dưới user có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và chạy được `SERVICE_RESTART_COMMAND`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.

@@ -387,4 +387,36 @@ Status: `Completed`
 ### Ghi chú
 
 - Phase này tương ứng với checklist `Phase 04` sau re-baseline DRD.
-- Planner read/write owner flow hiện đã dùng `PlanNode` thật; phần còn lại chưa aligned là budget summary cutover và public sharing.
+- Planner read/write owner flow hiện đã dùng `PlanNode` thật.
+
+## Post Phase 06 Re-baseline Additions
+
+Status: `Completed through Phase 08-A/08-B hardening slices`
+
+### Tóm tắt
+
+- Source hiện đã đi qua các mốc sau checklist hiện hành:
+  - `Phase 05`: budget summary cutover sang `PlanNode`
+  - `Phase 06`: public trip sharing
+  - `Phase 07`: community minimal với `posts`
+  - `Phase 08-A/08-B`: focused hardening cho app error codes và ownership/authorization
+
+### Nhật ký đồng bộ
+
+- `2026-04-20`: Budget summary owner flow đã chuyển sang đọc `PlanNode`, có `hasMixedCurrencies` và `totalsByCurrency`, đồng thời tách budget suite khỏi itinerary suite.
+- `2026-04-20`: Mở public trip list/detail và public planner read dưới namespace `/api/v1/public/trips`.
+- `2026-04-20`: Mở module `posts` với create auth-only, public list/detail, và owner list `GET /api/v1/posts/mine` cho profile.
+- `2026-04-21`: Hardening app error codes cho auth/trips/planning/public permission flow.
+- `2026-04-21`: Bổ sung ownership/authorization coverage cho trips, planning, sticker legacy endpoint, budgets, và posts.
+
+### Verification gần nhất trong lượt sync này
+
+- `2026-05-03`: `pnpm lint` pass.
+- `2026-05-03`: `pnpm test:unit` pass (`21` suites, `52` tests).
+
+### Deferred còn đúng
+
+- Migration helper hoặc runbook cleanup cho legacy itinerary bridge.
+- Quyết định xóa hoặc giữ legacy `PlanNodeSticker` endpoints sau khi frontend/journal contract chốt.
+- Comment endpoints.
+- Production smoke thật cho auth/trips/planner/public trip/posts sau deploy.

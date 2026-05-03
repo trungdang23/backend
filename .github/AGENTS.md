@@ -14,8 +14,8 @@
 ## Workflow Rules
 
 - Keep `backend-ci.yml` focused on deterministic verification for the backend package: install, secret scan, Prisma generation, lint, test, build, and Prisma validation.
-- Keep `deploy-backend.yml` manual by default unless the task explicitly changes release strategy.
-- Preserve the current deploy transport: `Cloudflare Tunnel` plus `cloudflared access ssh` to the stable hostname in `SSH_HOST`.
+- Keep `deploy-backend.yml` aligned with the current release strategy: automatic deploy on `push` to `main` with `workflow_dispatch` retained for manual redeploys.
+- Preserve the current deploy transport: a Linux/X64 self-hosted runner on the deploy machine. Do not reintroduce `cloudflared access ssh` as a deploy transport unless the task explicitly calls for rollback or comparison.
 - Do not reintroduce temporary reverse-tunnel workflows such as Pinggy unless the task explicitly calls for a rollback or comparison.
 - Keep runtime config sourced from GitHub `Secrets` and `Variables`, rendered into a temporary env file on the runner, and copied to `RUNTIME_ENV_PATH` on the target machine.
 - Never hardcode real secret values, host keys, private keys, or environment-specific credentials in workflow files.
