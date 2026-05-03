@@ -107,3 +107,12 @@ export class TripJournalResponseDto {
     };
   }
 }
+
+export class TripJournalListResponseDto {
+  @ApiProperty({ type: [TripJournalPayloadDto] })
+  data!: TripJournalPayloadDto[];
+
+  static from(results: TripJournalResult[]): TripJournalPayloadDto[] {
+    return results.map((result) => TripJournalResponseDto.from(result));
+  }
+}

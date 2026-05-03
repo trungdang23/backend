@@ -25,6 +25,19 @@ export class PrismaTripJournalRepository
     return record === null ? null : toTripJournal(record);
   }
 
+  async listByUserId(userId: string): Promise<TripJournal[]> {
+    const records = await this.prisma.tripJournal.findMany({
+      where: {
+        trip: {
+          userId,
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+    });
+
+    return records.map((record) => toTripJournal(record));
+  }
+
   async upsert(journal: TripJournal): Promise<TripJournal> {
     const record = await this.prisma.tripJournal.upsert({
       where: {
@@ -44,6 +57,16 @@ export class PrismaTripJournalRepository
     });
 
     return toTripJournal(record);
+  }
+
+  async deleteByTripId(tripId: string): Promise<boolean> {
+    const result = await this.prisma.tripJournal.deleteMany({
+      where: {
+        tripId,
+      },
+    });
+
+    return result.count > 0;
   }
 }
 

@@ -10,6 +10,18 @@ export class InMemoryTripJournalRepository
     return Promise.resolve(this.journalsByTripId.get(tripId) ?? null);
   }
 
+  listByUserId(userId: string): Promise<TripJournal[]> {
+    void userId;
+
+    return Promise.resolve(
+      Array.from(this.journalsByTripId.values()).sort(
+        (left, right) =>
+          right.updatedAt.getTime() - left.updatedAt.getTime() ||
+          (left.id ?? '').localeCompare(right.id ?? ''),
+      ),
+    );
+  }
+
   upsert(journal: TripJournal): Promise<TripJournal> {
     const existingJournal = this.journalsByTripId.get(journal.tripId);
     const now = new Date();
@@ -29,6 +41,12 @@ export class InMemoryTripJournalRepository
     this.journalsByTripId.set(savedJournal.tripId, savedJournal);
 
     return Promise.resolve(savedJournal);
+  }
+
+  deleteByTripId(tripId: string): Promise<boolean> {
+    const didDelete = this.journalsByTripId.delete(tripId);
+
+    return Promise.resolve(didDelete);
   }
 
   clear(): void {

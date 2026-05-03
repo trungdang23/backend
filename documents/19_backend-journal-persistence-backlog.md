@@ -16,8 +16,10 @@ Them persistence contract toi gian cho `journal` theo huong `PostgreSQL + JSONB`
 
 - [x] tao bang `trip_journals` gan 1-1 voi `Trip`
 - [x] them endpoint owner-only:
+  - `GET /api/v1/journals/mine`
   - `GET /api/v1/trips/:tripId/journal`
   - `PUT /api/v1/trips/:tripId/journal`
+  - `DELETE /api/v1/trips/:tripId/journal`
 - [x] luu `sceneVersion`, `page`, va `objects` bang JSONB
 - [x] tra ve scene rong mac dinh khi trip chua co journal record
 - [x] validate base scene object contract o request boundary

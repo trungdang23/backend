@@ -178,6 +178,55 @@ describe('Journal integration', () => {
     expect(savedJournalBody.data.journal.objects.map((object) => object.id)).toEqual([
       'obj-note-1',
     ]);
+
+    const listJournalResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/journals/mine',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listJournalBody = listJournalResponse.body as {
+      success: boolean;
+      data: Array<{
+        trip: {
+          id: string;
+        };
+        journal: {
+          id: string;
+        };
+      }>;
+    };
+
+    expect(listJournalResponse.statusCode).toBe(200);
+    expect(listJournalBody.success).toBe(true);
+    expect(listJournalBody.data).toHaveLength(1);
+    expect(listJournalBody.data[0]?.trip.id).toBe(tripId);
+    expect(listJournalBody.data[0]?.journal.id).toBe('journal-1');
+
+    const deleteJournalResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+
+    expect(deleteJournalResponse.statusCode).toBe(204);
+
+    const listAfterDeleteResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/journals/mine',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listAfterDeleteBody = listAfterDeleteResponse.body as {
+      data: unknown[];
+    };
+
+    expect(listAfterDeleteResponse.statusCode).toBe(200);
+    expect(listAfterDeleteBody.data).toEqual([]);
   });
 
   it('does not expose another user trip journal', async () => {

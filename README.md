@@ -55,8 +55,10 @@ Primary product contract:
   - `PATCH /api/v1/nodes/:id`
   - `DELETE /api/v1/nodes/:id`
 - Journal:
+  - `GET /api/v1/journals/mine`
   - `GET /api/v1/trips/:id/journal`
   - `PUT /api/v1/trips/:id/journal`
+  - `DELETE /api/v1/trips/:id/journal`
 
 Compatibility and migration bridge currently still live:
 - Itinerary:
