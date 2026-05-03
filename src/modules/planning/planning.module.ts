@@ -6,6 +6,7 @@ import { TripsModule } from '../trips/trips.module';
 import { PLAN_NODE_REPOSITORY } from './application/ports/plan-node-repository.port';
 import { PLAN_NODE_STICKER_REPOSITORY } from './application/ports/plan-node-sticker-repository.port';
 import { CreatePlanNodeService } from './application/services/create-plan-node.service';
+import { CopyPublicTripPlannerService } from './application/services/copy-public-trip-planner.service';
 import { DeletePlanNodeService } from './application/services/delete-plan-node.service';
 import { GetPlanNodeStickersService } from './application/services/get-plan-node-stickers.service';
 import { GetPublicTripPlannerService } from './application/services/get-public-trip-planner.service';
@@ -15,12 +16,18 @@ import { UpdatePlanNodeService } from './application/services/update-plan-node.s
 import { PrismaPlanNodeRepository } from './infrastructure/prisma/prisma-plan-node.repository';
 import { PrismaPlanNodeStickerRepository } from './infrastructure/prisma/prisma-plan-node-sticker.repository';
 import { PlanningController } from './presentation/planning.controller';
+import { PublicPlanningCopyController } from './presentation/public-planning-copy.controller';
 import { PublicPlanningController } from './presentation/public-planning.controller';
 
 @Module({
   imports: [AuthModule, PrismaModule, TripsModule],
-  controllers: [PlanningController, PublicPlanningController],
+  controllers: [
+    PlanningController,
+    PublicPlanningController,
+    PublicPlanningCopyController,
+  ],
   providers: [
+    CopyPublicTripPlannerService,
     CreatePlanNodeService,
     DeletePlanNodeService,
     GetPlanNodeStickersService,

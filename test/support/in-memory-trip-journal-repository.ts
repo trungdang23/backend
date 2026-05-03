@@ -22,6 +22,18 @@ export class InMemoryTripJournalRepository
     );
   }
 
+  listPublic(): Promise<TripJournal[]> {
+    return Promise.resolve(
+      Array.from(this.journalsByTripId.values())
+        .filter((journal) => journal.visibility === 'public')
+        .sort(
+          (left, right) =>
+            right.updatedAt.getTime() - left.updatedAt.getTime() ||
+            (left.id ?? '').localeCompare(right.id ?? ''),
+        ),
+    );
+  }
+
   upsert(journal: TripJournal): Promise<TripJournal> {
     const existingJournal = this.journalsByTripId.get(journal.tripId);
     const now = new Date();
@@ -34,11 +46,36 @@ export class InMemoryTripJournalRepository
       sceneVersion: journal.sceneVersion,
       page: journal.page,
       objects: journal.objects,
+      visibility: existingJournal?.visibility ?? journal.visibility,
       createdAt: existingJournal?.createdAt ?? journal.createdAt,
       updatedAt: now,
     });
 
     this.journalsByTripId.set(savedJournal.tripId, savedJournal);
+
+    return Promise.resolve(savedJournal);
+  }
+
+  updateVisibilityByTripId(
+    tripId: string,
+    visibility: string,
+  ): Promise<TripJournal> {
+    const existingJournal = this.journalsByTripId.get(tripId);
+    const now = new Date();
+    const savedJournal = TripJournal.create({
+      id:
+        existingJournal?.id ??
+        `journal-${this.journalsByTripId.size + 1}`,
+      tripId,
+      sceneVersion: existingJournal?.sceneVersion,
+      page: existingJournal?.page,
+      objects: existingJournal?.objects,
+      visibility,
+      createdAt: existingJournal?.createdAt ?? now,
+      updatedAt: now,
+    });
+
+    this.journalsByTripId.set(tripId, savedJournal);
 
     return Promise.resolve(savedJournal);
   }

@@ -38,6 +38,17 @@ export class PrismaTripJournalRepository
     return records.map((record) => toTripJournal(record));
   }
 
+  async listPublic(): Promise<TripJournal[]> {
+    const records = await this.prisma.tripJournal.findMany({
+      where: {
+        visibility: 'public',
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+    });
+
+    return records.map((record) => toTripJournal(record));
+  }
+
   async upsert(journal: TripJournal): Promise<TripJournal> {
     const record = await this.prisma.tripJournal.upsert({
       where: {
@@ -48,11 +59,39 @@ export class PrismaTripJournalRepository
         sceneVersion: journal.sceneVersion,
         page: toInputJson(journal.page),
         objects: toInputJson(journal.objects),
+        visibility: journal.visibility,
       },
       update: {
         sceneVersion: journal.sceneVersion,
         page: toInputJson(journal.page),
         objects: toInputJson(journal.objects),
+      },
+    });
+
+    return toTripJournal(record);
+  }
+
+  async updateVisibilityByTripId(
+    tripId: string,
+    visibility: string,
+  ): Promise<TripJournal> {
+    const emptyJournal = TripJournal.createEmpty({
+      tripId,
+      visibility,
+    });
+    const record = await this.prisma.tripJournal.upsert({
+      where: {
+        tripId,
+      },
+      create: {
+        tripId,
+        sceneVersion: emptyJournal.sceneVersion,
+        page: toInputJson(emptyJournal.page),
+        objects: toInputJson(emptyJournal.objects),
+        visibility: emptyJournal.visibility,
+      },
+      update: {
+        visibility: emptyJournal.visibility,
       },
     });
 
@@ -77,6 +116,7 @@ function toTripJournal(record: PrismaTripJournal): TripJournal {
     sceneVersion: record.sceneVersion,
     page: record.page as unknown as JournalPage,
     objects: record.objects as unknown as JournalSceneObject[],
+    visibility: record.visibility,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });

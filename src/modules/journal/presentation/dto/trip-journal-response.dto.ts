@@ -4,6 +4,7 @@ import type { TripJournalResult } from '../../application/services/get-trip-jour
 import { TripResponseDto } from '../../../trips/presentation/dto/trip-response.dto';
 import type { JournalPage, JournalSceneObject } from '../../domain/trip-journal';
 import { TripJournal } from '../../domain/trip-journal';
+import { JOURNAL_VISIBILITIES } from '../../domain/journal-visibility';
 
 class JournalPageBackgroundDto {
   @ApiProperty()
@@ -69,6 +70,9 @@ class TripJournalDto {
   @ApiProperty({ type: [JournalSceneObjectDto] })
   objects!: JournalSceneObject[];
 
+  @ApiProperty({ enum: JOURNAL_VISIBILITIES })
+  visibility!: string;
+
   @ApiProperty()
   createdAt!: string;
 
@@ -82,6 +86,7 @@ class TripJournalDto {
       sceneVersion: journal.sceneVersion,
       page: journal.page,
       objects: journal.objects,
+      visibility: journal.visibility,
       createdAt: journal.createdAt.toISOString(),
       updatedAt: journal.updatedAt.toISOString(),
     };

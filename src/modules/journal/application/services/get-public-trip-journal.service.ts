@@ -9,8 +9,7 @@ import {
   TRIP_REPOSITORY,
   type TripRepositoryPort,
 } from '../../../trips/application/ports/trip-repository.port';
-import { isTripPubliclyReadable } from '../../../trips/domain/trip-visibility';
-import { TripJournal } from '../../domain/trip-journal';
+import { isJournalPubliclyReadable } from '../../domain/journal-visibility';
 import {
   TRIP_JOURNAL_REPOSITORY,
   type TripJournalRepositoryPort,
@@ -35,15 +34,11 @@ export class GetPublicTripJournalService
       throw tripNotFoundException();
     }
 
-    if (!isTripPubliclyReadable(trip.visibility)) {
-      throw permissionDeniedException('Trip is private.');
-    }
+    const journal = await this.journalRepository.findByTripId(trip.id);
 
-    const journal =
-      (await this.journalRepository.findByTripId(trip.id)) ??
-      TripJournal.createEmpty({
-        tripId: trip.id,
-      });
+    if (journal === null || !isJournalPubliclyReadable(journal.visibility)) {
+      throw permissionDeniedException('Journal is private.');
+    }
 
     return {
       trip,

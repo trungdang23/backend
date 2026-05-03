@@ -45,6 +45,8 @@ Primary product contract:
   - `GET /api/v1/public/trips?page=&size=`
   - `GET /api/v1/public/trips/:id`
   - `GET /api/v1/public/trips/:id/planner`
+  - `POST /api/v1/public/trips/:id/copy`
+  - `GET /api/v1/public/journals`
   - `GET /api/v1/public/trips/:id/journal`
 - Posts:
   - `POST /api/v1/posts`
@@ -59,6 +61,7 @@ Primary product contract:
   - `GET /api/v1/journals/mine`
   - `GET /api/v1/trips/:id/journal`
   - `PUT /api/v1/trips/:id/journal`
+  - `PATCH /api/v1/trips/:id/journal`
   - `DELETE /api/v1/trips/:id/journal`
 
 Compatibility and migration bridge currently still live:
@@ -74,7 +77,8 @@ Compatibility and migration bridge currently still live:
 ### Trạng thái migration hiện tại
 
 - Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, và journal scene persistence tối giản bằng `trip_journals`.
-- `Trip.visibility = unlisted` mở read-only link trực tiếp cho public trip/planner/journal nhưng không xuất hiện trong public trip discovery list.
+- `Trip.visibility = unlisted` mở read-only link trực tiếp cho public trip/planner nhưng không xuất hiện trong public trip discovery list.
+- `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public/unlisted journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
 - Khi triển khai tiếp, ưu tiên:
   1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật

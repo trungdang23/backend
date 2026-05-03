@@ -258,7 +258,7 @@ describe('Journal integration', () => {
     const sharedTripId = await createTrip(
       expressApp,
       traveler.accessToken,
-      'unlisted',
+      'private',
     );
     const privateTripId = await createTrip(
       expressApp,
@@ -299,6 +299,27 @@ describe('Journal integration', () => {
       },
     });
 
+    const shareJournalResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/trips/${sharedTripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        visibility: 'public',
+      },
+    });
+    const shareJournalBody = shareJournalResponse.body as {
+      data: {
+        journal: {
+          visibility: string;
+        };
+      };
+    };
+
+    expect(shareJournalResponse.statusCode).toBe(200);
+    expect(shareJournalBody.data.journal.visibility).toBe('public');
+
     const sharedResponse = await dispatchRequest(expressApp, {
       method: 'GET',
       path: `/api/v1/public/trips/${sharedTripId}/journal`,
@@ -312,6 +333,7 @@ describe('Journal integration', () => {
         };
         journal: {
           id: string;
+          visibility: string;
           objects: Array<{
             id: string;
           }>;
@@ -322,11 +344,32 @@ describe('Journal integration', () => {
     expect(sharedResponse.statusCode).toBe(200);
     expect(sharedBody.success).toBe(true);
     expect(sharedBody.data.trip.id).toBe(sharedTripId);
-    expect(sharedBody.data.trip.visibility).toBe('unlisted');
+    expect(sharedBody.data.trip.visibility).toBe('private');
     expect(sharedBody.data.journal.id).toBe('journal-1');
+    expect(sharedBody.data.journal.visibility).toBe('public');
     expect(sharedBody.data.journal.objects.map((object) => object.id)).toEqual([
       'obj-public-note-1',
     ]);
+
+    const publicJournalsResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/journals',
+    });
+    const publicJournalsBody = publicJournalsResponse.body as {
+      data: Array<{
+        trip: {
+          id: string;
+        };
+        journal: {
+          visibility: string;
+        };
+      }>;
+    };
+
+    expect(publicJournalsResponse.statusCode).toBe(200);
+    expect(publicJournalsBody.data).toHaveLength(1);
+    expect(publicJournalsBody.data[0]?.trip.id).toBe(sharedTripId);
+    expect(publicJournalsBody.data[0]?.journal.visibility).toBe('public');
 
     const privateResponse = await dispatchRequest(expressApp, {
       method: 'GET',

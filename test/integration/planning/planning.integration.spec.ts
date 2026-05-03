@@ -796,6 +796,9 @@ describe('Planning integration', () => {
         tripId: publicTripBody.data.id,
         type: 'day',
         title: 'Public day one',
+        notes: 'Bring the shared checklist.',
+        costAmount: 120000,
+        costCurrency: 'vnd',
         sortOrder: 0,
       },
     });
@@ -869,6 +872,9 @@ describe('Planning integration', () => {
           id: string;
         };
         nodes: Array<{
+          costAmount: number | null;
+          costCurrency: string | null;
+          notes: string | null;
           title: string;
         }>;
       };
@@ -880,6 +886,13 @@ describe('Planning integration', () => {
     expect(plannerBody.data.nodes.map((node) => node.title)).toEqual([
       'Public day one',
     ]);
+    expect(plannerBody.data.nodes[0]).toEqual(
+      expect.objectContaining({
+        costAmount: 120000,
+        costCurrency: 'VND',
+        notes: 'Bring the shared checklist.',
+      }),
+    );
 
     const unlistedPlannerResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -890,9 +903,14 @@ describe('Planning integration', () => {
       data: {
         trip: {
           id: string;
+          manualBudgetAmount: number | null;
+          manualBudgetCurrency: string | null;
           visibility: string;
         };
         nodes: Array<{
+          costAmount: number | null;
+          costCurrency: string | null;
+          notes: string | null;
           title: string;
         }>;
       };
@@ -905,6 +923,48 @@ describe('Planning integration', () => {
     expect(unlistedPlannerBody.data.nodes.map((node) => node.title)).toEqual([
       'Unlisted day one',
     ]);
+
+    const copyPlannerResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: `/api/v1/public/trips/${publicTripBody.data.id}/copy`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const copyPlannerBody = copyPlannerResponse.body as {
+      success: boolean;
+      data: {
+        trip: {
+          id: string;
+          manualBudgetAmount: number | null;
+          manualBudgetCurrency: string | null;
+          visibility: string;
+        };
+        nodes: Array<{
+          costAmount: number | null;
+          costCurrency: string | null;
+          notes: string | null;
+          title: string;
+        }>;
+      };
+    };
+
+    expect(copyPlannerResponse.statusCode).toBe(201);
+    expect(copyPlannerBody.success).toBe(true);
+    expect(copyPlannerBody.data.trip.id).not.toBe(publicTripBody.data.id);
+    expect(copyPlannerBody.data.trip.manualBudgetAmount).toBe(3200000);
+    expect(copyPlannerBody.data.trip.manualBudgetCurrency).toBe('VND');
+    expect(copyPlannerBody.data.trip.visibility).toBe('private');
+    expect(copyPlannerBody.data.nodes.map((node) => node.title)).toEqual([
+      'Public day one',
+    ]);
+    expect(copyPlannerBody.data.nodes[0]).toEqual(
+      expect.objectContaining({
+        costAmount: 120000,
+        costCurrency: 'VND',
+        notes: 'Bring the shared checklist.',
+      }),
+    );
 
     const privatePlannerResponse = await dispatchRequest(expressApp, {
       method: 'GET',

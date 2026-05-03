@@ -35,12 +35,15 @@ Them persistence contract toi gian cho `journal` theo huong `PostgreSQL + JSONB`
 
 ### Muc tieu
 
-Mo read-only journal route cho guest de frontend co the chia se nhat ky ca nhan bang link public/unlisted, dong thoi giu owner mutation trong namespace auth-only hien co.
+Mo read-only journal route cho guest de frontend co the chia se nhat ky ca nhan bang link public/unlisted, dong thoi giu owner mutation trong namespace auth-only hien co. Journal share phai doc lap voi `Trip.visibility` de user co the share nhat ky ma khong share ke hoach.
 
 ### Scope cua luot trien khai nay
 
 - [x] them `GET /api/v1/public/trips/:tripId/journal`
-- [x] public journal read chi cho phep trip `visibility = public | unlisted`
-- [x] trip `visibility = private` tiep tuc tra permission denied
-- [x] neu trip duoc share nhung chua co journal record, tra scene rong mac dinh nhu owner read
+- [x] them `visibility: private | unlisted | public` rieng cho `trip_journals`
+- [x] them `PATCH /api/v1/trips/:tripId/journal` de owner doi rieng che do chia se nhat ky
+- [x] public journal read chi can journal `visibility = public | unlisted`
+- [x] trip `visibility = private` van co the doc public journal neu journal da duoc share
+- [x] them `GET /api/v1/public/journals` cho community discovery, chi list journal `visibility = public`
+- [x] journal `visibility = private` tiep tuc tra permission denied
 - [x] them integration coverage cho public journal read

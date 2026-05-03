@@ -1,4 +1,8 @@
 import { DomainError } from '../../../shared/domain/domain-error';
+import {
+  normalizeJournalVisibility,
+  type JournalVisibility,
+} from './journal-visibility';
 
 export const JOURNAL_SCENE_VERSION = 1;
 export const MAX_JOURNAL_OBJECTS = 120;
@@ -42,6 +46,7 @@ export interface TripJournalInput {
   sceneVersion?: number;
   page?: JournalPage;
   objects?: JournalSceneObject[];
+  visibility?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -52,6 +57,7 @@ interface TripJournalProps {
   sceneVersion: number;
   page: JournalPage;
   objects: JournalSceneObject[];
+  visibility: JournalVisibility;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,18 +77,23 @@ export class TripJournal {
       ),
       page: normalizePage(input.page ?? createDefaultJournalPage()),
       objects: normalizeObjects(input.objects ?? []),
+      visibility: normalizeJournalVisibility(input.visibility),
       createdAt,
       updatedAt,
     });
   }
 
-  static createEmpty(input: { tripId: string }): TripJournal {
+  static createEmpty(input: {
+    tripId: string;
+    visibility?: string;
+  }): TripJournal {
     return TripJournal.create({
       id: null,
       tripId: input.tripId,
       sceneVersion: JOURNAL_SCENE_VERSION,
       page: createDefaultJournalPage(),
       objects: [],
+      visibility: input.visibility,
     });
   }
 
@@ -104,6 +115,10 @@ export class TripJournal {
 
   get objects(): JournalSceneObject[] {
     return this.props.objects;
+  }
+
+  get visibility(): JournalVisibility {
+    return this.props.visibility;
   }
 
   get createdAt(): Date {

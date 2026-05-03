@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -17,12 +18,14 @@ import { DeleteTripJournalService } from '../application/services/delete-trip-jo
 import { GetTripJournalService } from '../application/services/get-trip-journal.service';
 import { ListUserJournalsService } from '../application/services/list-user-journals.service';
 import { SaveTripJournalService } from '../application/services/save-trip-journal.service';
+import { UpdateTripJournalVisibilityService } from '../application/services/update-trip-journal-visibility.service';
 import type { JournalPage, JournalSceneObject } from '../domain/trip-journal';
 import { SaveTripJournalRequestDto } from './dto/save-trip-journal-request.dto';
 import {
   TripJournalListResponseDto,
   TripJournalResponseDto,
 } from './dto/trip-journal-response.dto';
+import { UpdateTripJournalRequestDto } from './dto/update-trip-journal-request.dto';
 
 @ApiTags('journal')
 @ApiBearerAuth()
@@ -34,6 +37,7 @@ export class JournalController {
     private readonly getTripJournal: GetTripJournalService,
     private readonly listUserJournals: ListUserJournalsService,
     private readonly saveTripJournal: SaveTripJournalService,
+    private readonly updateTripJournalVisibility: UpdateTripJournalVisibilityService,
   ) {}
 
   @Get('journals/mine')
@@ -70,6 +74,21 @@ export class JournalController {
       sceneVersion: input.sceneVersion,
       page: input.page as unknown as JournalPage,
       objects: input.objects as unknown as JournalSceneObject[],
+    });
+
+    return TripJournalResponseDto.from(result);
+  }
+
+  @Patch('trips/:tripId/journal')
+  async updateJournal(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('tripId') tripId: string,
+    @Body() input: UpdateTripJournalRequestDto,
+  ) {
+    const result = await this.updateTripJournalVisibility.execute({
+      userId: authenticatedUser.userId,
+      tripId,
+      visibility: input.visibility,
     });
 
     return TripJournalResponseDto.from(result);

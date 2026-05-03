@@ -323,11 +323,26 @@ Machine-readable error response phải giữ pattern hiện có của app.
 ## Validation matrix của phase này
 
 - `Trip.visibility` phải thuộc enum hợp lệ
-- public detail chỉ đọc được khi `visibility = public`
-- public planner chỉ đọc được khi `visibility = public`
+- public detail đọc được khi `visibility = public | unlisted`
+- public planner đọc được khi `visibility = public | unlisted`
+- public list discovery chỉ trả `visibility = public`
 - owner auth routes hiện có không bị nới quyền ngoài ý muốn
 - public route không được mutate state hệ thống
 - response shape của public read không drift khỏi owner read nếu chưa có quyết định explicit
+
+## Follow-up public planner reuse
+
+### Mục tiêu
+
+Cho user đã đăng nhập tạo một kế hoạch riêng trong tài khoản từ một kế hoạch public/unlisted đang xem, để public planner không chỉ là read-only inspiration.
+
+### Scope
+
+- [x] thêm `POST /api/v1/public/trips/:tripId/copy` yêu cầu bearer auth
+- [x] copy `Trip` sang owner hiện tại với `visibility = private`
+- [x] copy planner `PlanNode` gồm ghi chú, thời gian, ảnh, và chi phí/ngân sách node
+- [x] giữ public read endpoints hiện tại không mutate state
+- [x] thêm integration coverage cho copy public planner
 
 ## Deferred rõ ràng sau phase này
 
