@@ -41,10 +41,24 @@ model Trip {
   updatedAt            DateTime @updatedAt @map("updated_at")
   itineraryDays        TripItineraryDay[]
   planNodes            PlanNode[]
+  journal              TripJournal?
   posts                Post[]
 
   @@index([userId, startDate])
   @@map("trips")
+}
+
+model TripJournal {
+  id           String   @id @default(cuid())
+  tripId       String   @unique @map("trip_id")
+  trip         Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  sceneVersion Int      @default(1) @map("scene_version")
+  page         Json
+  objects      Json
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("trip_journals")
 }
 
 model Post {

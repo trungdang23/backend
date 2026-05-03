@@ -5,6 +5,7 @@ import { AuthModule } from '../modules/auth/auth.module';
 import { BudgetsModule } from '../modules/budgets/budgets.module';
 import { HealthModule } from '../modules/health/health.module';
 import { ItinerariesModule } from '../modules/itineraries/itineraries.module';
+import { JournalModule } from '../modules/journal/journal.module';
 import { PlanningModule } from '../modules/planning/planning.module';
 import { PostsModule } from '../modules/posts/posts.module';
 import { TripsModule } from '../modules/trips/trips.module';
@@ -32,6 +33,7 @@ import { RequestContextModule } from './request-context/request-context.module';
     BudgetsModule,
     HealthModule,
     ItinerariesModule,
+    JournalModule,
     PlanningModule,
     PostsModule,
     TripsModule,

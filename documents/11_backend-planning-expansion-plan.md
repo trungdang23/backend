@@ -113,7 +113,7 @@ Phần còn chưa aligned hoàn toàn với roadmap mới:
 
 - `itinerary` vẫn còn là compatibility/migration bridge, chưa có migration helper hoặc cleanup plan cuối cùng
 - `comments` vẫn deferred
-- chưa có `journal` persistence/API riêng cho hướng Digital Scrapbook
+- `journal` đã có persistence/API tối giản `GET/PUT /trips/:tripId/journal`; page-level CRUD, publish snapshot, revision history và asset upload vẫn deferred
 
 ## Quyết định kiến trúc
 

@@ -8,6 +8,7 @@ import {
 export const APP_ERROR_CODES = {
   AUTH_INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
   AUTH_TOKEN_EXPIRED: 'AUTH_TOKEN_EXPIRED',
+  JOURNAL_VALIDATION_ERROR: 'JOURNAL_VALIDATION_ERROR',
   NODE_VALIDATION_ERROR: 'NODE_VALIDATION_ERROR',
   PERMISSION_DENIED: 'PERMISSION_DENIED',
   TRIP_NOT_FOUND: 'TRIP_NOT_FOUND',
@@ -40,6 +41,12 @@ export function authTokenExpiredException(message = 'Token has expired.') {
 export function nodeValidationException(message: string) {
   return new BadRequestException(
     buildExceptionBody(APP_ERROR_CODES.NODE_VALIDATION_ERROR, message),
+  );
+}
+
+export function journalValidationException(message: string) {
+  return new BadRequestException(
+    buildExceptionBody(APP_ERROR_CODES.JOURNAL_VALIDATION_ERROR, message),
   );
 }
 

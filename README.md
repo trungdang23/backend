@@ -21,6 +21,7 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
 - trip có `visibility: private | public`
 - trip có `budgetMode: auto | manual`
 - planner dùng `PlanNode` tree
+- journal scene lưu bằng `PostgreSQL JSONB`
 - social tối thiểu gồm `posts` và có thể mở `comments` ngay sau đó
 
 ### Contract mục tiêu
@@ -53,6 +54,9 @@ Primary product contract:
   - `POST /api/v1/nodes`
   - `PATCH /api/v1/nodes/:id`
   - `DELETE /api/v1/nodes/:id`
+- Journal:
+  - `GET /api/v1/trips/:id/journal`
+  - `PUT /api/v1/trips/:id/journal`
 
 Compatibility and migration bridge currently still live:
 - Itinerary:
@@ -66,7 +70,7 @@ Compatibility and migration bridge currently still live:
 
 ### Trạng thái migration hiện tại
 
-- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, và `budget-summary`.
+- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, và journal scene persistence tối giản bằng `trip_journals`.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
 - Khi triển khai tiếp, ưu tiên:
   1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật

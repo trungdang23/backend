@@ -33,7 +33,7 @@ export function setupApp(app: INestApplication): void {
       'Retry-After',
       'X-Correlation-Id',
     ],
-    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     optionsSuccessStatus: 204,
     origin(origin: string | undefined, callback: CorsOriginCallback) {
       if (origin === undefined) {
