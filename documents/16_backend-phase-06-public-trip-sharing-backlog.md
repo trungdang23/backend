@@ -64,6 +64,10 @@ Rule phase này:
 - `visibility = public`:
   - guest đọc được trip detail
   - guest đọc được planner
+  - trip xuất hiện trong public discovery list
+- `visibility = unlisted`:
+  - guest đọc được trip detail/planner/journal bằng link trực tiếp
+  - trip không xuất hiện trong public discovery list
 - `visibility = private`:
   - guest bị chặn
 - trip không tồn tại:
@@ -120,7 +124,7 @@ Public page có thể dùng:
 
 ### Response shape mục tiêu
 
-Giữ cùng shape list/meta hiện tại nhưng chỉ trả `visibility = public`.
+Giữ cùng shape list/meta hiện tại nhưng chỉ trả `visibility = public`; `unlisted` chỉ xem bằng link trực tiếp.
 
 ## Public trip detail
 

@@ -5,17 +5,20 @@ import { AuthModule } from '../auth/auth.module';
 import { TripsModule } from '../trips/trips.module';
 import { TRIP_JOURNAL_REPOSITORY } from './application/ports/trip-journal-repository.port';
 import { DeleteTripJournalService } from './application/services/delete-trip-journal.service';
+import { GetPublicTripJournalService } from './application/services/get-public-trip-journal.service';
 import { GetTripJournalService } from './application/services/get-trip-journal.service';
 import { ListUserJournalsService } from './application/services/list-user-journals.service';
 import { SaveTripJournalService } from './application/services/save-trip-journal.service';
 import { PrismaTripJournalRepository } from './infrastructure/prisma/prisma-trip-journal.repository';
 import { JournalController } from './presentation/journal.controller';
+import { PublicJournalController } from './presentation/public-journal.controller';
 
 @Module({
   imports: [AuthModule, PrismaModule, TripsModule],
-  controllers: [JournalController],
+  controllers: [JournalController, PublicJournalController],
   providers: [
     DeleteTripJournalService,
+    GetPublicTripJournalService,
     GetTripJournalService,
     ListUserJournalsService,
     SaveTripJournalService,

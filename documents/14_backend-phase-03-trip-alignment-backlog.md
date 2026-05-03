@@ -38,7 +38,7 @@ Phase này chưa xử lý:
 
 Public API của `Trip` phải có thêm:
 
-- `visibility: private | public`
+- `visibility: private | unlisted | public`
 - `budgetMode: auto | manual`
 - `manualBudgetAmount: number | null`
 - `manualBudgetCurrency: string | null`
@@ -71,7 +71,7 @@ Cách đi phù hợp nhất:
 
 - `name` là bắt buộc
 - `startDate <= endDate`
-- `visibility` chỉ nhận `private | public`
+- `visibility` chỉ nhận `private | unlisted | public`
 - `budgetMode` chỉ nhận `auto | manual`
 - `manualBudgetAmount >= 0` nếu có giá trị
 - `manualBudgetAmount` và `manualBudgetCurrency` bắt buộc khi `budgetMode = manual`

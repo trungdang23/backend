@@ -23,7 +23,7 @@ Trip
 - budgetMode            // auto | manual
 - manualBudgetAmount?
 - manualBudgetCurrency?
-- visibility            // private | public
+- visibility            // private | unlisted | public
 - createdAt
 - updatedAt
 ```

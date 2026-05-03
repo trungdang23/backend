@@ -10,6 +10,7 @@ import {
   TRIP_REPOSITORY,
   type TripRepositoryPort,
 } from '../ports/trip-repository.port';
+import { isTripPubliclyReadable } from '../../domain/trip-visibility';
 
 @Injectable()
 export class GetPublicTripDetailService implements UseCase<string, Trip> {
@@ -25,7 +26,7 @@ export class GetPublicTripDetailService implements UseCase<string, Trip> {
       throw tripNotFoundException();
     }
 
-    if (trip.visibility !== 'public') {
+    if (!isTripPubliclyReadable(trip.visibility)) {
       throw permissionDeniedException('Trip is private.');
     }
 

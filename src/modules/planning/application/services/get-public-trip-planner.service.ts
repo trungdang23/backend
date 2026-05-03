@@ -9,6 +9,7 @@ import {
   TRIP_REPOSITORY,
   type TripRepositoryPort,
 } from '../../../trips/application/ports/trip-repository.port';
+import { isTripPubliclyReadable } from '../../../trips/domain/trip-visibility';
 import {
   PLAN_NODE_REPOSITORY,
   type PlanNodeRepositoryPort,
@@ -34,7 +35,7 @@ export class GetPublicTripPlannerService implements UseCase<
       throw tripNotFoundException();
     }
 
-    if (trip.visibility !== 'public') {
+    if (!isTripPubliclyReadable(trip.visibility)) {
       throw permissionDeniedException('Trip is private.');
     }
 

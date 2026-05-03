@@ -474,6 +474,28 @@ describe('Trips integration', () => {
       };
     };
 
+    const unlistedTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Unlisted Phu Yen Link',
+        startDate: '2026-12-02',
+        endDate: '2026-12-06',
+        budgetMode: 'manual',
+        manualBudgetAmount: 3600000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'unlisted',
+      },
+    });
+    const unlistedTripBody = unlistedTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
     const detailResponse = await dispatchRequest(expressApp, {
       method: 'GET',
       path: `/api/v1/public/trips/${publicTripBody.data.id}`,
@@ -490,6 +512,23 @@ describe('Trips integration', () => {
     expect(detailBody.success).toBe(true);
     expect(detailBody.data.id).toBe(publicTripBody.data.id);
     expect(detailBody.data.visibility).toBe('public');
+
+    const unlistedDetailResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${unlistedTripBody.data.id}`,
+    });
+    const unlistedDetailBody = unlistedDetailResponse.body as {
+      success: boolean;
+      data: {
+        id: string;
+        visibility: string;
+      };
+    };
+
+    expect(unlistedDetailResponse.statusCode).toBe(200);
+    expect(unlistedDetailBody.success).toBe(true);
+    expect(unlistedDetailBody.data.id).toBe(unlistedTripBody.data.id);
+    expect(unlistedDetailBody.data.visibility).toBe('unlisted');
 
     const privateDetailResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -563,6 +602,23 @@ describe('Trips integration', () => {
         manualBudgetAmount: 1500000,
         manualBudgetCurrency: 'VND',
         visibility: 'private',
+      },
+    });
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Unlisted Ninh Binh',
+        startDate: '2026-04-15',
+        endDate: '2026-04-17',
+        budgetMode: 'manual',
+        manualBudgetAmount: 1900000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'unlisted',
       },
     });
 

@@ -800,6 +800,42 @@ describe('Planning integration', () => {
       },
     });
 
+    const unlistedTripResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/trips',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        name: 'Unlisted Planner',
+        startDate: '2026-09-06',
+        endDate: '2026-09-08',
+        budgetMode: 'manual',
+        manualBudgetAmount: 2800000,
+        manualBudgetCurrency: 'VND',
+        visibility: 'unlisted',
+      },
+    });
+    const unlistedTripBody = unlistedTripResponse.body as {
+      data: {
+        id: string;
+      };
+    };
+
+    await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: '/api/v1/nodes',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        tripId: unlistedTripBody.data.id,
+        type: 'day',
+        title: 'Unlisted day one',
+        sortOrder: 0,
+      },
+    });
+
     const privateTripResponse = await dispatchRequest(expressApp, {
       method: 'POST',
       path: '/api/v1/trips',
@@ -843,6 +879,31 @@ describe('Planning integration', () => {
     expect(plannerBody.data.trip.id).toBe(publicTripBody.data.id);
     expect(plannerBody.data.nodes.map((node) => node.title)).toEqual([
       'Public day one',
+    ]);
+
+    const unlistedPlannerResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${unlistedTripBody.data.id}/planner`,
+    });
+    const unlistedPlannerBody = unlistedPlannerResponse.body as {
+      success: boolean;
+      data: {
+        trip: {
+          id: string;
+          visibility: string;
+        };
+        nodes: Array<{
+          title: string;
+        }>;
+      };
+    };
+
+    expect(unlistedPlannerResponse.statusCode).toBe(200);
+    expect(unlistedPlannerBody.success).toBe(true);
+    expect(unlistedPlannerBody.data.trip.id).toBe(unlistedTripBody.data.id);
+    expect(unlistedPlannerBody.data.trip.visibility).toBe('unlisted');
+    expect(unlistedPlannerBody.data.nodes.map((node) => node.title)).toEqual([
+      'Unlisted day one',
     ]);
 
     const privatePlannerResponse = await dispatchRequest(expressApp, {
@@ -918,7 +979,7 @@ async function createTrip(
   accessToken: string,
   body: {
     name: string;
-    visibility: 'private' | 'public';
+    visibility: 'private' | 'unlisted' | 'public';
   },
 ) {
   const response = await dispatchRequest(expressApp, {

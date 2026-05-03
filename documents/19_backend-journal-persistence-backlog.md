@@ -29,5 +29,18 @@ Them persistence contract toi gian cho `journal` theo huong `PostgreSQL + JSONB`
 
 - upload asset that va asset ownership
 - page-level CRUD, publish snapshot, revision history
-- public journal route
 - realtime/collaboration/autosave conflict handling
+
+## Follow-up public share read
+
+### Muc tieu
+
+Mo read-only journal route cho guest de frontend co the chia se nhat ky ca nhan bang link public/unlisted, dong thoi giu owner mutation trong namespace auth-only hien co.
+
+### Scope cua luot trien khai nay
+
+- [x] them `GET /api/v1/public/trips/:tripId/journal`
+- [x] public journal read chi cho phep trip `visibility = public | unlisted`
+- [x] trip `visibility = private` tiep tuc tra permission denied
+- [x] neu trip duoc share nhung chua co journal record, tra scene rong mac dinh nhu owner read
+- [x] them integration coverage cho public journal read

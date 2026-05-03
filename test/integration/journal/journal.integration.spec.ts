@@ -252,6 +252,97 @@ describe('Journal integration', () => {
     expect(body.success).toBe(false);
     expect(body.error.code).toBe('TRIP_NOT_FOUND');
   });
+
+  it('serves shared journals publicly while blocking private journals', async () => {
+    const traveler = await registerUser(expressApp, 'journal.share@example.com');
+    const sharedTripId = await createTrip(
+      expressApp,
+      traveler.accessToken,
+      'unlisted',
+    );
+    const privateTripId = await createTrip(
+      expressApp,
+      traveler.accessToken,
+      'private',
+    );
+
+    await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/trips/${sharedTripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        sceneVersion: 1,
+        page: {
+          width: 1200,
+          height: 1600,
+          background: {
+            style: 'paper-cream',
+          },
+        },
+        objects: [
+          {
+            id: 'obj-public-note-1',
+            type: 'note',
+            x: 140,
+            y: 220,
+            width: 360,
+            height: 220,
+            rotation: 2,
+            zIndex: 1,
+            props: {
+              text: 'Mot trang nhat ky co the chia se.',
+            },
+          },
+        ],
+      },
+    });
+
+    const sharedResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${sharedTripId}/journal`,
+    });
+    const sharedBody = sharedResponse.body as {
+      success: boolean;
+      data: {
+        trip: {
+          id: string;
+          visibility: string;
+        };
+        journal: {
+          id: string;
+          objects: Array<{
+            id: string;
+          }>;
+        };
+      };
+    };
+
+    expect(sharedResponse.statusCode).toBe(200);
+    expect(sharedBody.success).toBe(true);
+    expect(sharedBody.data.trip.id).toBe(sharedTripId);
+    expect(sharedBody.data.trip.visibility).toBe('unlisted');
+    expect(sharedBody.data.journal.id).toBe('journal-1');
+    expect(sharedBody.data.journal.objects.map((object) => object.id)).toEqual([
+      'obj-public-note-1',
+    ]);
+
+    const privateResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${privateTripId}/journal`,
+    });
+    const privateBody = privateResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(privateResponse.statusCode).toBe(403);
+    expect(privateBody.success).toBe(false);
+    expect(privateBody.error.code).toBe('PERMISSION_DENIED');
+  });
 });
 
 async function registerUser(expressApp: Express, email: string) {
@@ -277,7 +368,11 @@ async function registerUser(expressApp: Express, email: string) {
   };
 }
 
-async function createTrip(expressApp: Express, accessToken: string) {
+async function createTrip(
+  expressApp: Express,
+  accessToken: string,
+  visibility: 'private' | 'unlisted' | 'public' = 'private',
+) {
   const response = await dispatchRequest(expressApp, {
     method: 'POST',
     path: '/api/v1/trips',
@@ -291,7 +386,7 @@ async function createTrip(expressApp: Express, accessToken: string) {
       budgetMode: 'manual',
       manualBudgetAmount: 5000000,
       manualBudgetCurrency: 'VND',
-      visibility: 'private',
+      visibility,
     },
   });
   const body = response.body as {
