@@ -78,4 +78,16 @@ export class AppConfigService {
   get journalAssetStorageDir(): string | null {
     return this.configService.get('journalAssets.storageDir', { infer: true });
   }
+
+  get journalAssetSigningSecret(): string {
+    return this.configService.get('journalAssets.signingSecret', {
+      infer: true,
+    });
+  }
+
+  get journalAssetSignedUrlTtlSeconds(): number {
+    return this.configService.get('journalAssets.signedUrlTtlSeconds', {
+      infer: true,
+    });
+  }
 }

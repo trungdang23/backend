@@ -12,9 +12,11 @@ import { DeleteTripJournalService } from './application/services/delete-trip-jou
 import { GetTripJournalAssetFileService } from './application/services/get-trip-journal-asset-file.service';
 import { GetPublicTripJournalService } from './application/services/get-public-trip-journal.service';
 import { GetTripJournalService } from './application/services/get-trip-journal.service';
+import { JournalAssetUrlSigningService } from './application/services/journal-asset-url-signing.service';
 import { ListPublicJournalsService } from './application/services/list-public-journals.service';
 import { ListTripJournalAssetsService } from './application/services/list-trip-journal-assets.service';
 import { ListUserJournalsService } from './application/services/list-user-journals.service';
+import { PresentTripJournalService } from './application/services/present-trip-journal.service';
 import { SaveTripJournalService } from './application/services/save-trip-journal.service';
 import { UpdateTripJournalVisibilityService } from './application/services/update-trip-journal-visibility.service';
 import { UploadTripJournalAssetService } from './application/services/upload-trip-journal-asset.service';
@@ -39,9 +41,11 @@ import { PublicJournalController } from './presentation/public-journal.controlle
     GetTripJournalAssetFileService,
     GetPublicTripJournalService,
     GetTripJournalService,
+    JournalAssetUrlSigningService,
     ListPublicJournalsService,
     ListTripJournalAssetsService,
     ListUserJournalsService,
+    PresentTripJournalService,
     SaveTripJournalService,
     UpdateTripJournalVisibilityService,
     UploadTripJournalAssetService,

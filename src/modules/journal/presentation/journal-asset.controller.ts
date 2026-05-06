@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseGuards,
@@ -20,6 +21,7 @@ import { Public } from '../../auth/presentation/decorators/public.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
 import { DeleteTripJournalAssetService } from '../application/services/delete-trip-journal-asset.service';
 import { GetTripJournalAssetFileService } from '../application/services/get-trip-journal-asset-file.service';
+import { JournalAssetUrlSigningService } from '../application/services/journal-asset-url-signing.service';
 import { ListTripJournalAssetsService } from '../application/services/list-trip-journal-assets.service';
 import { UploadTripJournalAssetService } from '../application/services/upload-trip-journal-asset.service';
 import { MAX_TRIP_JOURNAL_ASSET_BYTES } from '../domain/trip-journal-asset';
@@ -38,6 +40,7 @@ export class JournalAssetController {
   constructor(
     private readonly deleteTripJournalAsset: DeleteTripJournalAssetService,
     private readonly getTripJournalAssetFile: GetTripJournalAssetFileService,
+    private readonly journalAssetUrlSigning: JournalAssetUrlSigningService,
     private readonly listTripJournalAssets: ListTripJournalAssetsService,
     private readonly uploadTripJournalAsset: UploadTripJournalAssetService,
   ) {}
@@ -72,7 +75,10 @@ export class JournalAssetController {
             },
     });
 
-    return TripJournalAssetResponseDto.from(result.asset);
+    return TripJournalAssetResponseDto.from(
+      result.asset,
+      this.journalAssetUrlSigning.createSignedPath(result.asset.publicId),
+    );
   }
 
   @Get('trips/:tripId/journal/assets')
@@ -87,7 +93,9 @@ export class JournalAssetController {
       tripId,
     });
 
-    return TripJournalAssetResponseDto.list(result.assets);
+    return TripJournalAssetResponseDto.list(result.assets, (asset) =>
+      this.journalAssetUrlSigning.createSignedPath(asset.publicId),
+    );
   }
 
   @Delete('trips/:tripId/journal/assets/:assetId')
@@ -110,13 +118,22 @@ export class JournalAssetController {
   @Public()
   async getAsset(
     @Param('publicId') publicId: string,
+    @Query('expiresAt') expiresAt: string | undefined,
+    @Query('signature') signature: string | undefined,
     @Res() response: Response,
   ): Promise<void> {
-    const result = await this.getTripJournalAssetFile.execute(publicId);
+    const result = await this.getTripJournalAssetFile.execute({
+      publicId,
+      expiresAt,
+      signature,
+    });
 
     response.setHeader('Content-Type', result.asset.contentType);
     response.setHeader('Content-Length', result.file.byteSize);
-    response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    response.setHeader(
+      'Cache-Control',
+      `private, max-age=${result.cacheMaxAgeSeconds}, must-revalidate`,
+    );
     result.file.stream.pipe(response);
   }
 }

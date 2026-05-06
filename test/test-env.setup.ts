@@ -17,3 +17,6 @@ process.env.JWT_REFRESH_TOKEN_SECRET ??=
 process.env.JWT_REFRESH_TOKEN_TTL ??= '7d';
 process.env.AUTH_RATE_LIMIT_MAX_REQUESTS ??= '100';
 process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS ??= '60';
+process.env.JOURNAL_ASSET_SIGNING_SECRET ??=
+  'journey-test-journal-asset-signing-secret-123456789';
+process.env.JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS ??= '900';

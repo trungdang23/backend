@@ -25,5 +25,7 @@ export interface ApplicationConfig {
   };
   journalAssets: {
     storageDir: string | null;
+    signingSecret: string;
+    signedUrlTtlSeconds: number;
   };
 }

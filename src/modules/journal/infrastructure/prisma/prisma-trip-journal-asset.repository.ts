@@ -53,6 +53,19 @@ export class PrismaTripJournalAssetRepository implements TripJournalAssetReposit
     return record === null ? null : toTripJournalAsset(record);
   }
 
+  async listByTripId(tripId: string): Promise<TripJournalAsset[]> {
+    const records = await this.prisma.tripJournalAsset.findMany({
+      where: {
+        tripId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return records.map(toTripJournalAsset);
+  }
+
   async listByTripForUser(
     input: ListTripJournalAssetsForUserInput,
   ): Promise<TripJournalAsset[]> {

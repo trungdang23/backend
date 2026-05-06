@@ -315,7 +315,14 @@ describe('Journal integration', () => {
         tripId,
       }),
     );
-    expect(uploadBody.data.asset.url).toMatch(/^\/journal-assets\/.+/);
+    expect(uploadBody.data.asset.url).toMatch(
+      /^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/,
+    );
+
+    const signedAssetUrl = new URL(uploadBody.data.asset.url, 'http://journey.local');
+    const publicId = signedAssetUrl.pathname.split('/').pop() ?? '';
+
+    expect(publicId).not.toBe('');
 
     const listResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -346,11 +353,27 @@ describe('Journal integration', () => {
       }),
     );
 
+    const unsignedAssetResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/journal-assets/${publicId}`,
+    });
+    const unsignedAssetBody = unsignedAssetResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(unsignedAssetResponse.statusCode).toBe(404);
+    expect(unsignedAssetBody.success).toBe(false);
+    expect(unsignedAssetBody.error.code).toBe('JOURNAL_ASSET_NOT_FOUND');
+
     const assetResponse = await request(httpServer).get(
       `/api/v1${uploadBody.data.asset.url}`,
     );
 
     expect(assetResponse.statusCode).toBe(200);
+    expect(assetResponse.headers['cache-control']).toContain('private');
     expect(assetResponse.headers['content-type']).toContain('image/png');
     expect(assetResponse.body).toEqual(fileBuffer);
 
@@ -394,6 +417,196 @@ describe('Journal integration', () => {
     expect(deletedAssetResponse.statusCode).toBe(404);
     expect(deletedAssetBody.success).toBe(false);
     expect(deletedAssetBody.error.code).toBe('JOURNAL_ASSET_NOT_FOUND');
+  });
+
+  it('rewrites asset-backed photo object urls in owner and public journal responses', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'journal.asset.rewrite@example.com',
+    );
+    const tripId = await createTrip(expressApp, traveler.accessToken);
+    const fileBuffer = Buffer.from('signed-photo-content');
+
+    const uploadResponse = await request(httpServer)
+      .post(`/api/v1/trips/${tripId}/journal/assets`)
+      .set('Authorization', `Bearer ${traveler.accessToken}`)
+      .attach('file', fileBuffer, {
+        contentType: 'image/png',
+        filename: 'signed-memory.png',
+      });
+    const uploadBody = uploadResponse.body as {
+      data: {
+        asset: {
+          id: string;
+          url: string;
+        };
+      };
+    };
+    const persistedAbsoluteImageUrl = `https://api.example.com/api/v1${uploadBody.data.asset.url}`;
+
+    const saveResponse = await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        sceneVersion: 1,
+        page: {
+          width: 1200,
+          height: 1600,
+          background: {
+            style: 'paper-cream',
+          },
+        },
+        objects: [
+          {
+            id: 'obj-photo-1',
+            type: 'photo',
+            x: 180,
+            y: 220,
+            width: 420,
+            height: 320,
+            rotation: -3,
+            zIndex: 2,
+            props: {
+              assetId: uploadBody.data.asset.id,
+              contentType: 'image/png',
+              fileName: 'signed-memory.png',
+              imageUrl: persistedAbsoluteImageUrl,
+            },
+          },
+        ],
+      },
+    });
+    const saveBody = saveResponse.body as {
+      success: boolean;
+      data: {
+        journal: {
+          objects: Array<{
+            props: {
+              assetId: string;
+              imageUrl: string;
+            };
+          }>;
+        };
+      };
+    };
+
+    expect(saveResponse.statusCode).toBe(200);
+    expect(saveBody.success).toBe(true);
+    expect(saveBody.data.journal.objects[0]?.props.assetId).toBe(
+      uploadBody.data.asset.id,
+    );
+    expect(saveBody.data.journal.objects[0]?.props.imageUrl).toMatch(
+      /^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/,
+    );
+    expect(saveBody.data.journal.objects[0]?.props.imageUrl).not.toBe(
+      persistedAbsoluteImageUrl,
+    );
+
+    const ownerGetResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const ownerGetBody = ownerGetResponse.body as {
+      data: {
+        journal: {
+          objects: Array<{
+            props: {
+              imageUrl: string;
+            };
+          }>;
+        };
+      };
+    };
+
+    expect(ownerGetResponse.statusCode).toBe(200);
+    expect(ownerGetBody.data.journal.objects[0]?.props.imageUrl).toMatch(
+      /^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/,
+    );
+
+    const ownerListResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/journals/mine',
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const ownerListBody = ownerListResponse.body as {
+      data: Array<{
+        journal: {
+          objects: Array<{
+            props: {
+              imageUrl: string;
+            };
+          }>;
+        };
+      }>;
+    };
+
+    expect(ownerListResponse.statusCode).toBe(200);
+    expect(
+      ownerListBody.data[0]?.journal.objects[0]?.props.imageUrl,
+    ).toMatch(/^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/);
+
+    const shareResponse = await dispatchRequest(expressApp, {
+      method: 'PATCH',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        visibility: 'public',
+      },
+    });
+
+    expect(shareResponse.statusCode).toBe(200);
+
+    const publicGetResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/public/trips/${tripId}/journal`,
+    });
+    const publicGetBody = publicGetResponse.body as {
+      data: {
+        journal: {
+          objects: Array<{
+            props: {
+              imageUrl: string;
+            };
+          }>;
+        };
+      };
+    };
+
+    expect(publicGetResponse.statusCode).toBe(200);
+    expect(publicGetBody.data.journal.objects[0]?.props.imageUrl).toMatch(
+      /^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/,
+    );
+
+    const publicListResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: '/api/v1/public/journals',
+    });
+    const publicListBody = publicListResponse.body as {
+      data: Array<{
+        journal: {
+          objects: Array<{
+            props: {
+              imageUrl: string;
+            };
+          }>;
+        };
+      }>;
+    };
+
+    expect(publicListResponse.statusCode).toBe(200);
+    expect(
+      publicListBody.data[0]?.journal.objects[0]?.props.imageUrl,
+    ).toMatch(/^\/journal-assets\/.+\?expiresAt=\d+&signature=.+$/);
   });
 
   it('does not let another user manage assets for an owned trip', async () => {

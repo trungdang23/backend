@@ -79,6 +79,7 @@ Các script này:
 - Nếu đổi `APP_NAME` hoặc `XDG_STATE_HOME`, phải giữ quyền ghi cho auth revoke state path tương ứng để logout/refresh rotation không bị fail runtime.
 - `push` vào `main` sẽ tự kích hoạt deploy; `Run workflow` vẫn được giữ để redeploy thủ công khi cần.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
+- `JOURNAL_ASSET_SIGNING_SECRET` là secret runtime bắt buộc cho signed journal asset URL; `JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` quyết định thời gian sống của link ảnh được ký.
 
 ## GitHub configuration hiện cần
 
@@ -87,6 +88,7 @@ Các script này:
 - `RUNTIME_DATABASE_URL`
 - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
 - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
+- `RUNTIME_JOURNAL_ASSET_SIGNING_SECRET`
 - `RUNTIME_SWAGGER_USERNAME`
 - `RUNTIME_SWAGGER_PASSWORD`
 
@@ -105,6 +107,7 @@ Các script này:
 - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
 - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
 - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
+- `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`
 
 ## Giá trị path và command đã chốt cho máy hiện tại
 

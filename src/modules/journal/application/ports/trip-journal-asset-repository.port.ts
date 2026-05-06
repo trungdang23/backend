@@ -21,6 +21,7 @@ export interface TripJournalAssetRepositoryPort {
   findByIdForUser(
     input: FindTripJournalAssetForUserInput,
   ): Promise<TripJournalAsset | null>;
+  listByTripId(tripId: string): Promise<TripJournalAsset[]>;
   listByTripForUser(
     input: ListTripJournalAssetsForUserInput,
   ): Promise<TripJournalAsset[]>;

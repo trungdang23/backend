@@ -12,25 +12,41 @@ import {
   TRIP_JOURNAL_ASSET_REPOSITORY,
   type TripJournalAssetRepositoryPort,
 } from '../ports/trip-journal-asset-repository.port';
+import { JournalAssetUrlSigningService } from './journal-asset-url-signing.service';
+
+export interface GetTripJournalAssetFileInput {
+  publicId: string;
+  expiresAt?: string;
+  signature?: string;
+}
 
 export interface GetTripJournalAssetFileResult {
   asset: TripJournalAsset;
   file: JournalAssetFile;
+  cacheMaxAgeSeconds: number;
 }
 
 @Injectable()
 export class GetTripJournalAssetFileService
-  implements UseCase<string, GetTripJournalAssetFileResult>
+  implements UseCase<GetTripJournalAssetFileInput, GetTripJournalAssetFileResult>
 {
   constructor(
     @Inject(TRIP_JOURNAL_ASSET_REPOSITORY)
     private readonly assetRepository: TripJournalAssetRepositoryPort,
     @Inject(JOURNAL_ASSET_STORAGE)
     private readonly assetStorage: JournalAssetStoragePort,
+    private readonly journalAssetUrlSigning: JournalAssetUrlSigningService,
   ) {}
 
-  async execute(publicId: string): Promise<GetTripJournalAssetFileResult> {
-    const asset = await this.assetRepository.findByPublicId(publicId);
+  async execute(
+    input: GetTripJournalAssetFileInput,
+  ): Promise<GetTripJournalAssetFileResult> {
+    const expiresAt = this.journalAssetUrlSigning.validateSignedPathOrThrow({
+      publicId: input.publicId,
+      expiresAt: input.expiresAt,
+      signature: input.signature,
+    });
+    const asset = await this.assetRepository.findByPublicId(input.publicId);
 
     if (asset === null) {
       throw journalAssetNotFoundException();
@@ -45,6 +61,8 @@ export class GetTripJournalAssetFileService
     return {
       asset,
       file,
+      cacheMaxAgeSeconds:
+        this.journalAssetUrlSigning.getRemainingLifetimeSeconds(expiresAt),
     };
   }
 }

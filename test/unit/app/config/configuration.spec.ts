@@ -32,6 +32,9 @@ describe('configuration', () => {
     process.env.JWT_REFRESH_TOKEN_TTL = '14d';
     process.env.AUTH_RATE_LIMIT_MAX_REQUESTS = '12';
     process.env.AUTH_RATE_LIMIT_WINDOW_SECONDS = '90';
+    process.env.JOURNAL_ASSET_SIGNING_SECRET =
+      'journey-production-journal-asset-signing-secret-123456789';
+    process.env.JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS = '1800';
 
     expect(configuration()).toEqual({
       app: {
@@ -52,6 +55,9 @@ describe('configuration', () => {
       },
       journalAssets: {
         storageDir: null,
+        signingSecret:
+          'journey-production-journal-asset-signing-secret-123456789',
+        signedUrlTtlSeconds: 1800,
       },
       auth: {
         jwtIssuer: 'api.buicojourney.com',
@@ -70,6 +76,21 @@ describe('configuration', () => {
 
     expect(() => configuration()).toThrow(
       'Missing required environment variable: DATABASE_URL',
+    );
+  });
+
+  it('throws when required journal asset signing secret env is missing', () => {
+    process.env.DATABASE_URL =
+      'postgresql://journey:journey@localhost:5432/journey_prod?schema=public';
+    process.env.JWT_ISSUER = 'api.buicojourney.com';
+    process.env.JWT_ACCESS_TOKEN_SECRET =
+      'journey-production-access-token-secret-123456789';
+    process.env.JWT_REFRESH_TOKEN_SECRET =
+      'journey-production-refresh-token-secret-123456789';
+    delete process.env.JOURNAL_ASSET_SIGNING_SECRET;
+
+    expect(() => configuration()).toThrow(
+      'Missing required environment variable: JOURNAL_ASSET_SIGNING_SECRET',
     );
   });
 });

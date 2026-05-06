@@ -103,3 +103,26 @@ Them contract backend toi thieu de owner xem va xoa asset da upload cho mot trip
 - cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
 - signed/private asset delivery cho journal private
 - cloud/object storage provider production-ready
+
+## Follow-up signed/private journal asset delivery
+
+### Muc tieu
+
+Dong cac journal asset URL dang public/unlisted bang signed URL co TTL, de anh trong journal private/public van render duoc qua the `<img>` nhung khong con bi doc truc tiep neu thieu chu ky hop le. Slice nay uu tien bao ve asset read truoc cleanup orphan/trip delete cleanup vi hien tai visibility cua journal co the bi lo qua duong dan asset.
+
+### Scope
+
+- [ ] them runtime config cho journal asset signing secret va signed URL TTL
+- [ ] `GET /api/v1/journal-assets/:publicId` chi phuc vu file khi query signature hop le va chua het han
+- [ ] upload/list asset response tra signed URL thay vi public URL tron
+- [ ] owner journal response (`GET/PUT/PATCH /trips/:tripId/journal`, `GET /journals/mine`) rewrite `imageUrl` cua object anh da gan `assetId`
+- [ ] public journal response (`GET /public/trips/:tripId/journal`, `GET /public/journals`) rewrite `imageUrl` cua object anh da gan `assetId`
+- [ ] giu nguyen external image URL khong thuoc asset storage noi bo
+- [ ] them integration coverage cho signed URL format, unsigned denial, va response rewriting owner/public
+
+### Deferred
+
+- rotate/revoke signed URL theo asset-level key version
+- cloud/object storage provider production-ready
+- cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
+- cleanup file vat ly khi trip bi xoa qua `DELETE /trips/:tripId`

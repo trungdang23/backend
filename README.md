@@ -78,7 +78,7 @@ Compatibility and migration bridge currently still live:
 
 ### Trạng thái migration hiện tại
 
-- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, journal scene persistence tối giản bằng `trip_journals`, và journal asset upload owner-only với file URL public/unlisted.
+- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, journal scene persistence tối giản bằng `trip_journals`, và journal asset upload owner-only với signed URL delivery cho asset read.
 - `Trip.visibility = public` mở read-only public trip/planner và xuất hiện trong public trip discovery list; `private` bị chặn ở public route.
 - `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
@@ -144,8 +144,8 @@ pnpm prisma:validate
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
 - Repo `backend` có workflow deploy tại `.github/workflows/deploy-backend.yml`; workflow này tự chạy khi `push` vào `main` và vẫn hỗ trợ `Run workflow` để redeploy thủ công khi cần. Workflow render `.env.production` từ GitHub Secrets/Variables, rồi mới copy sang máy đích trước khi migrate và restart service.
 - Trên personal-machine deploy path hiện tại, workflow deploy sẽ gọi `scripts/ensure-runtime-database.sh` trước migration; nếu `DATABASE_URL` trỏ về `localhost` nhưng port chưa mở, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ `docker compose up -d postgres` khi container đó chưa tồn tại.
-- `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
-- Journal asset upload lưu file local mặc định tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/journal-assets`; có thể override bằng `JOURNAL_ASSET_STORAGE_DIR` nếu muốn đặt volume/path riêng.
+- `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, `JWT_REFRESH_TOKEN_SECRET`, và `JOURNAL_ASSET_SIGNING_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
+- Journal asset upload lưu file local mặc định tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/journal-assets`; có thể override bằng `JOURNAL_ASSET_STORAGE_DIR` nếu muốn đặt volume/path riêng. Asset read URL hiện được ký bằng `JOURNAL_ASSET_SIGNING_SECRET`, với TTL điều khiển qua `JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` (mặc định 900 giây nếu env trống).
 - CORS cho frontend tách origin được điều khiển bằng `CORS_ALLOWED_ORIGINS`; các endpoint public của auth hiện có rate limiting theo IP với `AUTH_RATE_LIMIT_MAX_REQUESTS` và `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 - Refresh token hiện được revoke server-side trên cả `POST /api/v1/auth/refresh` và `POST /api/v1/auth/logout`; revoke state được persist tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/revoked-refresh-tokens.json` để survive process restart trên deploy model single-machine hiện tại.
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.
@@ -174,6 +174,7 @@ pnpm prisma:validate
   - `RUNTIME_DATABASE_URL`
   - `RUNTIME_JWT_ACCESS_TOKEN_SECRET`
   - `RUNTIME_JWT_REFRESH_TOKEN_SECRET`
+  - `RUNTIME_JOURNAL_ASSET_SIGNING_SECRET`
   - `RUNTIME_SWAGGER_USERNAME`
   - `RUNTIME_SWAGGER_PASSWORD`
 - Repo backend cũng cần các GitHub variables:
@@ -190,6 +191,7 @@ pnpm prisma:validate
   - `RUNTIME_JWT_REFRESH_TOKEN_TTL`
   - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
   - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
+  - `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
 - Self-hosted runner phải chạy dưới user có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và chạy được `SERVICE_RESTART_COMMAND`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.

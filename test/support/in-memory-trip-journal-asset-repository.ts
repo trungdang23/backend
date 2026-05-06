@@ -41,6 +41,16 @@ export class InMemoryTripJournalAssetRepository implements TripJournalAssetRepos
     return Promise.resolve(asset ?? null);
   }
 
+  listByTripId(tripId: string): Promise<TripJournalAsset[]> {
+    const assets = Array.from(this.assetsByPublicId.values())
+      .filter((asset) => asset.tripId === tripId)
+      .sort(
+        (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+      );
+
+    return Promise.resolve(assets);
+  }
+
   listByTripForUser(input: {
     tripId: string;
     userId: string;

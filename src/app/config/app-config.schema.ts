@@ -30,4 +30,10 @@ export const appConfigSchema = Joi.object({
     .empty('')
     .default(60),
   JOURNAL_ASSET_STORAGE_DIR: Joi.string().allow('').default(''),
+  JOURNAL_ASSET_SIGNING_SECRET: Joi.string().min(32).required(),
+  JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS: Joi.number()
+    .integer()
+    .min(60)
+    .empty('')
+    .default(900),
 });

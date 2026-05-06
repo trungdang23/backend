@@ -99,6 +99,11 @@ export function configuration(): ApplicationConfig {
     },
     journalAssets: {
       storageDir: parseOptionalString(process.env.JOURNAL_ASSET_STORAGE_DIR),
+      signingSecret: requireEnv('JOURNAL_ASSET_SIGNING_SECRET'),
+      signedUrlTtlSeconds: parseInteger(
+        process.env.JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS,
+        900,
+      ),
     },
   };
 }
