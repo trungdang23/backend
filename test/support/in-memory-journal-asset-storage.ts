@@ -33,6 +33,12 @@ export class InMemoryJournalAssetStorage implements JournalAssetStoragePort {
     });
   }
 
+  delete(storageKey: string): Promise<void> {
+    this.filesByStorageKey.delete(storageKey);
+
+    return Promise.resolve();
+  }
+
   clear(): void {
     this.filesByStorageKey.clear();
   }

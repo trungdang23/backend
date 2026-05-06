@@ -7,11 +7,13 @@ import { TripsModule } from '../trips/trips.module';
 import { JOURNAL_ASSET_STORAGE } from './application/ports/journal-asset-storage.port';
 import { TRIP_JOURNAL_ASSET_REPOSITORY } from './application/ports/trip-journal-asset-repository.port';
 import { TRIP_JOURNAL_REPOSITORY } from './application/ports/trip-journal-repository.port';
+import { DeleteTripJournalAssetService } from './application/services/delete-trip-journal-asset.service';
 import { DeleteTripJournalService } from './application/services/delete-trip-journal.service';
 import { GetTripJournalAssetFileService } from './application/services/get-trip-journal-asset-file.service';
 import { GetPublicTripJournalService } from './application/services/get-public-trip-journal.service';
 import { GetTripJournalService } from './application/services/get-trip-journal.service';
 import { ListPublicJournalsService } from './application/services/list-public-journals.service';
+import { ListTripJournalAssetsService } from './application/services/list-trip-journal-assets.service';
 import { ListUserJournalsService } from './application/services/list-user-journals.service';
 import { SaveTripJournalService } from './application/services/save-trip-journal.service';
 import { UpdateTripJournalVisibilityService } from './application/services/update-trip-journal-visibility.service';
@@ -32,11 +34,13 @@ import { PublicJournalController } from './presentation/public-journal.controlle
   ],
   providers: [
     AppConfigService,
+    DeleteTripJournalAssetService,
     DeleteTripJournalService,
     GetTripJournalAssetFileService,
     GetPublicTripJournalService,
     GetTripJournalService,
     ListPublicJournalsService,
+    ListTripJournalAssetsService,
     ListUserJournalsService,
     SaveTripJournalService,
     UpdateTripJournalVisibilityService,

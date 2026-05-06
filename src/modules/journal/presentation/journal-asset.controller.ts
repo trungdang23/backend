@@ -1,6 +1,8 @@
 import {
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Res,
@@ -16,7 +18,9 @@ import type { AuthenticatedUser } from '../../auth/application/authenticated-use
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { Public } from '../../auth/presentation/decorators/public.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
+import { DeleteTripJournalAssetService } from '../application/services/delete-trip-journal-asset.service';
 import { GetTripJournalAssetFileService } from '../application/services/get-trip-journal-asset-file.service';
+import { ListTripJournalAssetsService } from '../application/services/list-trip-journal-assets.service';
 import { UploadTripJournalAssetService } from '../application/services/upload-trip-journal-asset.service';
 import { MAX_TRIP_JOURNAL_ASSET_BYTES } from '../domain/trip-journal-asset';
 import { TripJournalAssetResponseDto } from './dto/trip-journal-asset-response.dto';
@@ -32,7 +36,9 @@ interface UploadedJournalAssetFile {
 @Controller()
 export class JournalAssetController {
   constructor(
+    private readonly deleteTripJournalAsset: DeleteTripJournalAssetService,
     private readonly getTripJournalAssetFile: GetTripJournalAssetFileService,
+    private readonly listTripJournalAssets: ListTripJournalAssetsService,
     private readonly uploadTripJournalAsset: UploadTripJournalAssetService,
   ) {}
 
@@ -67,6 +73,37 @@ export class JournalAssetController {
     });
 
     return TripJournalAssetResponseDto.from(result.asset);
+  }
+
+  @Get('trips/:tripId/journal/assets')
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenAuthGuard)
+  async listAssets(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('tripId') tripId: string,
+  ) {
+    const result = await this.listTripJournalAssets.execute({
+      userId: authenticatedUser.userId,
+      tripId,
+    });
+
+    return TripJournalAssetResponseDto.list(result.assets);
+  }
+
+  @Delete('trips/:tripId/journal/assets/:assetId')
+  @HttpCode(204)
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenAuthGuard)
+  async deleteAsset(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('tripId') tripId: string,
+    @Param('assetId') assetId: string,
+  ) {
+    await this.deleteTripJournalAsset.execute({
+      userId: authenticatedUser.userId,
+      tripId,
+      assetId,
+    });
   }
 
   @Get('journal-assets/:publicId')

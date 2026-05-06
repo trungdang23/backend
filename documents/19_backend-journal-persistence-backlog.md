@@ -80,6 +80,26 @@ Them asset upload that cho journal editor phase dau, de frontend co the them anh
 ### Deferred
 
 - signed/private asset delivery cho journal private
+- cloud/object storage provider production-ready
+
+## Follow-up owner journal asset lifecycle
+
+### Muc tieu
+
+Them contract backend toi thieu de owner xem va xoa asset da upload cho mot trip, dong thoi xoa file vat ly khi asset bi xoa qua endpoint owner-only. Slice nay giu UI quan ly asset va cleanup theo trip delete rieng de tranh tron module trip/journal trong cung mot buoc.
+
+### Scope
+
+- [x] them `GET /api/v1/trips/:tripId/journal/assets` owner-only de list asset theo trip
+- [x] them `DELETE /api/v1/trips/:tripId/journal/assets/:assetId` owner-only
+- [x] delete asset phai xoa DB record va file vat ly trong local storage
+- [x] missing file khi delete asset khong lam user bi ket voi DB record khong xoa duoc
+- [x] them integration coverage cho owner list/delete, public file read sau upload, va non-owner denial
+
+### Deferred
+
 - delete/list asset management UI
-- cleanup file vat ly khi asset/trip bi xoa neu can beyond DB cascade
+- cleanup file vat ly khi trip bi xoa qua `DELETE /trips/:tripId`
+- cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
+- signed/private asset delivery cho journal private
 - cloud/object storage provider production-ready

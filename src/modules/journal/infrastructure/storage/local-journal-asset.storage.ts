@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 
@@ -17,9 +17,7 @@ import type {
 export class LocalJournalAssetStorage implements JournalAssetStoragePort {
   constructor(private readonly config: AppConfigService) {}
 
-  async save(
-    input: SaveJournalAssetFileInput,
-  ): Promise<SavedJournalAssetFile> {
+  async save(input: SaveJournalAssetFileInput): Promise<SavedJournalAssetFile> {
     const storageKey = `${input.publicId}${resolveFileExtension(input.contentType)}`;
     const filePath = this.resolveFilePath(storageKey);
 
@@ -50,6 +48,20 @@ export class LocalJournalAssetStorage implements JournalAssetStoragePort {
     } catch (error) {
       if (isFileNotFoundError(error)) {
         return null;
+      }
+
+      throw error;
+    }
+  }
+
+  async delete(storageKey: string): Promise<void> {
+    const filePath = this.resolveFilePath(storageKey);
+
+    try {
+      await unlink(filePath);
+    } catch (error) {
+      if (isFileNotFoundError(error)) {
+        return;
       }
 
       throw error;

@@ -14,18 +14,32 @@ export interface TripJournalAssetUploadResponseDto {
   asset: TripJournalAssetDto;
 }
 
+export interface TripJournalAssetListResponseDto {
+  assets: TripJournalAssetDto[];
+}
+
 export class TripJournalAssetResponseDto {
+  static list(assets: TripJournalAsset[]): TripJournalAssetListResponseDto {
+    return {
+      assets: assets.map((asset) => this.toDto(asset)),
+    };
+  }
+
   static from(asset: TripJournalAsset): TripJournalAssetUploadResponseDto {
     return {
-      asset: {
-        id: asset.id,
-        tripId: asset.tripId,
-        fileName: asset.fileName,
-        contentType: asset.contentType,
-        byteSize: asset.byteSize,
-        url: `/journal-assets/${asset.publicId}`,
-        createdAt: asset.createdAt.toISOString(),
-      },
+      asset: this.toDto(asset),
+    };
+  }
+
+  private static toDto(asset: TripJournalAsset): TripJournalAssetDto {
+    return {
+      id: asset.id,
+      tripId: asset.tripId,
+      fileName: asset.fileName,
+      contentType: asset.contentType,
+      byteSize: asset.byteSize,
+      url: `/journal-assets/${asset.publicId}`,
+      createdAt: asset.createdAt.toISOString(),
     };
   }
 }

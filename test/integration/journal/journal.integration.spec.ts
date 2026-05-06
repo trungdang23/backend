@@ -194,9 +194,9 @@ describe('Journal integration', () => {
 
     expect(savedJournalResponse.statusCode).toBe(200);
     expect(savedJournalBody.data.journal.id).toBe('journal-1');
-    expect(savedJournalBody.data.journal.objects.map((object) => object.id)).toEqual([
-      'obj-note-1',
-    ]);
+    expect(
+      savedJournalBody.data.journal.objects.map((object) => object.id),
+    ).toEqual(['obj-note-1']);
 
     const listJournalResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -250,7 +250,10 @@ describe('Journal integration', () => {
 
   it('does not expose another user trip journal', async () => {
     const owner = await registerUser(expressApp, 'journal.owner@example.com');
-    const stranger = await registerUser(expressApp, 'journal.stranger@example.com');
+    const stranger = await registerUser(
+      expressApp,
+      'journal.stranger@example.com',
+    );
     const tripId = await createTrip(expressApp, owner.accessToken);
 
     const response = await dispatchRequest(expressApp, {
@@ -314,6 +317,35 @@ describe('Journal integration', () => {
     );
     expect(uploadBody.data.asset.url).toMatch(/^\/journal-assets\/.+/);
 
+    const listResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/assets`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listBody = listResponse.body as {
+      success: boolean;
+      data: {
+        assets: Array<{
+          id: string;
+          fileName: string;
+          url: string;
+        }>;
+      };
+    };
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listBody.success).toBe(true);
+    expect(listBody.data.assets).toHaveLength(1);
+    expect(listBody.data.assets[0]).toEqual(
+      expect.objectContaining({
+        fileName: 'hoi-an-memory.png',
+        id: uploadBody.data.asset.id,
+        url: uploadBody.data.asset.url,
+      }),
+    );
+
     const assetResponse = await request(httpServer).get(
       `/api/v1${uploadBody.data.asset.url}`,
     );
@@ -321,9 +353,50 @@ describe('Journal integration', () => {
     expect(assetResponse.statusCode).toBe(200);
     expect(assetResponse.headers['content-type']).toContain('image/png');
     expect(assetResponse.body).toEqual(fileBuffer);
+
+    const deleteResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}/journal/assets/${uploadBody.data.asset.id}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+
+    expect(deleteResponse.statusCode).toBe(204);
+
+    const listAfterDeleteResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/assets`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listAfterDeleteBody = listAfterDeleteResponse.body as {
+      data: {
+        assets: unknown[];
+      };
+    };
+
+    expect(listAfterDeleteResponse.statusCode).toBe(200);
+    expect(listAfterDeleteBody.data.assets).toEqual([]);
+
+    const deletedAssetResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1${uploadBody.data.asset.url}`,
+    });
+    const deletedAssetBody = deletedAssetResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(deletedAssetResponse.statusCode).toBe(404);
+    expect(deletedAssetBody.success).toBe(false);
+    expect(deletedAssetBody.error.code).toBe('JOURNAL_ASSET_NOT_FOUND');
   });
 
-  it('does not let another user upload an asset to an owned trip', async () => {
+  it('does not let another user manage assets for an owned trip', async () => {
     const owner = await registerUser(
       expressApp,
       'journal.asset.owner@example.com',
@@ -333,6 +406,23 @@ describe('Journal integration', () => {
       'journal.asset.stranger@example.com',
     );
     const tripId = await createTrip(expressApp, owner.accessToken);
+
+    const uploadResponse = await request(httpServer)
+      .post(`/api/v1/trips/${tripId}/journal/assets`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .attach('file', Buffer.from('fake-png-content'), {
+        contentType: 'image/png',
+        filename: 'owner-memory.png',
+      });
+    const uploadBody = uploadResponse.body as {
+      data: {
+        asset: {
+          id: string;
+        };
+      };
+    };
+
+    expect(uploadResponse.statusCode).toBe(201);
 
     const response = await request(httpServer)
       .post(`/api/v1/trips/${tripId}/journal/assets`)
@@ -351,10 +441,49 @@ describe('Journal integration', () => {
     expect(response.statusCode).toBe(404);
     expect(body.success).toBe(false);
     expect(body.error.code).toBe('TRIP_NOT_FOUND');
+
+    const listResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/assets`,
+      headers: {
+        authorization: `Bearer ${stranger.accessToken}`,
+      },
+    });
+    const listBody = listResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(listResponse.statusCode).toBe(404);
+    expect(listBody.success).toBe(false);
+    expect(listBody.error.code).toBe('TRIP_NOT_FOUND');
+
+    const deleteResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}/journal/assets/${uploadBody.data.asset.id}`,
+      headers: {
+        authorization: `Bearer ${stranger.accessToken}`,
+      },
+    });
+    const deleteBody = deleteResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(deleteResponse.statusCode).toBe(404);
+    expect(deleteBody.success).toBe(false);
+    expect(deleteBody.error.code).toBe('TRIP_NOT_FOUND');
   });
 
   it('serves shared journals publicly while blocking private journals', async () => {
-    const traveler = await registerUser(expressApp, 'journal.share@example.com');
+    const traveler = await registerUser(
+      expressApp,
+      'journal.share@example.com',
+    );
     const sharedTripId = await createTrip(
       expressApp,
       traveler.accessToken,

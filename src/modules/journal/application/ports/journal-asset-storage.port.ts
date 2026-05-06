@@ -20,4 +20,5 @@ export interface JournalAssetFile {
 export interface JournalAssetStoragePort {
   save(input: SaveJournalAssetFileInput): Promise<SavedJournalAssetFile>;
   read(storageKey: string): Promise<JournalAssetFile | null>;
+  delete(storageKey: string): Promise<void>;
 }
