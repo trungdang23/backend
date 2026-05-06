@@ -8,6 +8,7 @@ import {
 export const APP_ERROR_CODES = {
   AUTH_INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
   AUTH_TOKEN_EXPIRED: 'AUTH_TOKEN_EXPIRED',
+  JOURNAL_ASSET_NOT_FOUND: 'JOURNAL_ASSET_NOT_FOUND',
   JOURNAL_VALIDATION_ERROR: 'JOURNAL_VALIDATION_ERROR',
   NODE_VALIDATION_ERROR: 'NODE_VALIDATION_ERROR',
   PERMISSION_DENIED: 'PERMISSION_DENIED',
@@ -47,6 +48,14 @@ export function nodeValidationException(message: string) {
 export function journalValidationException(message: string) {
   return new BadRequestException(
     buildExceptionBody(APP_ERROR_CODES.JOURNAL_VALIDATION_ERROR, message),
+  );
+}
+
+export function journalAssetNotFoundException(
+  message = 'Journal asset not found.',
+) {
+  return new NotFoundException(
+    buildExceptionBody(APP_ERROR_CODES.JOURNAL_ASSET_NOT_FOUND, message),
   );
 }
 

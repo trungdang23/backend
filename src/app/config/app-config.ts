@@ -23,4 +23,7 @@ export interface ApplicationConfig {
     rateLimitMaxRequests: number;
     rateLimitWindowSeconds: number;
   };
+  journalAssets: {
+    storageDir: string | null;
+  };
 }

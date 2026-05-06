@@ -8,40 +8,42 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  displayName  String?  @map("display_name")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  trips        Trip[]
-  posts        Post[]
+  id            String             @id @default(cuid())
+  email         String             @unique
+  passwordHash  String             @map("password_hash")
+  displayName   String?            @map("display_name")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  trips         Trip[]
+  posts         Post[]
+  journalAssets TripJournalAsset[]
 
   @@map("users")
 }
 
 model Trip {
-  id                   String   @id @default(cuid())
-  userId               String   @map("user_id")
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(cuid())
+  userId               String             @map("user_id")
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                 String
   destination          String?
-  summaryNotes         String?  @map("summary_notes")
-  coverImageUrl        String?  @map("cover_image_url")
-  startDate            String   @map("start_date")
-  endDate              String   @map("end_date")
+  summaryNotes         String?            @map("summary_notes")
+  coverImageUrl        String?            @map("cover_image_url")
+  startDate            String             @map("start_date")
+  endDate              String             @map("end_date")
   timezone             String?
-  budgetAmount         Int      @map("budget_amount")
-  budgetCurrency       String   @map("budget_currency")
-  budgetMode           String   @default("manual") @map("budget_mode")
-  manualBudgetAmount   Int?     @map("manual_budget_amount")
-  manualBudgetCurrency String?  @map("manual_budget_currency")
-  visibility           String   @default("private")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  budgetAmount         Int                @map("budget_amount")
+  budgetCurrency       String             @map("budget_currency")
+  budgetMode           String             @default("manual") @map("budget_mode")
+  manualBudgetAmount   Int?               @map("manual_budget_amount")
+  manualBudgetCurrency String?            @map("manual_budget_currency")
+  visibility           String             @default("private")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
   itineraryDays        TripItineraryDay[]
   planNodes            PlanNode[]
   journal              TripJournal?
+  journalAssets        TripJournalAsset[]
   posts                Post[]
 
   @@index([userId, startDate])
@@ -60,6 +62,24 @@ model TripJournal {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("trip_journals")
+}
+
+model TripJournalAsset {
+  id          String   @id @default(cuid())
+  tripId      String   @map("trip_id")
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName    String   @map("file_name")
+  contentType String   @map("content_type")
+  byteSize    Int      @map("byte_size")
+  storageKey  String   @unique @map("storage_key")
+  publicId    String   @unique @map("public_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tripId, createdAt])
+  @@index([userId, createdAt])
+  @@map("trip_journal_assets")
 }
 
 model Post {
@@ -92,25 +112,25 @@ enum PlanNodeType {
 }
 
 model PlanNode {
-  id           String       @id @default(cuid())
-  tripId       String       @map("trip_id")
-  trip         Trip         @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  parentId     String?      @map("parent_id")
-  parent       PlanNode?    @relation("PlanNodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children     PlanNode[]   @relation("PlanNodeHierarchy")
+  id           String            @id @default(cuid())
+  tripId       String            @map("trip_id")
+  trip         Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  parentId     String?           @map("parent_id")
+  parent       PlanNode?         @relation("PlanNodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     PlanNode[]        @relation("PlanNodeHierarchy")
   stickers     PlanNodeSticker[]
   type         PlanNodeType
   title        String
   notes        String?
-  startAt      String?      @map("start_at")
-  endAt        String?      @map("end_at")
-  costAmount   Int?         @map("cost_amount")
-  costCurrency String?      @map("cost_currency")
-  imageUrl     String?      @map("image_url")
-  sortOrder    Int          @map("sort_order")
+  startAt      String?           @map("start_at")
+  endAt        String?           @map("end_at")
+  costAmount   Int?              @map("cost_amount")
+  costCurrency String?           @map("cost_currency")
+  imageUrl     String?           @map("image_url")
+  sortOrder    Int               @map("sort_order")
   depth        Int
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
 
   @@index([tripId, parentId, sortOrder])
   @@index([tripId, depth])
@@ -135,22 +155,22 @@ model PlanNodeSticker {
 }
 
 model TripItineraryDay {
-  id         String                 @id @default(cuid())
-  tripId     String                 @map("trip_id")
-  trip       Trip                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  date       String
-  title      String
-  startsAt   String?                @map("starts_at")
-  endsAt     String?                @map("ends_at")
-  location   String?
-  notes      String?
-  costAmount Int                    @default(0) @map("cost_amount")
-  costCurrency String               @map("cost_currency")
-  position   Int
-  imageUrls  String[]               @default([]) @map("image_urls")
-  createdAt  DateTime               @default(now()) @map("created_at")
-  updatedAt  DateTime               @updatedAt @map("updated_at")
-  activities TripItineraryActivity[]
+  id           String                  @id @default(cuid())
+  tripId       String                  @map("trip_id")
+  trip         Trip                    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  date         String
+  title        String
+  startsAt     String?                 @map("starts_at")
+  endsAt       String?                 @map("ends_at")
+  location     String?
+  notes        String?
+  costAmount   Int                     @default(0) @map("cost_amount")
+  costCurrency String                  @map("cost_currency")
+  position     Int
+  imageUrls    String[]                @default([]) @map("image_urls")
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+  activities   TripItineraryActivity[]
 
   @@unique([tripId, date, position])
   @@index([tripId, date, position])

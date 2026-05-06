@@ -74,4 +74,8 @@ export class AppConfigService {
       infer: true,
     });
   }
+
+  get journalAssetStorageDir(): string | null {
+    return this.configService.get('journalAssets.storageDir', { infer: true });
+  }
 }

@@ -2,13 +2,18 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
 import type { Express } from 'express';
+import request from 'supertest';
 
 import { AppModule } from '../../../src/app/app.module';
 import { setupApp } from '../../../src/app/bootstrap/setup-app';
+import { JOURNAL_ASSET_STORAGE } from '../../../src/modules/journal/application/ports/journal-asset-storage.port';
+import { TRIP_JOURNAL_ASSET_REPOSITORY } from '../../../src/modules/journal/application/ports/trip-journal-asset-repository.port';
 import { TRIP_JOURNAL_REPOSITORY } from '../../../src/modules/journal/application/ports/trip-journal-repository.port';
 import { TRIP_REPOSITORY } from '../../../src/modules/trips/application/ports/trip-repository.port';
 import { USER_REPOSITORY } from '../../../src/modules/users/application/ports/user-repository.port';
 import { dispatchRequest } from '../../support/dispatch-request';
+import { InMemoryJournalAssetStorage } from '../../support/in-memory-journal-asset-storage';
+import { InMemoryTripJournalAssetRepository } from '../../support/in-memory-trip-journal-asset-repository';
 import { InMemoryTripJournalRepository } from '../../support/in-memory-trip-journal-repository';
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
 import { InMemoryUserRepository } from '../../support/in-memory-user-repository';
@@ -16,6 +21,9 @@ import { InMemoryUserRepository } from '../../support/in-memory-user-repository'
 describe('Journal integration', () => {
   let app: INestApplication;
   let expressApp: Express;
+  let httpServer: Parameters<typeof request>[0];
+  let assetRepository: InMemoryTripJournalAssetRepository;
+  let assetStorage: InMemoryJournalAssetStorage;
   let tripRepository: InMemoryTripRepository;
   let journalRepository: InMemoryTripJournalRepository;
 
@@ -27,6 +35,10 @@ describe('Journal integration', () => {
       .useClass(InMemoryUserRepository)
       .overrideProvider(TRIP_REPOSITORY)
       .useClass(InMemoryTripRepository)
+      .overrideProvider(TRIP_JOURNAL_ASSET_REPOSITORY)
+      .useClass(InMemoryTripJournalAssetRepository)
+      .overrideProvider(JOURNAL_ASSET_STORAGE)
+      .useClass(InMemoryJournalAssetStorage)
       .overrideProvider(TRIP_JOURNAL_REPOSITORY)
       .useClass(InMemoryTripJournalRepository)
       .compile();
@@ -37,6 +49,11 @@ describe('Journal integration', () => {
     await app.init();
 
     expressApp = app.getHttpAdapter().getInstance() as Express;
+    httpServer = app.getHttpServer() as Parameters<typeof request>[0];
+    assetRepository = app.get<InMemoryTripJournalAssetRepository>(
+      TRIP_JOURNAL_ASSET_REPOSITORY,
+    );
+    assetStorage = app.get<InMemoryJournalAssetStorage>(JOURNAL_ASSET_STORAGE);
     tripRepository = app.get<InMemoryTripRepository>(TRIP_REPOSITORY);
     journalRepository = app.get<InMemoryTripJournalRepository>(
       TRIP_JOURNAL_REPOSITORY,
@@ -48,6 +65,8 @@ describe('Journal integration', () => {
   });
 
   beforeEach(() => {
+    assetRepository.clear();
+    assetStorage.clear();
     tripRepository.clear();
     journalRepository.clear();
   });
@@ -241,6 +260,87 @@ describe('Journal integration', () => {
         authorization: `Bearer ${stranger.accessToken}`,
       },
     });
+    const body = response.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(response.statusCode).toBe(404);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('TRIP_NOT_FOUND');
+  });
+
+  it('uploads a journal image asset for the owner and serves the stored file', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'journal.asset@example.com',
+    );
+    const tripId = await createTrip(expressApp, traveler.accessToken);
+    const fileBuffer = Buffer.from('fake-png-content');
+
+    const uploadResponse = await request(httpServer)
+      .post(`/api/v1/trips/${tripId}/journal/assets`)
+      .set('Authorization', `Bearer ${traveler.accessToken}`)
+      .attach('file', fileBuffer, {
+        contentType: 'image/png',
+        filename: 'hoi-an-memory.png',
+      });
+    const uploadBody = uploadResponse.body as {
+      success: boolean;
+      data: {
+        asset: {
+          id: string;
+          tripId: string;
+          fileName: string;
+          contentType: string;
+          byteSize: number;
+          url: string;
+        };
+      };
+    };
+
+    expect(uploadResponse.statusCode).toBe(201);
+    expect(uploadBody.success).toBe(true);
+    expect(uploadBody.data.asset).toEqual(
+      expect.objectContaining({
+        byteSize: fileBuffer.byteLength,
+        contentType: 'image/png',
+        fileName: 'hoi-an-memory.png',
+        id: 'journal-asset-1',
+        tripId,
+      }),
+    );
+    expect(uploadBody.data.asset.url).toMatch(/^\/journal-assets\/.+/);
+
+    const assetResponse = await request(httpServer).get(
+      `/api/v1${uploadBody.data.asset.url}`,
+    );
+
+    expect(assetResponse.statusCode).toBe(200);
+    expect(assetResponse.headers['content-type']).toContain('image/png');
+    expect(assetResponse.body).toEqual(fileBuffer);
+  });
+
+  it('does not let another user upload an asset to an owned trip', async () => {
+    const owner = await registerUser(
+      expressApp,
+      'journal.asset.owner@example.com',
+    );
+    const stranger = await registerUser(
+      expressApp,
+      'journal.asset.stranger@example.com',
+    );
+    const tripId = await createTrip(expressApp, owner.accessToken);
+
+    const response = await request(httpServer)
+      .post(`/api/v1/trips/${tripId}/journal/assets`)
+      .set('Authorization', `Bearer ${stranger.accessToken}`)
+      .attach('file', Buffer.from('fake-png-content'), {
+        contentType: 'image/png',
+        filename: 'not-yours.png',
+      });
     const body = response.body as {
       success: boolean;
       error: {

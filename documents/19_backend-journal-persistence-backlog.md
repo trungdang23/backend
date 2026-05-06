@@ -27,7 +27,7 @@ Them persistence contract toi gian cho `journal` theo huong `PostgreSQL + JSONB`
 
 ## Deferred
 
-- upload asset that va asset ownership
+- cloud/object storage provider, asset delete/list UI, va asset lifecycle cleanup
 - page-level CRUD, publish snapshot, revision history
 - realtime/collaboration/autosave conflict handling
 
@@ -60,3 +60,26 @@ Dong bo journal share voi product direction moi: chi co `private` va `public`.
 - [x] public journal read/list chi doc journal `public`
 - [x] du lieu journal `unlisted` cu duoc migrate sang `public`
 - [x] them DB check constraint cho `trip_journals.visibility`
+
+## Follow-up owner journal asset upload
+
+### Muc tieu
+
+Them asset upload that cho journal editor phase dau, de frontend co the them anh tu file local thay vi bat user dan URL thu cong. Upload phai owner-only theo `Trip.userId`, nhung URL file tra ve dang public/unlisted de browser co the render anh trong editor va public journal bang the `<img>`.
+
+### Scope
+
+- [x] them bang `trip_journal_assets` gan asset voi `trip_id` va `user_id`
+- [x] them `POST /api/v1/trips/:tripId/journal/assets` owner-only multipart upload
+- [x] chi nhan anh `image/png`, `image/jpeg`, `image/webp`, va `image/gif`
+- [x] gioi han file upload phase dau toi 5MB
+- [x] luu file local mac dinh vao `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/journal-assets`
+- [x] them `GET /api/v1/journal-assets/:publicId` de render file bang URL public/unlisted
+- [x] them integration coverage cho owner upload, public file read, va non-owner upload denial
+
+### Deferred
+
+- signed/private asset delivery cho journal private
+- delete/list asset management UI
+- cleanup file vat ly khi asset/trip bi xoa neu can beyond DB cascade
+- cloud/object storage provider production-ready

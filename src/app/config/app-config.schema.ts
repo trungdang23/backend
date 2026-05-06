@@ -29,4 +29,5 @@ export const appConfigSchema = Joi.object({
     .min(1)
     .empty('')
     .default(60),
+  JOURNAL_ASSET_STORAGE_DIR: Joi.string().allow('').default(''),
 });

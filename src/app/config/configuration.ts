@@ -97,5 +97,8 @@ export function configuration(): ApplicationConfig {
         60,
       ),
     },
+    journalAssets: {
+      storageDir: parseOptionalString(process.env.JOURNAL_ASSET_STORAGE_DIR),
+    },
   };
 }
