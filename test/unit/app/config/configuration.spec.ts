@@ -50,6 +50,9 @@ describe('configuration', () => {
       database: {
         url: 'postgresql://journey:journey@localhost:5432/journey_prod?schema=public',
       },
+      journalAssets: {
+        storageDir: null,
+      },
       auth: {
         jwtIssuer: 'api.buicojourney.com',
         accessTokenSecret: 'journey-production-access-token-secret-123456789',

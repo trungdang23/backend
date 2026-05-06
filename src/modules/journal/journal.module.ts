@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AppConfigService } from '../../app/config/app-config.service';
 import { PrismaModule } from '../../shared/infrastructure/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { TripsModule } from '../trips/trips.module';
@@ -30,6 +31,7 @@ import { PublicJournalController } from './presentation/public-journal.controlle
     PublicJournalController,
   ],
   providers: [
+    AppConfigService,
     DeleteTripJournalService,
     GetTripJournalAssetFileService,
     GetPublicTripJournalService,
