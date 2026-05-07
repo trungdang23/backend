@@ -105,5 +105,8 @@ export function configuration(): ApplicationConfig {
         900,
       ),
     },
+    userAvatars: {
+      storageDir: parseOptionalString(process.env.USER_AVATAR_STORAGE_DIR),
+    },
   };
 }

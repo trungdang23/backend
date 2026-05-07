@@ -90,4 +90,8 @@ export class AppConfigService {
       infer: true,
     });
   }
+
+  get userAvatarStorageDir(): string | null {
+    return this.configService.get('userAvatars.storageDir', { infer: true });
+  }
 }

@@ -12,6 +12,9 @@ export class UserResponseDto {
   @ApiPropertyOptional({ nullable: true })
   displayName!: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  avatarUrl!: string | null;
+
   @ApiProperty()
   createdAt!: Date;
 
@@ -23,6 +26,7 @@ export class UserResponseDto {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

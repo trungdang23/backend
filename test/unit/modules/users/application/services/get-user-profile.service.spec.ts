@@ -25,6 +25,7 @@ describe('GetUserProfileService', () => {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      avatarUrl: null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });

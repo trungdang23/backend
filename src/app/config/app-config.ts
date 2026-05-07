@@ -28,4 +28,7 @@ export interface ApplicationConfig {
     signingSecret: string;
     signedUrlTtlSeconds: number;
   };
+  userAvatars: {
+    storageDir: string | null;
+  };
 }

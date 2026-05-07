@@ -47,6 +47,32 @@
 - Cross-instance revoke propagation cho môi trường nhiều replica.
 - Admin/session introspection API.
 
+## Current pass - 2026-05-07 - Profile and avatar completion
+
+### Trigger
+
+- Browser smoke đã pass cho flow hiện tại, nhưng hồ sơ vẫn dùng avatar placeholder chung và chưa có cách cập nhật tên hiển thị.
+- Người dùng cần upload avatar khi tạo tài khoản, đổi avatar trong profile, và backend phải dọn file avatar cũ để tránh phình storage local.
+
+### Scope của lượt này
+
+- [x] Thêm metadata avatar vào `users` bằng migration additive.
+- [x] Mở auth-only profile update:
+  - `PATCH /api/v1/auth/me`
+  - `POST /api/v1/auth/me/avatar`
+  - `DELETE /api/v1/auth/me/avatar`
+- [x] Mở public read cho avatar:
+  - `GET /api/v1/user-avatars/:publicId`
+- [x] Response user chỉ expose `avatarUrl`, không expose `avatarStorageKey`.
+- [x] Avatar lưu local mặc định tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/user-avatars`, có thể override bằng `USER_AVATAR_STORAGE_DIR`.
+- [x] Khi đổi hoặc xóa avatar, backend xóa file cũ best-effort sau khi DB update thành công.
+
+### Deferred sau lượt này
+
+- Crop/resize ảnh phía server.
+- CDN/object storage cho avatar.
+- Revision/history avatar hoặc moderation pipeline.
+
 ## Trạng thái hiện tại
 
 Đã có:

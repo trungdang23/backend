@@ -8,15 +8,20 @@ datasource db {
 }
 
 model User {
-  id            String             @id @default(cuid())
-  email         String             @unique
-  passwordHash  String             @map("password_hash")
-  displayName   String?            @map("display_name")
-  createdAt     DateTime           @default(now()) @map("created_at")
-  updatedAt     DateTime           @updatedAt @map("updated_at")
-  trips         Trip[]
-  posts         Post[]
-  journalAssets TripJournalAsset[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String             @map("password_hash")
+  displayName       String?            @map("display_name")
+  avatarFileName    String?            @map("avatar_file_name")
+  avatarContentType String?            @map("avatar_content_type")
+  avatarByteSize    Int?               @map("avatar_byte_size")
+  avatarStorageKey  String?            @unique @map("avatar_storage_key")
+  avatarPublicId    String?            @unique @map("avatar_public_id")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  trips             Trip[]
+  posts             Post[]
+  journalAssets     TripJournalAsset[]
 
   @@map("users")
 }

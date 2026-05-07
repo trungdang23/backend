@@ -31,8 +31,12 @@ Primary product contract:
   - `POST /api/v1/auth/register`
   - `POST /api/v1/auth/login`
   - `GET /api/v1/auth/me`
+  - `PATCH /api/v1/auth/me`
+  - `POST /api/v1/auth/me/avatar`
+  - `DELETE /api/v1/auth/me/avatar`
   - `POST /api/v1/auth/refresh`
   - `POST /api/v1/auth/logout`
+  - `GET /api/v1/user-avatars/:publicId`
 - Trips:
   - `GET /api/v1/trips?page=&size=`
   - `POST /api/v1/trips`
@@ -146,6 +150,7 @@ pnpm prisma:validate
 - Trên personal-machine deploy path hiện tại, workflow deploy sẽ gọi `scripts/ensure-runtime-database.sh` trước migration; nếu `DATABASE_URL` trỏ về `localhost` nhưng port chưa mở, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ `docker compose up -d postgres` khi container đó chưa tồn tại.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, `JWT_REFRESH_TOKEN_SECRET`, và `JOURNAL_ASSET_SIGNING_SECRET` là runtime config bắt buộc; backend không còn fallback các giá trị này trong source, nên giá trị production phải đến từ GitHub Secrets/Variables.
 - Journal asset upload lưu file local mặc định tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/journal-assets`; có thể override bằng `JOURNAL_ASSET_STORAGE_DIR` nếu muốn đặt volume/path riêng. Asset read URL hiện được ký bằng `JOURNAL_ASSET_SIGNING_SECRET`, với TTL điều khiển qua `JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` (mặc định 900 giây nếu env trống).
+- User avatar upload lưu file local mặc định tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/user-avatars`; có thể override bằng `USER_AVATAR_STORAGE_DIR`. Khi đổi hoặc xóa avatar, backend cập nhật DB trước rồi xóa file avatar cũ best-effort để tránh chiếm dung lượng.
 - CORS cho frontend tách origin được điều khiển bằng `CORS_ALLOWED_ORIGINS`; các endpoint public của auth hiện có rate limiting theo IP với `AUTH_RATE_LIMIT_MAX_REQUESTS` và `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 - Refresh token hiện được revoke server-side trên cả `POST /api/v1/auth/refresh` và `POST /api/v1/auth/logout`; revoke state được persist tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/revoked-refresh-tokens.json` để survive process restart trên deploy model single-machine hiện tại.
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.

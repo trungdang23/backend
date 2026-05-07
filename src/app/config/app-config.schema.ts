@@ -36,4 +36,5 @@ export const appConfigSchema = Joi.object({
     .min(60)
     .empty('')
     .default(900),
+  USER_AVATAR_STORAGE_DIR: Joi.string().allow('').default(''),
 });

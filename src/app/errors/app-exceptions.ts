@@ -13,6 +13,8 @@ export const APP_ERROR_CODES = {
   NODE_VALIDATION_ERROR: 'NODE_VALIDATION_ERROR',
   PERMISSION_DENIED: 'PERMISSION_DENIED',
   TRIP_NOT_FOUND: 'TRIP_NOT_FOUND',
+  USER_AVATAR_NOT_FOUND: 'USER_AVATAR_NOT_FOUND',
+  USER_PROFILE_VALIDATION_ERROR: 'USER_PROFILE_VALIDATION_ERROR',
 } as const;
 
 type AppErrorCode = (typeof APP_ERROR_CODES)[keyof typeof APP_ERROR_CODES];
@@ -68,5 +70,19 @@ export function permissionDeniedException(message = 'Permission denied.') {
 export function tripNotFoundException(message = 'Trip not found.') {
   return new NotFoundException(
     buildExceptionBody(APP_ERROR_CODES.TRIP_NOT_FOUND, message),
+  );
+}
+
+export function userAvatarNotFoundException(
+  message = 'User avatar not found.',
+) {
+  return new NotFoundException(
+    buildExceptionBody(APP_ERROR_CODES.USER_AVATAR_NOT_FOUND, message),
+  );
+}
+
+export function userProfileValidationException(message: string) {
+  return new BadRequestException(
+    buildExceptionBody(APP_ERROR_CODES.USER_PROFILE_VALIDATION_ERROR, message),
   );
 }
