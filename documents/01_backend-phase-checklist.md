@@ -299,8 +299,11 @@ Status: `In progress`
   - auth
   - trips
   - planner
+  - budget summary owner flow sau create/update/delete `PlanNode`
+  - journal owner save/load, image upload, signed asset read, visibility update
   - public trip
-  - posts
+  - public journal
+  - posts/community feed
 
 ## Checklist giao việc theo slice
 

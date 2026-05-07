@@ -113,7 +113,7 @@ Phần còn chưa aligned hoàn toàn với roadmap mới:
 
 - `itinerary` vẫn còn là compatibility/migration bridge, chưa có migration helper hoặc cleanup plan cuối cùng
 - `comments` vẫn deferred
-- `journal` đã có persistence/API tối giản `GET/PUT/PATCH/DELETE /trips/:tripId/journal` và owner-only image upload; page-level CRUD, publish snapshot, revision history, cloud storage, và asset lifecycle management vẫn deferred
+- `journal` đã có persistence/API tối giản `GET/PUT/PATCH/DELETE /trips/:tripId/journal`, public journal discovery/read, owner-only image upload, asset list/delete, và signed URL delivery; page-level CRUD, publish snapshot, revision history, cloud storage, orphan cleanup, và trip-delete asset cleanup vẫn deferred
 
 ## Quyết định kiến trúc
 
