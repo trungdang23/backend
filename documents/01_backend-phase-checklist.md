@@ -190,11 +190,16 @@ Status: `Partial`
   - flow planner chính đã freeze khỏi itinerary bridge
   - `itinerary` còn giữ cho budget/migration support
 - [~] Source đã có suite budget riêng ở mức unit/integration/e2e, nhưng runtime verify còn bị chặn bởi môi trường shell hiện tại chưa có `node/pnpm` tương thích với `pnpm`-linked `node_modules`
-- [ ] Thiết kế script hoặc strategy migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`
-- [ ] Chốt cutover plan:
-  - budget summary đã ngừng đọc itinerary bridge; phần còn lại là cleanup thời điểm và migration support cho dữ liệu lịch sử
-  - thời điểm có thể cleanup legacy itinerary support
-- [~] Bổ sung test đảm bảo budget không lệch sau migration
+- [x] Chốt helper/script migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`:
+  - helper mapping thuần + unit test
+  - CLI `dry-run` mặc định, `--apply` khi cần ghi DB
+  - skip trip đã có `PlanNode` để tránh merge mù vào planner đang dùng
+- [x] Chốt cutover plan tại `20_backend-itinerary-plan-node-migration-runbook.md`:
+  - budget summary đã ngừng đọc itinerary bridge; phần còn lại là migration support và cleanup legacy endpoints/tables theo từng bước
+  - nêu rõ tiêu chí nào mới được phép cleanup legacy itinerary support
+- [~] Bổ sung test đảm bảo budget không lệch sau migration:
+  - unit đã khóa mapping/zero-cost/image warning
+  - runtime/backfill verification trên dữ liệu thật vẫn là bước rollout riêng
 
 ## Phase 06 - Public trip sharing
 

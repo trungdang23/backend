@@ -79,6 +79,28 @@ Phase này chưa xử lý:
   - mixed-currency runtime pass với top-level compatibility fields bám `manualBudgetCurrency = VND`, đồng thời `totalsByCurrency` trả đủ `VND` và `USD`
   - không phát hiện drift production/source ở budget owner flow trong lượt này
 
+## Legacy itinerary migration helper sub-slice - 2026-05-08
+
+- Trigger:
+  - sau khi runtime smoke budget pass, ưu tiên tiếp theo của backend là chốt migration/cleanup plan cho legacy itinerary support
+- Scope của lượt này:
+  - [x] chốt mapping deterministic từ `TripItineraryDay/Activity` sang `PlanNode`
+  - [x] thêm helper mapping thuần trong `src/` để rule migration có test surface riêng
+  - [x] thêm CLI `dry-run` mặc định và `--apply` khi cần ghi DB
+  - [x] skip trip đã có `PlanNode` để tránh merge mù vào planner hiện hữu
+  - [x] normalize `costAmount = 0` về `null/null` ở `PlanNode` để không làm lệch `totalsByCurrency.nodeCount`
+  - [x] phát warning khi `imageUrls[]` bị giảm fidelity còn `imageUrl`
+  - [x] chốt runbook/cutover criteria tại `20_backend-itinerary-plan-node-migration-runbook.md`
+- Deferred rõ trong lượt này:
+  - mode merge/overwrite vào trip đã có planner data
+  - rollback CLI tự động
+  - drop legacy itinerary endpoints/tables
+- File owner của lượt này:
+  - `src/modules/planning/application/migrations`
+  - `scripts/migrate-itinerary-to-plan-nodes.ts`
+  - `test/unit/modules/planning/application/migrations`
+  - `documents/20_backend-itinerary-plan-node-migration-runbook.md`
+
 ## Quyết định rollout cần chốt
 
 ## 1. Giữ nguyên endpoint, đổi source of truth phía sau

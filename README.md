@@ -88,6 +88,7 @@ Compatibility and migration bridge currently still live:
 - `Trip.visibility = public` mở read-only public trip/planner và xuất hiện trong public trip discovery list; `private` bị chặn ở public route.
 - `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
 - `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
+- Repo hiện có helper migration `pnpm migrate:itinerary-to-plan-nodes -- --trip-id=<trip-id>` hoặc `--all`; lệnh mặc định là `dry-run`, chỉ ghi DB khi thêm `--apply`, và sẽ skip trip đã có `PlanNode`.
 - Khi triển khai tiếp, ưu tiên:
   1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật
   2. chốt migration/cleanup plan cho legacy itinerary support
@@ -140,6 +141,33 @@ pnpm prisma:validate
 ```
 
 `pnpm test`, `pnpm test:integration`, và `pnpm test:e2e` hiện sẽ tự chạy `pnpm prisma:migrate:deploy` vào test database trước khi vào Jest. Nếu `DATABASE_URL` chưa được set, package sẽ mặc định dùng `journey_test` trên `localhost:5432`.
+
+## Legacy Itinerary Migration Helper
+
+Dry-run một trip legacy:
+
+```bash
+pnpm migrate:itinerary-to-plan-nodes -- --trip-id=<trip-id>
+```
+
+Dry-run toàn bộ trip còn `TripItineraryDay`:
+
+```bash
+pnpm migrate:itinerary-to-plan-nodes -- --all
+```
+
+Apply thật:
+
+```bash
+pnpm migrate:itinerary-to-plan-nodes -- --all --apply
+```
+
+Ghi chú:
+
+- `--apply` là bắt buộc nếu muốn ghi `plan_nodes`
+- trip đã có planner data sẽ bị skip để tránh merge mù
+- nếu muốn chạy trên production env file, set `NODE_ENV=production`
+- runbook chi tiết nằm tại `documents/20_backend-itinerary-plan-node-migration-runbook.md`
 
 ## Operational Foundation
 
