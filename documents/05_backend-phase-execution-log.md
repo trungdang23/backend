@@ -416,7 +416,17 @@ Status: `Completed through Phase 08-A/08-B hardening slices`
 
 ### Deferred còn đúng
 
-- Migration helper hoặc runbook cleanup cho legacy itinerary bridge.
 - Quyết định xóa hoặc giữ legacy `PlanNodeSticker` endpoints sau khi frontend/journal contract chốt.
 - Comment endpoints.
 - Production smoke thật cho auth/trips/planner/public trip/posts sau deploy.
+
+### Bổ sung `2026-05-08`
+
+- Runtime DB `journey_prod_local` được kiểm tra trực tiếp trước destructive cleanup:
+  - `trip_itinerary_days = 0`
+  - `trip_itinerary_activities = 0`
+  - `plan_nodes = 2`
+- Từ trạng thái đó, backend đã mở cleanup phase cho legacy itinerary support:
+  - gỡ `ItinerariesModule` và toàn bộ route/service/repository/domain test support liên quan
+  - drop bảng `trip_itinerary_days` và `trip_itinerary_activities`
+  - gỡ helper/script migration khỏi source active

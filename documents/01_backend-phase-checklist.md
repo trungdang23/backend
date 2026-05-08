@@ -46,7 +46,7 @@
 - [x] Có planner core thật trên `PlanNode`
 - [x] Đã có `Trip.visibility`
 - [x] Đã có `budgetMode/manualBudget`
-- [~] Budget summary owner flow đã đọc từ `PlanNode`; phần còn lại là runtime verify, migration strategy, và cleanup legacy bridge
+- [x] Budget summary owner flow đã đọc từ `PlanNode`; runtime smoke và cleanup legacy itinerary support đã hoàn tất
 - [x] Đã có public trip read
 - [x] Đã có `posts`
 - [x] Đã có `logout` endpoint đúng target
@@ -60,7 +60,7 @@
 | 02    | Auth và session aligned với DRD                 | Completed |
 | 03    | Trips aligned với DRD                           | Completed |
 | 04    | Planner core trên `PlanNode`                    | Completed |
-| 05    | Budget logic và migration khỏi itinerary bridge | Partial   |
+| 05    | Budget logic và migration khỏi itinerary bridge | Completed |
 | 06    | Public trip sharing                             | Completed |
 | 07    | Community minimal                               | Completed |
 | 08    | Hardening, test, release readiness              | Todo      |
@@ -177,29 +177,26 @@ Status: `Completed`
 
 ## Phase 05 - Budget logic và migration khỏi itinerary bridge
 
-Status: `Partial`
+Status: `Completed`
 
 - [x] Chi tiết backlog tại `18_backend-phase-05-budget-alignment-backlog.md`
+- [x] Cleanup backlog tại `21_backend-legacy-itinerary-cleanup-backlog.md`
 - [x] Chuyển budget summary sang đọc từ `PlanNode`
 - [x] Budget summary owner flow không còn đọc từ itinerary bridge
 - [x] Hỗ trợ:
   - `auto -> sum(costAmount)`
   - `manual -> manualBudget`
-- [~] Có response budget summary `PlanNode`-based cho frontend owner flow, kèm additive mixed-currency breakdown
-- [~] Chiến lược chuyển tiếp hiện tại:
-  - flow planner chính đã freeze khỏi itinerary bridge
-  - `itinerary` còn giữ cho budget/migration support
-- [~] Source đã có suite budget riêng ở mức unit/integration/e2e, nhưng runtime verify còn bị chặn bởi môi trường shell hiện tại chưa có `node/pnpm` tương thích với `pnpm`-linked `node_modules`
-- [x] Chốt helper/script migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode`:
-  - helper mapping thuần + unit test
-  - CLI `dry-run` mặc định, `--apply` khi cần ghi DB
-  - skip trip đã có `PlanNode` để tránh merge mù vào planner đang dùng
-- [x] Chốt cutover plan tại `20_backend-itinerary-plan-node-migration-runbook.md`:
-  - budget summary đã ngừng đọc itinerary bridge; phần còn lại là migration support và cleanup legacy endpoints/tables theo từng bước
-  - nêu rõ tiêu chí nào mới được phép cleanup legacy itinerary support
-- [~] Bổ sung test đảm bảo budget không lệch sau migration:
-  - unit đã khóa mapping/zero-cost/image warning
-  - runtime/backfill verification trên dữ liệu thật vẫn là bước rollout riêng
+- [x] Có response budget summary `PlanNode`-based cho frontend owner flow, kèm additive mixed-currency breakdown
+- [x] Runtime verify:
+  - production smoke `budget-summary` pass trên flow `PlanNode`
+  - runtime DB check xác nhận không còn dữ liệu legacy cần backfill trước cleanup destructive
+- [x] Đã có helper/script migrate dữ liệu từ `TripItineraryDay/Activity` sang `PlanNode` ở bước cutover trước đó
+- [x] Đã chốt cutover plan tại `20_backend-itinerary-plan-node-migration-runbook.md`
+- [x] Cleanup legacy itinerary support:
+  - gỡ backend itinerary endpoints/module/repository/test support
+  - drop bảng `trip_itinerary_days` và `trip_itinerary_activities`
+  - gỡ helper/script migration khỏi source active
+- [x] Budget summary không còn phụ thuộc bất kỳ runtime path nào từ itinerary bridge
 
 ## Phase 06 - Public trip sharing
 
@@ -263,7 +260,6 @@ Status: `In progress`
   - [x] Prisma schema validate với `DATABASE_URL` local test
 - Deferred rõ:
   - comment endpoints
-  - cleanup legacy itinerary bridge
   - production smoke thật sau deploy
 
 ### Focused hardening slice 08-B - ownership and authorization
@@ -286,7 +282,6 @@ Status: `In progress`
 - Deferred rõ:
   - xóa hẳn legacy sticker endpoints chỉ thực hiện khi FE/contract xác nhận không còn caller
   - comment endpoints
-  - cleanup legacy itinerary bridge
   - production smoke thật sau deploy
 
 - [ ] Rà lại tất cả response envelopes theo DRD
@@ -333,8 +328,8 @@ Status: `In progress`
 ### Slice BE-D
 
 - [x] budget mode logic
-- [~] budget summary alignment
-- [ ] migration strategy from itinerary
+- [x] budget summary alignment
+- [x] migration strategy from itinerary
 
 ### Slice BE-E
 

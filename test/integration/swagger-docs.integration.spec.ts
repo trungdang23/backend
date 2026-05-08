@@ -60,6 +60,7 @@ describe('Swagger docs integration', () => {
         .set('Authorization', authorizationHeader);
       const authorizedDocsJsonBody = authorizedDocsJsonResponse.body as {
         openapi: string;
+        paths: Record<string, unknown>;
       };
 
       expect(unauthorizedDocsResponse.statusCode).toBe(401);
@@ -70,6 +71,12 @@ describe('Swagger docs integration', () => {
       expect(authorizedDocsResponse.text).toContain('Swagger UI');
       expect(authorizedDocsJsonResponse.statusCode).toBe(200);
       expect(authorizedDocsJsonBody.openapi).toBe('3.0.0');
+      expect(authorizedDocsJsonBody.paths).not.toHaveProperty(
+        '/api/v1/trips/{tripId}/itinerary',
+      );
+      expect(authorizedDocsJsonBody.paths).not.toHaveProperty(
+        '/api/v1/trips/{tripId}/itinerary/days',
+      );
     } finally {
       await app.close();
     }

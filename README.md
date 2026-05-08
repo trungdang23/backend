@@ -71,28 +71,16 @@ Primary product contract:
   - `POST /api/v1/trips/:id/journal/assets`
   - `GET /api/v1/journal-assets/:publicId`
 
-Compatibility and migration bridge currently still live:
-
-- Itinerary:
-  - `GET /api/v1/trips/:id/itinerary`
-  - `POST /api/v1/trips/:id/itinerary/days`
-  - `PATCH /api/v1/trips/:id/itinerary/days/:dayId`
-  - `DELETE /api/v1/trips/:id/itinerary/days/:dayId`
-  - `POST /api/v1/trips/:id/itinerary/days/:dayId/activities`
-  - `PATCH /api/v1/trips/:id/itinerary/days/:dayId/activities/:activityId`
-  - `DELETE /api/v1/trips/:id/itinerary/days/:dayId/activities/:activityId`
-
 ### Trạng thái migration hiện tại
 
-- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `itinerary bridge`, `budget-summary`, journal scene persistence tối giản bằng `trip_journals`, và journal asset upload owner-only với signed URL delivery cho asset read.
+- Source hiện đã có `auth`, `trips` aligned với `visibility/budgetMode/manualBudget`, `planning` trên `PlanNode`, `budget-summary`, journal scene persistence tối giản bằng `trip_journals`, và journal asset upload owner-only với signed URL delivery cho asset read.
 - `Trip.visibility = public` mở read-only public trip/planner và xuất hiện trong public trip discovery list; `private` bị chặn ở public route.
 - `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
-- `TripItineraryDay -> TripItineraryActivity` không còn là flow planner chính; budget summary owner flow hiện đã đọc từ `PlanNode`, còn bridge giữ lại chủ yếu cho legacy endpoints và migration support.
-- Repo hiện có helper migration `pnpm migrate:itinerary-to-plan-nodes -- --trip-id=<trip-id>` hoặc `--all`; lệnh mặc định là `dry-run`, chỉ ghi DB khi thêm `--apply`, và sẽ skip trip đã có `PlanNode`.
+- Legacy itinerary support đã bị gỡ khỏi backend source sau khi runtime DB check `2026-05-08` xác nhận không còn row ở `trip_itinerary_days` và `trip_itinerary_activities`.
 - Khi triển khai tiếp, ưu tiên:
-  1. hoàn tất integration/e2e/runtime smoke cho budget summary `PlanNode`-based và mixed-currency breakdown trên môi trường deploy thật
-  2. chốt migration/cleanup plan cho legacy itinerary support
-  3. hoàn tất hardening và release safety cho public/community flows
+  1. hoàn tất hardening và release safety cho public/community flows
+  2. rà Swagger/DTO/response envelope theo checklist phase 08
+  3. production smoke thật sau deploy cho auth/trips/planner/journal/public/posts
 
 ## Run Local
 
@@ -142,33 +130,6 @@ pnpm prisma:validate
 
 `pnpm test`, `pnpm test:integration`, và `pnpm test:e2e` hiện sẽ tự chạy `pnpm prisma:migrate:deploy` vào test database trước khi vào Jest. Nếu `DATABASE_URL` chưa được set, package sẽ mặc định dùng `journey_test` trên `localhost:5432`.
 
-## Legacy Itinerary Migration Helper
-
-Dry-run một trip legacy:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --trip-id=<trip-id>
-```
-
-Dry-run toàn bộ trip còn `TripItineraryDay`:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --all
-```
-
-Apply thật:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --all --apply
-```
-
-Ghi chú:
-
-- `--apply` là bắt buộc nếu muốn ghi `plan_nodes`
-- trip đã có planner data sẽ bị skip để tránh merge mù
-- nếu muốn chạy trên production env file, set `NODE_ENV=production`
-- runbook chi tiết nằm tại `documents/20_backend-itinerary-plan-node-migration-runbook.md`
-
 ## Operational Foundation
 
 - Mỗi request đều có correlation id. Header `X-Correlation-Id` được giữ nguyên nếu client gửi lên; nếu không có, backend sẽ tự tạo và phản hồi lại cùng header này.
@@ -189,7 +150,7 @@ Ghi chú:
 - Workflow deploy production hiện render thêm `APP_RELEASE_SHA` từ commit đang deploy, verify lại `/api/v1/health` phải trả đúng SHA đó sau restart, rồi mới ghi `.deploy-release.json` vào `DEPLOY_PATH`.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, JWT access/refresh token flow thật, refresh-token rotation one-time-use, và logout revocation persisted cho runtime hiện tại.
 - Phase trips hiện đã có `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:tripId`, `PATCH /api/v1/trips/:tripId`, `DELETE /api/v1/trips/:tripId`, pagination/sort, Prisma-backed persistence, và trip-specific unit/integration/e2e coverage.
-- Phase itineraries/budgets hiện đã có `GET /api/v1/trips/:tripId/itinerary`, `POST /api/v1/trips/:tripId/itinerary/days`, `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`, `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`, `GET /api/v1/trips/:tripId/budget-summary`, cùng Prisma-backed persistence và itinerary/budget-specific test coverage.
+- Phase budgets hiện đã có `GET /api/v1/trips/:tripId/budget-summary`, đọc từ `PlanNode`, cùng budget-specific unit/integration/e2e coverage; legacy itinerary backend support đã được cleanup khỏi source active.
 - Repo đã có bộ script runtime trên host:
   - `scripts/start-production.sh`
   - `scripts/stop-production.sh`

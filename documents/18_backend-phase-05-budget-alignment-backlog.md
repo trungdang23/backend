@@ -23,8 +23,8 @@ Phase này chưa xử lý:
 
 ## Trạng thái
 
-- Status: `Implemented in source`
-- Date: `2026-04-20`
+- Status: `Completed in source`
+- Date: `2026-05-08`
 - Owner area:
   - `backend/src/modules/budgets`
   - `backend/src/modules/planning`
@@ -35,7 +35,8 @@ Phase này chưa xử lý:
   - `TripBudgetSummary` hiện đã có additive mixed-currency breakdown qua `hasMixedCurrencies` và `totalsByCurrency`
   - budget summary đã có suite riêng ở `test/unit`, `test/integration`, và `test/e2e`
   - assertion budget cũ đã được tách khỏi suite `itineraries`
-  - runtime verification còn bị chặn bởi shell hiện tại chưa có `node/pnpm` tương thích với `pnpm`-linked `node_modules`
+  - runtime smoke deploy đã pass cho owner budget flow
+  - runtime DB check trước cleanup xác nhận không còn row ở `trip_itinerary_days` và `trip_itinerary_activities`
 - Dependency chặn:
   - `Phase 03` đã chốt `Trip.budgetMode/manualBudget`
   - `Phase 04` đã chốt `PlanNode.costAmount/costCurrency`
@@ -100,6 +101,28 @@ Phase này chưa xử lý:
   - `scripts/migrate-itinerary-to-plan-nodes.ts`
   - `test/unit/modules/planning/application/migrations`
   - `documents/20_backend-itinerary-plan-node-migration-runbook.md`
+
+## Legacy itinerary cleanup sub-slice - 2026-05-08
+
+- Trigger:
+  - runtime DB `journey_prod_local` xác nhận không còn dữ liệu legacy cần backfill: `trip_itinerary_days = 0`, `trip_itinerary_activities = 0`
+- Scope của lượt này:
+  - [x] gỡ `ItinerariesModule` khỏi app
+  - [x] xóa controller/service/repository/domain/DTO của itinerary bridge
+  - [x] xóa helper/script migration khỏi source active
+  - [x] xóa test/support chỉ phục vụ itinerary bridge
+  - [x] drop bảng `trip_itinerary_days` và `trip_itinerary_activities`
+  - [x] cập nhật README/checklist/runbook cho trạng thái sau cleanup
+- Deferred rõ trong lượt này:
+  - archival sâu hơn cho các document lịch sử vẫn còn nhắc itinerary bridge như phase trước
+  - public budget summary endpoint riêng
+  - currency conversion
+- File owner của lượt này:
+  - `src/app/app.module.ts`
+  - `src/modules/itineraries`
+  - `db/schema.prisma`
+  - `db/migrations/20260508173000_drop_legacy_itinerary_support`
+  - `documents/21_backend-legacy-itinerary-cleanup-backlog.md`
 
 ## Quyết định rollout cần chốt
 

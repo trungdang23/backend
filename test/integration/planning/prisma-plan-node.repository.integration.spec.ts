@@ -16,8 +16,6 @@ describe('PrismaPlanNodeRepository integration', () => {
 
   beforeEach(async () => {
     await prisma.planNode.deleteMany();
-    await prisma.tripItineraryActivity.deleteMany();
-    await prisma.tripItineraryDay.deleteMany();
     await prisma.trip.deleteMany();
     await prisma.user.deleteMany();
   });
@@ -87,6 +85,8 @@ describe('PrismaPlanNodeRepository integration', () => {
 
     expect(remainingNodes).toHaveLength(1);
     expect(remainingNodes[0]?.id).toBe(secondRootNode.id);
-    expect(remainingNodes.find((node) => node.id === childNode.id)).toBeUndefined();
+    expect(
+      remainingNodes.find((node) => node.id === childNode.id),
+    ).toBeUndefined();
   });
 });

@@ -16,8 +16,6 @@ describe('PrismaPostRepository integration', () => {
   beforeEach(async () => {
     await prisma.post.deleteMany();
     await prisma.planNode.deleteMany();
-    await prisma.tripItineraryActivity.deleteMany();
-    await prisma.tripItineraryDay.deleteMany();
     await prisma.trip.deleteMany();
     await prisma.user.deleteMany();
   });

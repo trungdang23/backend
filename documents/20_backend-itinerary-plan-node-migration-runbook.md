@@ -1,43 +1,26 @@
 # Backend Legacy Itinerary -> PlanNode Migration Runbook
 
+Status hiện tại: `Archived for historical reference`
+
+- `2026-05-08`: runtime DB check xác nhận không còn row ở `trip_itinerary_days` và `trip_itinerary_activities`, sau đó source đã cleanup legacy itinerary support và gỡ CLI/helper migration khỏi source active.
+- Tài liệu này được giữ lại để lưu mapping rule và cutover reasoning đã dùng trước cleanup.
+
 ## Mục tiêu
 
 - Chuyển dữ liệu lịch sử từ `TripItineraryDay` / `TripItineraryActivity` sang `PlanNode`.
 - Giữ `PlanNode` là source of truth duy nhất cho planner-first flow và budget summary owner flow.
 - Giảm rủi ro rollout bằng helper migration an toàn, `dry-run` mặc định, và skip trip đã có planner data.
 
-## Trạng thái source
+## Trạng thái source tại thời điểm cleanup
 
 - Budget summary owner flow đã đọc từ `PlanNode`.
-- Legacy itinerary endpoints vẫn còn sống để phục vụ compatibility và migration support.
-- Repo đã có CLI `migrate:itinerary-to-plan-nodes` để preview/apply migration cho trip legacy.
+- Runtime DB check trước cleanup xác nhận không còn dữ liệu legacy cần backfill.
+- Legacy itinerary endpoints/module/tables đã bị gỡ khỏi source active sau cleanup.
+- CLI `migrate:itinerary-to-plan-nodes` chỉ còn là artifact lịch sử và đã bị xóa khỏi source active.
 
-## Command
+## Historical command note
 
-Dry-run cho một trip:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --trip-id=<trip-id>
-```
-
-Dry-run cho toàn bộ trip có dữ liệu itinerary:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --all
-```
-
-Apply thật:
-
-```bash
-pnpm migrate:itinerary-to-plan-nodes -- --all --apply
-```
-
-Ghi chú:
-
-- script mặc định là `dry-run`
-- phải truyền `--apply` mới ghi `plan_nodes`
-- trip đã có `PlanNode` sẽ bị skip, không merge mù vào planner đang dùng
-- nếu chạy production env, set `NODE_ENV=production` để script đọc `.env.production`
+Các command migration trong tài liệu này không còn tồn tại trong source sau cleanup `2026-05-08`. Phần còn lại được giữ lại để tham chiếu mapping rule và tiêu chí cutover đã dùng.
 
 ## Mapping rule đã chốt
 
