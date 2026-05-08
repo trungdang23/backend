@@ -73,6 +73,19 @@
 - CDN/object storage cho avatar.
 - Revision/history avatar hoặc moderation pipeline.
 
+## Current pass - 2026-05-08 - Avatar runtime DI hotfix
+
+### Trigger
+
+- Production trả `404 Cannot POST /api/v1/auth/me/avatar` vì runtime vẫn chạy build cũ.
+- Khi redeploy lên source mới có avatar route, Nest boot fail do `UsersModule` không resolve được `AppConfigService` cho `LocalUserAvatarStorage`.
+
+### Scope của lượt này
+
+- [x] wire `AppConfigService` vào `UsersModule` để avatar storage boot được trong runtime thật
+- [x] thêm test compile nhỏ cho `UsersModule` với `LocalUserAvatarStorage` thật để CI chặn regression DI này
+- [x] redeploy backend production và verify lại `POST /api/v1/auth/me/avatar` không còn `NOT_FOUND`
+
 ## Trạng thái hiện tại
 
 Đã có:

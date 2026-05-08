@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AppConfigService } from '../../app/config/app-config.service';
 import { PrismaModule } from '../../shared/infrastructure/prisma/prisma.module';
 import { DeleteUserAvatarService } from './application/services/delete-user-avatar.service';
 import { GetUserAvatarFileService } from './application/services/get-user-avatar-file.service';
@@ -19,6 +20,7 @@ import { UserAvatarController } from './presentation/user-avatar.controller';
   imports: [PrismaModule],
   controllers: [UserAvatarController],
   providers: [
+    AppConfigService,
     DeleteUserAvatarService,
     GetUserAvatarFileService,
     GetUserProfileService,
