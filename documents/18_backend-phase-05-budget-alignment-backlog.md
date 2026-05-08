@@ -60,6 +60,25 @@ Phase này chưa xử lý:
   - browser/runtime verify trên deploy thật
   - cleanup legacy itinerary bridge
 
+## Runtime smoke sub-slice - 2026-05-08
+
+- Trigger:
+  - repo root snapshot và backend README hiện ưu tiên verify budget summary `PlanNode`-based trên môi trường deploy thật trước khi đẩy tiếp cleanup legacy itinerary
+- Scope của lượt này:
+  - [x] verify `GET /api/v1/trips/:tripId/budget-summary` trên production với trip tạo mới bằng planner `PlanNode`
+  - [x] verify summary recompute đúng sau `POST /api/v1/nodes`
+  - [x] verify summary recompute đúng sau `PATCH /api/v1/nodes/:nodeId`
+  - [x] verify summary recompute đúng sau `DELETE /api/v1/nodes/:nodeId`
+  - [x] verify `hasMixedCurrencies` và `totalsByCurrency` không stale sau mutation đổi currency set
+  - [x] ghi lại bug hoặc drift runtime nếu có, rồi vá ở source + test tối thiểu
+- Deferred rõ trong lượt này:
+  - browser-level budget presentation verify trong frontend runtime
+  - cleanup legacy itinerary bridge
+- Kết quả runtime:
+  - `manual` mode summary pass với baseline `0`, sau đó recompute đúng qua create/update/delete activity node
+  - mixed-currency runtime pass với top-level compatibility fields bám `manualBudgetCurrency = VND`, đồng thời `totalsByCurrency` trả đủ `VND` và `USD`
+  - không phát hiện drift production/source ở budget owner flow trong lượt này
+
 ## Quyết định rollout cần chốt
 
 ## 1. Giữ nguyên endpoint, đổi source of truth phía sau
