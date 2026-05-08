@@ -25,6 +25,10 @@ export class AppConfigService {
     return this.configService.get('app.globalPrefix', { infer: true });
   }
 
+  get appReleaseSha(): string | null {
+    return this.configService.get('app.releaseSha', { infer: true });
+  }
+
   get swaggerEnabled(): boolean {
     return this.configService.get('app.swaggerEnabled', { infer: true });
   }

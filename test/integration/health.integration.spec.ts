@@ -46,6 +46,7 @@ describe('Health integration', () => {
         service: string;
         environment: string;
         version: string;
+        releaseSha: string | null;
         timestamp: string;
         checks: {
           database: {
@@ -61,6 +62,7 @@ describe('Health integration', () => {
     expect(body.data.service).toBe('journey-backend');
     expect(body.data.environment).toBe('test');
     expect(body.data.version).toBe('0.1.0');
+    expect(body.data.releaseSha).toBeNull();
     expect(body.data.timestamp).toEqual(expect.any(String));
     expect(body.data.checks.database.status).toBe('up');
     expect(response.headers[CORRELATION_ID_HEADER]).toEqual(expect.any(String));

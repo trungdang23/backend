@@ -25,6 +25,7 @@ describe('appConfigSchema', () => {
     expect(result.value).toMatchObject({
       AUTH_RATE_LIMIT_MAX_REQUESTS: 10,
       AUTH_RATE_LIMIT_WINDOW_SECONDS: 60,
+      APP_RELEASE_SHA: '',
       JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS: 900,
     });
   });

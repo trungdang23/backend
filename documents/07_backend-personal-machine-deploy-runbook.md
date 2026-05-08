@@ -12,6 +12,20 @@
 - Giữ workflow deploy hiện tại của GitHub Actions.
 - Loại bỏ phụ thuộc vào `cloudflared access ssh` và mọi bước SSH trung gian.
 
+## Current pass - 2026-05-08 - Release SHA deploy drift hardening
+
+### Trigger
+
+- Runtime production từng phục vụ source cũ hơn `origin/main` nhưng health vẫn xanh, nên lỗi chỉ lộ ra khi user chạm route mới như `POST /api/v1/auth/me/avatar`.
+
+### Scope của lượt này
+
+- [x] render `APP_RELEASE_SHA` từ commit đang deploy vào runtime env production
+- [x] expose `data.releaseSha` trên `/api/v1/health`
+- [x] bắt workflow verify health phải trả đúng SHA vừa deploy sau restart
+- [x] thêm smoke `POST /api/v1/auth/me/avatar` không token phải trả `401` để chặn route mới bị thiếu mà health vẫn xanh
+- [x] ghi metadata release đã verify vào `${DEPLOY_PATH}/.deploy-release.json`
+
 ## Checklist hardening deploy `localhost`
 
 - [x] Xác định runtime database hiện tại có trỏ về `localhost` hay không từ chính `DATABASE_URL` đã render.
@@ -49,9 +63,12 @@
 5. Ghi file env đó vào `RUNTIME_ENV_PATH`.
 6. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ fallback sang `docker compose up -d postgres` khi container đó chưa tồn tại.
 7. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
-8. Source runtime env vừa ghi.
+8. Source runtime env vừa ghi, trong đó có cả `APP_RELEASE_SHA` của commit đang deploy.
 9. Chạy `pnpm prisma:migrate:deploy`.
 10. Chạy `SERVICE_RESTART_COMMAND`.
+11. Verify `/api/v1/health` phải trả đúng `data.releaseSha` của commit vừa deploy.
+12. Smoke `POST /api/v1/auth/me/avatar` không token phải trả `401`.
+13. Ghi metadata release đã verify vào `${DEPLOY_PATH}/.deploy-release.json`.
 
 ## Runtime script hiện có trong repo
 
@@ -68,6 +85,7 @@ Các script này:
 - dùng cùng state dir đó để persist refresh-token revoke state tại `auth/revoked-refresh-tokens.json`
 - clear `RUNNER_TRACKING_ID` trước khi detach backend runtime để process không bị self-hosted runner cleanup sau khi workflow kết thúc
 - dùng `curl` để xác minh `/api/v1/health` sau khi restart
+- có thể verify commit đang chạy bằng `bash ./scripts/verify-production-release.sh <sha>` trong `DEPLOY_PATH`
 
 ## Giá trị cốt lõi cần nhớ
 
@@ -80,6 +98,7 @@ Các script này:
 - `push` vào `main` sẽ tự kích hoạt deploy; `Run workflow` vẫn được giữ để redeploy thủ công khi cần.
 - `DATABASE_URL`, `JWT_ISSUER`, `JWT_ACCESS_TOKEN_SECRET`, và `JWT_REFRESH_TOKEN_SECRET` không còn fallback trong source; nếu GitHub Secrets/Variables thiếu hoặc sai, runtime sẽ dùng đúng giá trị GitHub đang cấp hoặc fail sớm khi boot.
 - `JOURNAL_ASSET_SIGNING_SECRET` là secret runtime bắt buộc cho signed journal asset URL; `JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` quyết định thời gian sống của link ảnh được ký.
+- Sau deploy xanh, có thể đọc nhanh `${DEPLOY_PATH}/.deploy-release.json` hoặc `GET /api/v1/health` để biết runtime đang chạy commit nào.
 
 ## GitHub configuration hiện cần
 
@@ -165,7 +184,10 @@ Compose project name hiện được khóa là `backend`, nên lệnh ở dev pa
    - Docker đang chạy
    - backend runtime healthy
    - runner đang online
-5. Nếu cần redeploy lại cùng ref hoặc chạy lại sau khi runner lỗi, dùng `Run workflow` cho `deploy-backend`.
+5. Nếu cần đối chiếu commit đang chạy, kiểm tra:
+   - `curl https://api.buicojourney.com/api/v1/health`
+   - `cat /home/trungdang/apps/journey-backend/.deploy-release.json`
+6. Nếu cần redeploy lại cùng ref hoặc chạy lại sau khi runner lỗi, dùng `Run workflow` cho `deploy-backend`.
 
 ## Lệnh kiểm tra nhanh trước deploy
 

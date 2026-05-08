@@ -7,6 +7,7 @@ export const appConfigSchema = Joi.object({
   APP_NAME: Joi.string().default('journey-backend'),
   APP_PORT: Joi.number().port().default(3001),
   GLOBAL_PREFIX: Joi.string().default('api/v1'),
+  APP_RELEASE_SHA: Joi.string().allow('').default(''),
   SWAGGER_ENABLED: Joi.boolean().default(true),
   SWAGGER_USERNAME: Joi.string().allow('').default(''),
   SWAGGER_PASSWORD: Joi.string().allow('').default(''),

@@ -8,6 +8,7 @@ export interface HealthSnapshot {
   service: string;
   environment: string;
   version: string;
+  releaseSha: string | null;
   timestamp: string;
   checks: {
     database: {
@@ -38,6 +39,7 @@ export class HealthService {
       service: this.configService.appName,
       environment: this.configService.nodeEnv,
       version: process.env.npm_package_version ?? '0.1.0',
+      releaseSha: this.configService.appReleaseSha,
       timestamp: new Date().toISOString(),
       checks: {
         database: {

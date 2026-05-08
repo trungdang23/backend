@@ -27,6 +27,7 @@ Backend package này là nơi giữ source of truth triển khai cho backend c�
 ### Contract mục tiêu
 
 Primary product contract:
+
 - Auth:
   - `POST /api/v1/auth/register`
   - `POST /api/v1/auth/login`
@@ -71,6 +72,7 @@ Primary product contract:
   - `GET /api/v1/journal-assets/:publicId`
 
 Compatibility and migration bridge currently still live:
+
 - Itinerary:
   - `GET /api/v1/trips/:id/itinerary`
   - `POST /api/v1/trips/:id/itinerary/days`
@@ -143,6 +145,7 @@ pnpm prisma:validate
 
 - Mỗi request đều có correlation id. Header `X-Correlation-Id` được giữ nguyên nếu client gửi lên; nếu không có, backend sẽ tự tạo và phản hồi lại cùng header này.
 - `/api/v1/health` hiện kiểm tra cả khả năng chạm PostgreSQL thật; khi DB sống, response sẽ có `checks.database.status = "up"`.
+- `/api/v1/health` hiện cũng expose `data.releaseSha` khi runtime được deploy qua workflow production, để đối chiếu process đang chạy với commit vừa release.
 - Structured logging đã có redaction cho dữ liệu nhạy cảm như `authorization`, `cookie`, `password`, `token`, và các trường chứa `secret`.
 - Repo `backend` có workflow CI riêng tại `.github/workflows/backend-ci.yml`; merge vào repo backend sẽ chạy `pnpm prisma:generate`, `pnpm lint`, `pnpm test`, `pnpm build`, và `pnpm prisma:validate`.
 - Repo `backend` chạy thêm secret scan trong CI bằng `scripts/check-secrets.sh` để chặn file env thật hoặc các key pattern phổ biến trước khi merge.
@@ -155,6 +158,7 @@ pnpm prisma:validate
 - Refresh token hiện được revoke server-side trên cả `POST /api/v1/auth/refresh` và `POST /api/v1/auth/logout`; revoke state được persist tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/revoked-refresh-tokens.json` để survive process restart trên deploy model single-machine hiện tại.
 - Swagger docs có thể được bảo vệ bằng `Basic Auth` qua `SWAGGER_USERNAME` và `SWAGGER_PASSWORD`; trên production, nếu `SWAGGER_ENABLED=true` nhưng thiếu credential thì `/api/v1/docs` và `/api/v1/docs-json` sẽ không được mount.
 - Workflow deploy hiện giữ bước verify trên GitHub-hosted runner, nhưng chạy bước deploy thật trên self-hosted runner Linux của chính máy đích; vì vậy deploy không còn phụ thuộc vào `cloudflared access ssh` hay lớp SSH trung gian.
+- Workflow deploy production hiện render thêm `APP_RELEASE_SHA` từ commit đang deploy, verify lại `/api/v1/health` phải trả đúng SHA đó sau restart, rồi mới ghi `.deploy-release.json` vào `DEPLOY_PATH`.
 - Phase auth/users hiện đã có `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`, `AccessTokenAuthGuard`, `@Public()`, `@CurrentUser()`, password hashing, JWT access/refresh token flow thật, refresh-token rotation one-time-use, và logout revocation persisted cho runtime hiện tại.
 - Phase trips hiện đã có `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:tripId`, `PATCH /api/v1/trips/:tripId`, `DELETE /api/v1/trips/:tripId`, pagination/sort, Prisma-backed persistence, và trip-specific unit/integration/e2e coverage.
 - Phase itineraries/budgets hiện đã có `GET /api/v1/trips/:tripId/itinerary`, `POST /api/v1/trips/:tripId/itinerary/days`, `POST /api/v1/trips/:tripId/itinerary/days/:dayId/activities`, `PATCH /api/v1/trips/:tripId/itinerary/days/:dayId/activities/:activityId`, `GET /api/v1/trips/:tripId/budget-summary`, cùng Prisma-backed persistence và itinerary/budget-specific test coverage.

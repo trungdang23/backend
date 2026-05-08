@@ -9,6 +9,7 @@ describe('HealthService', () => {
     const service = new HealthService(
       {
         appName: 'journey-backend',
+        appReleaseSha: '9da357cb35912eedf2f5044c98754b7895cea53b',
         nodeEnv: 'test',
       } as never,
       prismaService,
@@ -20,6 +21,7 @@ describe('HealthService', () => {
         service: 'journey-backend',
         environment: 'test',
         version: '0.1.0',
+        releaseSha: '9da357cb35912eedf2f5044c98754b7895cea53b',
         checks: {
           database: {
             status: 'up',
@@ -36,6 +38,7 @@ describe('HealthService', () => {
     const service = new HealthService(
       {
         appName: 'journey-backend',
+        appReleaseSha: null,
         nodeEnv: 'test',
       } as never,
       prismaService,

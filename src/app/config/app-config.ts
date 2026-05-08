@@ -6,6 +6,7 @@ export interface ApplicationConfig {
     nodeEnv: NodeEnvironment;
     port: number;
     globalPrefix: string;
+    releaseSha: string | null;
     swaggerEnabled: boolean;
     swaggerUsername: string | null;
     swaggerPassword: string | null;

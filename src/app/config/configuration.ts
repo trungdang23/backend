@@ -74,6 +74,7 @@ export function configuration(): ApplicationConfig {
       nodeEnv,
       port: parsePort(process.env.APP_PORT, 3001),
       globalPrefix: process.env.GLOBAL_PREFIX ?? 'api/v1',
+      releaseSha: parseOptionalString(process.env.APP_RELEASE_SHA),
       swaggerEnabled: parseBoolean(process.env.SWAGGER_ENABLED, true),
       swaggerUsername: parseOptionalString(process.env.SWAGGER_USERNAME),
       swaggerPassword: parseOptionalString(process.env.SWAGGER_PASSWORD),

@@ -43,6 +43,11 @@ jobs:
         with:
           ref: ${{ env.DEPLOY_REF }}
 
+      - name: Capture deploy revision metadata
+        run: |
+          echo "DEPLOY_COMMIT_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
+          echo "DEPLOY_COMMIT_SHORT_SHA=$(git rev-parse --short HEAD)" >> "${GITHUB_ENV}"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -196,12 +201,14 @@ jobs:
           RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS: ${{ vars.RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS }}
           RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS: ${{ vars.RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS }}
           RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS: ${{ vars.RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS }}
+          DEPLOY_COMMIT_SHA: ${{ env.DEPLOY_COMMIT_SHA }}
         run: |
           {
             printf 'NODE_ENV=production\n'
             printf 'APP_NAME=%s\n' "${RUNTIME_APP_NAME}"
             printf 'APP_PORT=%s\n' "${RUNTIME_APP_PORT}"
             printf 'GLOBAL_PREFIX=%s\n' "${RUNTIME_GLOBAL_PREFIX}"
+            printf 'APP_RELEASE_SHA=%s\n' "${DEPLOY_COMMIT_SHA}"
             printf 'SWAGGER_ENABLED=%s\n' "${RUNTIME_SWAGGER_ENABLED}"
             printf 'SWAGGER_USERNAME=%s\n' "${RUNTIME_SWAGGER_USERNAME}"
             printf 'SWAGGER_PASSWORD=%s\n' "${RUNTIME_SWAGGER_PASSWORD}"
@@ -253,3 +260,34 @@ jobs:
           set +a
           pnpm prisma:migrate:deploy
           ${service_restart_command}
+
+      - name: Verify deployed runtime release
+        env:
+          DEPLOY_COMMIT_SHA: ${{ env.DEPLOY_COMMIT_SHA }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+        run: |
+          cd "${DEPLOY_PATH}"
+          bash ./scripts/verify-production-release.sh "${DEPLOY_COMMIT_SHA}"
+
+      - name: Smoke protected avatar route
+        env:
+          RUNTIME_APP_PORT: ${{ vars.RUNTIME_APP_PORT }}
+          RUNTIME_GLOBAL_PREFIX: ${{ vars.RUNTIME_GLOBAL_PREFIX }}
+        run: |
+          prefix="${RUNTIME_GLOBAL_PREFIX#/}"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' -X POST "http://127.0.0.1:${RUNTIME_APP_PORT}/${prefix}/auth/me/avatar")"
+          if [ "${status}" != "401" ]; then
+            echo "Expected POST /${prefix}/auth/me/avatar without bearer token to return 401, got ${status}." >&2
+            exit 1
+          fi
+
+      - name: Persist deployed release metadata
+        env:
+          DEPLOY_COMMIT_SHA: ${{ env.DEPLOY_COMMIT_SHA }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_REF: ${{ env.DEPLOY_REF }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node -e 'const fs=require("node:fs"); const path=require("node:path"); const file=path.join(process.env.DEPLOY_PATH, ".deploy-release.json"); const payload={commitSha:process.env.DEPLOY_COMMIT_SHA, ref:process.env.DEPLOY_REF, runId:process.env.GITHUB_RUN_ID, runUrl:process.env.GITHUB_SERVER_URL + "/" + process.env.GITHUB_REPOSITORY + "/actions/runs/" + process.env.GITHUB_RUN_ID, verifiedAtUtc:new Date().toISOString()}; fs.writeFileSync(file, JSON.stringify(payload, null, 2) + "\n");'

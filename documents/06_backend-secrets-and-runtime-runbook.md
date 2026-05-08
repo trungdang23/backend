@@ -52,6 +52,7 @@
 - `APP_NAME`
 - `APP_PORT`
 - `GLOBAL_PREFIX`
+- `APP_RELEASE_SHA`
 - `SWAGGER_ENABLED`
 - `DATABASE_URL`
 - `JWT_ISSUER`
@@ -74,6 +75,7 @@
   - OpenAI API key
   - Slack token
 - Workflow deploy render `.env.production` từ GitHub configuration, ghi file đó trực tiếp vào `RUNTIME_ENV_PATH`, rồi mới source file env đó trước khi chạy `prisma:migrate:deploy`.
+- Workflow deploy hiện render thêm `APP_RELEASE_SHA` từ commit đang deploy, rồi verify `/api/v1/health` phải trả đúng `data.releaseSha` sau restart trước khi coi deploy là thành công.
 - Khi `DATABASE_URL` trong env vừa render trỏ về `localhost` nhưng port chưa mở, workflow sẽ gọi `scripts/ensure-runtime-database.sh` để thử bật `docker compose up -d postgres` trước khi chạy migration.
 - Backend runtime hiện lưu refresh-token revoke state tại `${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}/auth/revoked-refresh-tokens.json`; state này phải survive restart để `logout` và `refresh` không cho reuse token cũ sau deploy/restart.
 - Quyền truy cập vào máy deploy được chuyển từ mạng/SSH sang quyền của self-hosted runner service. Runner user vì vậy phải được coi như tài khoản production operator.
@@ -161,10 +163,12 @@
 7. Workflow render `.env.production` từ GitHub Secrets/Variables và ghi file đó vào `RUNTIME_ENV_PATH`.
 8. Workflow chạy `scripts/ensure-runtime-database.sh`; nếu runtime DB đang là `localhost` nhưng chưa reachable, workflow sẽ thử bật `postgres` bằng Docker Compose.
 9. Workflow source env từ `RUNTIME_ENV_PATH` rồi mới chạy migration và restart service.
+10. Workflow verify `data.releaseSha` trên health endpoint khớp commit vừa deploy, rồi ghi metadata đã verify vào `${DEPLOY_PATH}/.deploy-release.json`.
 
 ## Kiểm tra sau deploy
 
 - Kiểm tra `/api/v1/health`
+- Kiểm tra `data.releaseSha` trên health endpoint khớp commit mong đợi nếu vừa deploy hoặc redeploy
 - Kiểm tra `pnpm status`
 - Kiểm tra log ứng dụng
 - Kiểm tra `logout` và `refresh` không cho reuse refresh token cũ nếu vừa chạy smoke auth
