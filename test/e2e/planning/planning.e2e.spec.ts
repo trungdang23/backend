@@ -6,11 +6,9 @@ import request from 'supertest';
 import { AppModule } from '../../../src/app/app.module';
 import { setupApp } from '../../../src/app/bootstrap/setup-app';
 import { PLAN_NODE_REPOSITORY } from '../../../src/modules/planning/application/ports/plan-node-repository.port';
-import { PLAN_NODE_STICKER_REPOSITORY } from '../../../src/modules/planning/application/ports/plan-node-sticker-repository.port';
 import { TRIP_REPOSITORY } from '../../../src/modules/trips/application/ports/trip-repository.port';
 import { USER_REPOSITORY } from '../../../src/modules/users/application/ports/user-repository.port';
 import { InMemoryPlanNodeRepository } from '../../support/in-memory-plan-node-repository';
-import { InMemoryPlanNodeStickerRepository } from '../../support/in-memory-plan-node-sticker-repository';
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
 import { InMemoryUserRepository } from '../../support/in-memory-user-repository';
 
@@ -28,8 +26,6 @@ describe('Planning e2e', () => {
       .useClass(InMemoryTripRepository)
       .overrideProvider(PLAN_NODE_REPOSITORY)
       .useClass(InMemoryPlanNodeRepository)
-      .overrideProvider(PLAN_NODE_STICKER_REPOSITORY)
-      .useClass(InMemoryPlanNodeStickerRepository)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -127,56 +123,6 @@ describe('Planning e2e', () => {
     expect(plannerBody.data.nodes).toHaveLength(1);
     expect(plannerBody.data.nodes[0]?.id).toBe(createNodeBody.data.id);
     expect(plannerBody.data.nodes[0]?.title).toBe('Arrival block');
-
-    const saveStickersResponse = await request(httpServer)
-      .put(`/api/v1/nodes/${createNodeBody.data.id}/stickers`)
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({
-        stickers: [
-          {
-            stickerKey: 'ticket',
-            x: 1500,
-            y: 2200,
-            rotation: -6,
-            scale: 105,
-            zIndex: 0,
-          },
-        ],
-      });
-    const saveStickersBody = saveStickersResponse.body as {
-      success: boolean;
-      data: Array<{
-        stickerKey: string;
-        x: number;
-        y: number;
-      }>;
-    };
-
-    expect(saveStickersResponse.statusCode).toBe(200);
-    expect(saveStickersBody.success).toBe(true);
-    expect(saveStickersBody.data[0]).toEqual(
-      expect.objectContaining({
-        stickerKey: 'ticket',
-        x: 1500,
-        y: 2200,
-      }),
-    );
-
-    const stickerListResponse = await request(httpServer)
-      .get(`/api/v1/nodes/${createNodeBody.data.id}/stickers`)
-      .set('Authorization', `Bearer ${accessToken}`);
-    const stickerListBody = stickerListResponse.body as {
-      success: boolean;
-      data: Array<{
-        stickerKey: string;
-      }>;
-    };
-
-    expect(stickerListResponse.statusCode).toBe(200);
-    expect(stickerListBody.success).toBe(true);
-    expect(stickerListBody.data.map((sticker) => sticker.stickerKey)).toEqual([
-      'ticket',
-    ]);
   });
 
   it('reads a public planner without authentication', async () => {

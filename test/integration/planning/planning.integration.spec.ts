@@ -6,7 +6,6 @@ import type { Express } from 'express';
 import { AppModule } from '../../../src/app/app.module';
 import { setupApp } from '../../../src/app/bootstrap/setup-app';
 import { PLAN_NODE_REPOSITORY } from '../../../src/modules/planning/application/ports/plan-node-repository.port';
-import { PLAN_NODE_STICKER_REPOSITORY } from '../../../src/modules/planning/application/ports/plan-node-sticker-repository.port';
 import { TRIP_REPOSITORY } from '../../../src/modules/trips/application/ports/trip-repository.port';
 import { USER_REPOSITORY } from '../../../src/modules/users/application/ports/user-repository.port';
 import {
@@ -14,7 +13,6 @@ import {
   type DispatchRequestResult,
 } from '../../support/dispatch-request';
 import { InMemoryPlanNodeRepository } from '../../support/in-memory-plan-node-repository';
-import { InMemoryPlanNodeStickerRepository } from '../../support/in-memory-plan-node-sticker-repository';
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
 import { InMemoryUserRepository } from '../../support/in-memory-user-repository';
 
@@ -31,7 +29,6 @@ describe('Planning integration', () => {
   let expressApp: Express;
   let tripRepository: InMemoryTripRepository;
   let planNodeRepository: InMemoryPlanNodeRepository;
-  let planNodeStickerRepository: InMemoryPlanNodeStickerRepository;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -43,8 +40,6 @@ describe('Planning integration', () => {
       .useClass(InMemoryTripRepository)
       .overrideProvider(PLAN_NODE_REPOSITORY)
       .useClass(InMemoryPlanNodeRepository)
-      .overrideProvider(PLAN_NODE_STICKER_REPOSITORY)
-      .useClass(InMemoryPlanNodeStickerRepository)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -56,9 +51,6 @@ describe('Planning integration', () => {
     tripRepository = app.get<InMemoryTripRepository>(TRIP_REPOSITORY);
     planNodeRepository =
       app.get<InMemoryPlanNodeRepository>(PLAN_NODE_REPOSITORY);
-    planNodeStickerRepository = app.get<InMemoryPlanNodeStickerRepository>(
-      PLAN_NODE_STICKER_REPOSITORY,
-    );
   });
 
   afterAll(async () => {
@@ -68,7 +60,6 @@ describe('Planning integration', () => {
   beforeEach(() => {
     tripRepository.clear();
     planNodeRepository.clear();
-    planNodeStickerRepository.clear();
   });
 
   it('creates, updates, lists, and cascade deletes planner nodes for the authenticated user', async () => {
@@ -464,134 +455,7 @@ describe('Planning integration', () => {
     );
   });
 
-  it('saves and lists sticker coordinates for a planner node', async () => {
-    const traveler = await registerUser(
-      expressApp,
-      'planning.stickers@example.com',
-    );
-
-    const tripResponse = await dispatchRequest(expressApp, {
-      method: 'POST',
-      path: '/api/v1/trips',
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-      body: {
-        name: 'Sticker Planner',
-        startDate: '2026-10-01',
-        endDate: '2026-10-03',
-        budgetMode: 'manual',
-        manualBudgetAmount: 1800000,
-        manualBudgetCurrency: 'VND',
-        visibility: 'private',
-      },
-    });
-    const tripBody = tripResponse.body as {
-      data: {
-        id: string;
-      };
-    };
-
-    const nodeResponse = await dispatchRequest(expressApp, {
-      method: 'POST',
-      path: '/api/v1/nodes',
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-      body: {
-        tripId: tripBody.data.id,
-        type: 'activity',
-        title: 'Cafe hopping',
-        startAt: '2026-10-01T09:00',
-        endAt: '2026-10-01T11:00',
-        sortOrder: 0,
-      },
-    });
-    const nodeBody = nodeResponse.body as {
-      data: {
-        id: string;
-      };
-    };
-
-    const saveStickersResponse = await dispatchRequest(expressApp, {
-      method: 'PUT',
-      path: `/api/v1/nodes/${nodeBody.data.id}/stickers`,
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-      body: {
-        stickers: [
-          {
-            stickerKey: 'sun',
-            x: 2400,
-            y: 1800,
-            rotation: -12,
-            scale: 110,
-            zIndex: 2,
-          },
-          {
-            stickerKey: 'camera',
-            x: 7600,
-            y: 6100,
-            rotation: 8,
-            scale: 95,
-            zIndex: 1,
-          },
-        ],
-      },
-    });
-    const saveStickersBody = saveStickersResponse.body as {
-      success: boolean;
-      data: Array<{
-        stickerKey: string;
-        x: number;
-        y: number;
-        zIndex: number;
-      }>;
-    };
-
-    expect(saveStickersResponse.statusCode).toBe(200);
-    expect(saveStickersBody.success).toBe(true);
-    expect(saveStickersBody.data.map((sticker) => sticker.stickerKey)).toEqual([
-      'camera',
-      'sun',
-    ]);
-
-    const getStickersResponse = await dispatchRequest(expressApp, {
-      method: 'GET',
-      path: `/api/v1/nodes/${nodeBody.data.id}/stickers`,
-      headers: {
-        authorization: `Bearer ${traveler.accessToken}`,
-      },
-    });
-    const getStickersBody = getStickersResponse.body as {
-      success: boolean;
-      data: Array<{
-        stickerKey: string;
-        x: number;
-        y: number;
-      }>;
-    };
-
-    expect(getStickersResponse.statusCode).toBe(200);
-    expect(getStickersBody.success).toBe(true);
-    expect(getStickersBody.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          stickerKey: 'camera',
-          x: 7600,
-          y: 6100,
-        }),
-        expect.objectContaining({
-          stickerKey: 'sun',
-          x: 2400,
-          y: 1800,
-        }),
-      ]),
-    );
-  });
-
-  it('rejects planner and sticker access from a non-owner', async () => {
+  it('rejects planner access from a non-owner', async () => {
     const owner = await registerUser(expressApp, 'planning.owner@example.com');
     const otherTraveler = await registerUser(
       expressApp,
@@ -609,26 +473,6 @@ describe('Planning integration', () => {
       endAt: '2026-10-01T09:00',
       sortOrder: 0,
     });
-
-    const saveStickersResponse = await dispatchRequest(expressApp, {
-      method: 'PUT',
-      path: `/api/v1/nodes/${nodeId}/stickers`,
-      headers: {
-        authorization: `Bearer ${owner.accessToken}`,
-      },
-      body: {
-        stickers: [
-          {
-            stickerKey: 'sun',
-            x: 1000,
-            y: 2000,
-            zIndex: 1,
-          },
-        ],
-      },
-    });
-
-    expect(saveStickersResponse.statusCode).toBe(200);
 
     const deniedPlannerResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -679,36 +523,6 @@ describe('Planning integration', () => {
 
     expectTripNotFound(deniedDeleteResponse);
 
-    const deniedGetStickersResponse = await dispatchRequest(expressApp, {
-      method: 'GET',
-      path: `/api/v1/nodes/${nodeId}/stickers`,
-      headers: {
-        authorization: `Bearer ${otherTraveler.accessToken}`,
-      },
-    });
-
-    expectTripNotFound(deniedGetStickersResponse);
-
-    const deniedSaveStickersResponse = await dispatchRequest(expressApp, {
-      method: 'PUT',
-      path: `/api/v1/nodes/${nodeId}/stickers`,
-      headers: {
-        authorization: `Bearer ${otherTraveler.accessToken}`,
-      },
-      body: {
-        stickers: [
-          {
-            stickerKey: 'moon',
-            x: 3000,
-            y: 4000,
-            zIndex: 1,
-          },
-        ],
-      },
-    });
-
-    expectTripNotFound(deniedSaveStickersResponse);
-
     const ownerPlannerResponse = await dispatchRequest(expressApp, {
       method: 'GET',
       path: `/api/v1/trips/${tripId}/planner`,
@@ -729,32 +543,6 @@ describe('Planning integration', () => {
     expect(ownerPlannerBody.success).toBe(true);
     expect(ownerPlannerBody.data.nodes.map((node) => node.title)).toEqual([
       'Owner breakfast',
-    ]);
-
-    const ownerStickersResponse = await dispatchRequest(expressApp, {
-      method: 'GET',
-      path: `/api/v1/nodes/${nodeId}/stickers`,
-      headers: {
-        authorization: `Bearer ${owner.accessToken}`,
-      },
-    });
-    const ownerStickersBody = ownerStickersResponse.body as {
-      success: boolean;
-      data: Array<{
-        stickerKey: string;
-        x: number;
-        y: number;
-      }>;
-    };
-
-    expect(ownerStickersResponse.statusCode).toBe(200);
-    expect(ownerStickersBody.success).toBe(true);
-    expect(ownerStickersBody.data).toEqual([
-      expect.objectContaining({
-        stickerKey: 'sun',
-        x: 1000,
-        y: 2000,
-      }),
     ]);
   });
 

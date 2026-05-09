@@ -77,6 +77,9 @@ describe('Swagger docs integration', () => {
       expect(authorizedDocsJsonBody.paths).not.toHaveProperty(
         '/api/v1/trips/{tripId}/itinerary/days',
       );
+      expect(authorizedDocsJsonBody.paths).not.toHaveProperty(
+        '/api/v1/nodes/{nodeId}/stickers',
+      );
     } finally {
       await app.close();
     }

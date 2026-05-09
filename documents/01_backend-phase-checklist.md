@@ -284,6 +284,21 @@ Status: `In progress`
   - comment endpoints
   - production smoke thật sau deploy
 
+### Focused cleanup slice 08-C - remove legacy planner sticker endpoints
+
+- Scope của lượt này:
+  - [x] xác nhận frontend/source of truth không còn caller active cho `GET/PUT /api/v1/nodes/:nodeId/stickers`
+  - [x] gỡ backend controller/service/provider/test wiring chỉ phục vụ planner sticker legacy path
+  - [x] không đổi contract planner tree chính trên `GET /trips/:id/planner`, `POST /nodes`, `PATCH /nodes/:id`, `DELETE /nodes/:id`
+- Target cases trong lượt này:
+  - [x] Swagger không còn lộ planner sticker endpoints
+  - [x] integration/e2e planning suite không còn phụ thuộc sticker API
+  - [x] README/checklist/backend docs không còn mô tả sticker API là active contract planner
+- Deferred rõ:
+  - cleanup persistence/schema cho dữ liệu sticker nếu sau này xác nhận không cần giữ historical artifacts
+  - comment endpoints
+  - production smoke thật sau deploy
+
 - [ ] Rà lại tất cả response envelopes theo DRD
 - [x] Rà app error code:
   - [x] `AUTH_INVALID_CREDENTIALS`
