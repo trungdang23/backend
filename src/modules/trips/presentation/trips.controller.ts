@@ -9,9 +9,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { buildSuccessResponse } from '../../../app/http/api-response';
+import {
+  ApiErrorEnvelopeResponse,
+  ApiPaginatedSuccessEnvelopeResponse,
+  ApiSuccessEnvelopeResponse,
+} from '../../../app/http/swagger-response.decorators';
 import type { AuthenticatedUser } from '../../auth/application/authenticated-user';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
@@ -40,6 +45,15 @@ export class TripsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new trip owned by the authenticated user.' })
+  @ApiSuccessEnvelopeResponse(TripResponseDto, {
+    description: 'Returns the newly created trip.',
+    status: 201,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the trip payload.',
+    status: 400,
+  })
   async create(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Body() input: CreateTripRequestDto,
@@ -65,6 +79,15 @@ export class TripsController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List trips owned by the authenticated user.' })
+  @ApiPaginatedSuccessEnvelopeResponse(
+    TripResponseDto,
+    'Returns the authenticated user trip list with pagination metadata.',
+  )
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for one or more trip query parameters.',
+    status: 400,
+  })
   async list(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Query() query: ListTripsQueryDto,
@@ -92,6 +115,14 @@ export class TripsController {
   }
 
   @Get(':tripId')
+  @ApiOperation({ summary: 'Get a single owned trip by id.' })
+  @ApiSuccessEnvelopeResponse(TripResponseDto, {
+    description: 'Returns the requested owned trip.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async detail(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -105,6 +136,18 @@ export class TripsController {
   }
 
   @Patch(':tripId')
+  @ApiOperation({ summary: 'Update an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripResponseDto, {
+    description: 'Returns the updated trip.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the trip update payload.',
+    status: 400,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async update(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -132,6 +175,14 @@ export class TripsController {
   }
 
   @Delete(':tripId')
+  @ApiOperation({ summary: 'Delete an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripResponseDto, {
+    description: 'Returns the deleted trip snapshot.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async delete(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,

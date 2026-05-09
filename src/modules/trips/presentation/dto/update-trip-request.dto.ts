@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsIn,
@@ -24,22 +25,30 @@ import { ISO_DATE_REGEX } from '../../domain/trip-date-range';
 import { TRIP_VISIBILITIES } from '../../domain/trip-visibility';
 
 export class UpdateTripRequestDto {
+  @ApiPropertyOptional({ maxLength: MAX_TRIP_NAME_LENGTH })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(MAX_TRIP_NAME_LENGTH)
   name?: string;
 
+  @ApiPropertyOptional({ maxLength: MAX_TRIP_DESTINATION_LENGTH, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(MAX_TRIP_DESTINATION_LENGTH)
   destination?: string | null;
 
+  @ApiPropertyOptional({ maxLength: MAX_TRIP_SUMMARY_NOTES_LENGTH, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(MAX_TRIP_SUMMARY_NOTES_LENGTH)
   summaryNotes?: string | null;
 
+  @ApiPropertyOptional({
+    maxLength: MAX_TRIP_COVER_IMAGE_URL_LENGTH,
+    nullable: true,
+    format: 'uri',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(MAX_TRIP_COVER_IMAGE_URL_LENGTH)
@@ -49,20 +58,24 @@ export class UpdateTripRequestDto {
   })
   coverImageUrl?: string | null;
 
+  @ApiPropertyOptional({ example: '2026-07-12' })
   @IsOptional()
   @IsString()
   @Matches(ISO_DATE_REGEX)
   startDate?: string;
 
+  @ApiPropertyOptional({ example: '2026-07-15' })
   @IsOptional()
   @IsString()
   @Matches(ISO_DATE_REGEX)
   endDate?: string;
 
+  @ApiPropertyOptional({ nullable: true, example: 'Asia/Ho_Chi_Minh' })
   @IsOptional()
   @IsString()
   timezone?: string | null;
 
+  @ApiPropertyOptional({ minimum: 0, maximum: MAX_TRIP_BUDGET_AMOUNT })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -70,16 +83,19 @@ export class UpdateTripRequestDto {
   @Max(MAX_TRIP_BUDGET_AMOUNT)
   budgetAmount?: number;
 
+  @ApiPropertyOptional({ example: 'VND' })
   @IsOptional()
   @IsString()
   @Matches(/^[a-zA-Z]{3}$/)
   budgetCurrency?: string;
 
+  @ApiPropertyOptional({ enum: TRIP_BUDGET_MODES })
   @IsOptional()
   @IsString()
   @IsIn(TRIP_BUDGET_MODES)
   budgetMode?: string;
 
+  @ApiPropertyOptional({ minimum: 0, maximum: MAX_TRIP_BUDGET_AMOUNT, nullable: true })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -87,11 +103,13 @@ export class UpdateTripRequestDto {
   @Max(MAX_TRIP_BUDGET_AMOUNT)
   manualBudgetAmount?: number | null;
 
+  @ApiPropertyOptional({ example: 'VND', nullable: true })
   @IsOptional()
   @IsString()
   @Matches(/^[a-zA-Z]{3}$/)
   manualBudgetCurrency?: string | null;
 
+  @ApiPropertyOptional({ enum: TRIP_VISIBILITIES })
   @IsOptional()
   @IsString()
   @IsIn(TRIP_VISIBILITIES)

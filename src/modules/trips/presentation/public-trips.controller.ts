@@ -1,7 +1,12 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { buildSuccessResponse } from '../../../app/http/api-response';
+import {
+  ApiErrorEnvelopeResponse,
+  ApiPaginatedSuccessEnvelopeResponse,
+  ApiSuccessEnvelopeResponse,
+} from '../../../app/http/swagger-response.decorators';
 import { Public } from '../../auth/presentation/decorators/public.decorator';
 import { GetPublicTripDetailService } from '../application/services/get-public-trip-detail.service';
 import { ListPublicTripsService } from '../application/services/list-public-trips.service';
@@ -19,6 +24,15 @@ export class PublicTripsController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'List public trips available for discovery.' })
+  @ApiPaginatedSuccessEnvelopeResponse(
+    TripResponseDto,
+    'Returns public trips with pagination metadata.',
+  )
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for one or more public trip query parameters.',
+    status: 400,
+  })
   async list(@Query() query: ListTripsQueryDto) {
     const page = query.page ?? 0;
     const size = query.size ?? 20;
@@ -42,6 +56,18 @@ export class PublicTripsController {
   }
 
   @Get(':tripId')
+  @ApiOperation({ summary: 'Get a public trip by id.' })
+  @ApiSuccessEnvelopeResponse(TripResponseDto, {
+    description: 'Returns the requested public trip.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The trip is private and cannot be read on the public route.',
+    status: 403,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested public trip does not exist.',
+    status: 404,
+  })
   async detail(@Param('tripId') tripId: string) {
     const trip = await this.getPublicTripDetail.execute(tripId);
 

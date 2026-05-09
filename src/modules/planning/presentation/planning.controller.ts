@@ -9,8 +9,17 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
+import {
+  ApiErrorEnvelopeResponse,
+  ApiSuccessEnvelopeResponse,
+} from '../../../app/http/swagger-response.decorators';
 import type { AuthenticatedUser } from '../../auth/application/authenticated-user';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
@@ -36,6 +45,14 @@ export class PlanningController {
   ) {}
 
   @Get('trips/:tripId/planner')
+  @ApiOperation({ summary: 'Get the full planner tree for an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripPlannerResponseDto, {
+    description: 'Returns the owned trip and its full planner node tree.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async getPlanner(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -49,6 +66,19 @@ export class PlanningController {
   }
 
   @Post('nodes')
+  @ApiOperation({ summary: 'Create a planner node inside an owned trip.' })
+  @ApiSuccessEnvelopeResponse(PlanNodeResponseDto, {
+    description: 'Returns the newly created planner node.',
+    status: 201,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the planner node payload.',
+    status: 400,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The target trip or parent node does not exist for the authenticated user.',
+    status: 404,
+  })
   async createNode(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Body() input: CreatePlanNodeRequestDto,
@@ -72,6 +102,18 @@ export class PlanningController {
   }
 
   @Patch('nodes/:nodeId')
+  @ApiOperation({ summary: 'Update an owned planner node.' })
+  @ApiSuccessEnvelopeResponse(PlanNodeResponseDto, {
+    description: 'Returns the updated planner node.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the planner node update payload.',
+    status: 400,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested planner node does not exist for the authenticated user.',
+    status: 404,
+  })
   async updateNode(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('nodeId') nodeId: string,
@@ -96,6 +138,14 @@ export class PlanningController {
 
   @Delete('nodes/:nodeId')
   @HttpCode(204)
+  @ApiOperation({ summary: 'Delete an owned planner node.' })
+  @ApiNoContentResponse({
+    description: 'Deletes the planner node and any owned descendants.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested planner node does not exist for the authenticated user.',
+    status: 404,
+  })
   async deleteNode(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('nodeId') nodeId: string,

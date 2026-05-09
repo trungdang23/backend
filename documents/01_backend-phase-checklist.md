@@ -299,6 +299,21 @@ Status: `In progress`
   - comment endpoints
   - production smoke thật sau deploy
 
+### Focused hardening slice 08-D - Swagger envelope and primary DTO docs
+
+- Scope của lượt này:
+  - [x] chuẩn hóa Swagger cho `auth`, `trips`, `planning`, `posts` theo envelope `success/data/meta` đang dùng thật ở runtime
+  - [x] bổ sung request/query DTO metadata cho các endpoint chính của 4 nhóm trên
+  - [x] không đổi route path hoặc payload runtime hiện tại
+- Target cases trong lượt này:
+  - [x] public auth endpoints không còn bị Swagger đánh dấu bearer auth sai
+  - [x] list endpoints mô tả rõ `meta.page/size/sort/totalElements/totalPages`
+  - [x] request/query DTO chính có field docs rõ ràng cho Swagger UI
+  - [x] swagger integration test khóa lại các schema chính của `auth/trips/planning/posts`
+- Deferred rõ:
+  - journal/budgets/public journal/public trips Swagger sweep sâu hơn
+  - production smoke thật sau deploy
+
 - [ ] Rà lại tất cả response envelopes theo DRD
 - [x] Rà app error code:
   - [x] `AUTH_INVALID_CREDENTIALS`
@@ -308,7 +323,7 @@ Status: `In progress`
   - [x] `PERMISSION_DENIED`
 - [x] Rà ownership và authorization cho auth/trips/planner/posts
 - [ ] Rà validation toàn bộ DTO chính
-- [ ] Rà Swagger cho auth/trips/planner/posts
+- [x] Rà Swagger cho auth/trips/planner/posts
 - [ ] Rà migration rollback notes
 - [ ] Smoke test production sau deploy:
   - auth

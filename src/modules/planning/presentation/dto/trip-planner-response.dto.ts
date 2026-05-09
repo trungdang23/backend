@@ -4,19 +4,14 @@ import type { TripPlannerResult } from '../../application/services/get-trip-plan
 import { TripResponseDto } from '../../../trips/presentation/dto/trip-response.dto';
 import { PlanNodeResponseDto } from './plan-node-response.dto';
 
-class TripPlannerPayloadDto {
+export class TripPlannerResponseDto {
   @ApiProperty({ type: TripResponseDto })
   trip!: TripResponseDto;
 
   @ApiProperty({ type: [PlanNodeResponseDto] })
   nodes!: PlanNodeResponseDto[];
-}
 
-export class TripPlannerResponseDto {
-  @ApiProperty({ type: TripPlannerPayloadDto })
-  data!: TripPlannerPayloadDto;
-
-  static from(result: TripPlannerResult): TripPlannerPayloadDto {
+  static from(result: TripPlannerResult): TripPlannerResponseDto {
     return {
       trip: TripResponseDto.from(result.trip),
       nodes: result.nodes.map((node) => PlanNodeResponseDto.from(node)),
