@@ -398,6 +398,12 @@ Machine-readable error response phải giữ pattern hiện có của app.
 - upload media binary
 - SEO/Open Graph cho post detail
 
+## Rollback note
+
+- `posts` là slice additive; nếu community rollout bị lỗi, ưu tiên disable controller/service wiring của `POST /api/v1/posts`, `GET /api/v1/posts`, và `GET /api/v1/posts/:postId` thay vì chạm nóng vào `trips` hay auth contract.
+- Không rollback bằng cách đổi `Trip.visibility` hoặc sửa dữ liệu post/trip liên kết hàng loạt trừ khi đã xác nhận có drift ở persistence.
+- Nếu cần rollback ngắn hạn, giữ nguyên schema `Post` và read model hiện tại, nhưng ngắt exposure ở HTTP layer để owner trips/auth không bị regression dây chuyền.
+
 ## Definition of done cho Phase 07
 
 Phase này chỉ được gọi là done khi:

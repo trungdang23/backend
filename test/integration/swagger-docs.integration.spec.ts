@@ -12,6 +12,10 @@ import { InMemoryUserRepository } from '../support/in-memory-user-repository';
 type SwaggerSchemaProperty = {
   $ref?: string;
   example?: boolean;
+  items?: {
+    $ref?: string;
+  };
+  type?: string;
 };
 
 type SwaggerOperationResponse = {
@@ -24,6 +28,17 @@ type SwaggerOperationResponse = {
   };
 };
 
+type SwaggerRequestBody = {
+  content?: Record<
+    string,
+    {
+      schema?: {
+        $ref?: string;
+      };
+    }
+  >;
+};
+
 type SwaggerParameter = {
   name: string;
   schema?: {
@@ -33,7 +48,7 @@ type SwaggerParameter = {
 
 type SwaggerOperation = {
   security?: Array<Record<string, string[]>>;
-  requestBody?: unknown;
+  requestBody?: SwaggerRequestBody;
   parameters?: SwaggerParameter[];
   responses: Record<string, SwaggerOperationResponse>;
 };
@@ -105,6 +120,34 @@ describe('Swagger docs integration', () => {
         authorizedDocsJsonBody.paths['/api/v1/trips'].get;
       const ownedPlannerOperation =
         authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/planner'].get;
+      const ownedBudgetOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/budget-summary']
+          .get;
+      const ownedJournalListOperation =
+        authorizedDocsJsonBody.paths['/api/v1/journals/mine'].get;
+      const ownedJournalGetOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/journal'].get;
+      const ownedJournalSaveOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/journal'].put;
+      const ownedJournalVisibilityOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/journal'].patch;
+      const journalAssetUploadOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/journal/assets']
+          .post;
+      const journalAssetListOperation =
+        authorizedDocsJsonBody.paths['/api/v1/trips/{tripId}/journal/assets']
+          .get;
+      const publicTripsListOperation =
+        authorizedDocsJsonBody.paths['/api/v1/public/trips'].get;
+      const publicTripDetailOperation =
+        authorizedDocsJsonBody.paths['/api/v1/public/trips/{tripId}'].get;
+      const publicJournalListOperation =
+        authorizedDocsJsonBody.paths['/api/v1/public/journals'].get;
+      const publicJournalDetailOperation =
+        authorizedDocsJsonBody.paths['/api/v1/public/trips/{tripId}/journal']
+          .get;
+      const journalAssetReadOperation =
+        authorizedDocsJsonBody.paths['/api/v1/journal-assets/{publicId}'].get;
       const createPostOperation =
         authorizedDocsJsonBody.paths['/api/v1/posts'].post;
 
@@ -137,6 +180,10 @@ describe('Swagger docs integration', () => {
           .properties.data.$ref,
       ).toContain('AuthSessionResponseDto');
       expect(currentUserOperation.security).toEqual([{ bearer: [] }]);
+      expect(publicTripsListOperation.security).toBeUndefined();
+      expect(publicTripDetailOperation.security).toBeUndefined();
+      expect(publicJournalListOperation.security).toBeUndefined();
+      expect(publicJournalDetailOperation.security).toBeUndefined();
       const sortParameter = ownedTripsListOperation.parameters?.find(
         (parameter) => parameter.name === 'sort',
       );
@@ -170,6 +217,71 @@ describe('Swagger docs integration', () => {
         ownedPlannerOperation.responses['200'].content['application/json']
           .schema.properties.data.$ref,
       ).toContain('TripPlannerResponseDto');
+      expect(
+        ownedBudgetOperation.responses['200'].content['application/json'].schema
+          .properties.data.$ref,
+      ).toContain('BudgetSummaryResponseDto');
+      expect(ownedJournalListOperation.security).toEqual([{ bearer: [] }]);
+      expect(ownedJournalGetOperation.security).toEqual([{ bearer: [] }]);
+      expect(ownedJournalSaveOperation.security).toEqual([{ bearer: [] }]);
+      expect(ownedJournalVisibilityOperation.security).toEqual([
+        { bearer: [] },
+      ]);
+      expect(ownedJournalSaveOperation.requestBody).toBeDefined();
+      expect(
+        ownedJournalSaveOperation.requestBody?.content?.[
+          'application/json'
+        ]?.schema?.$ref,
+      ).toContain('SaveTripJournalRequestDto');
+      expect(
+        ownedJournalListOperation.responses['200'].content['application/json']
+          .schema.properties.data.type,
+      ).toBe('array');
+      expect(
+        ownedJournalListOperation.responses['200'].content['application/json']
+          .schema.properties.data.items?.$ref,
+      ).toContain('TripJournalResponseDto');
+      expect(
+        ownedJournalGetOperation.responses['200'].content['application/json']
+          .schema.properties.data.$ref,
+      ).toContain('TripJournalResponseDto');
+      expect(
+        journalAssetUploadOperation.requestBody?.content?.[
+          'multipart/form-data'
+        ]?.schema?.$ref,
+      ).toContain('UploadTripJournalAssetRequestDto');
+      expect(
+        journalAssetUploadOperation.responses['201'].content[
+          'application/json'
+        ].schema.properties.data.$ref,
+      ).toContain('TripJournalAssetUploadResponseDto');
+      expect(
+        journalAssetListOperation.responses['200'].content['application/json']
+          .schema.properties.data.$ref,
+      ).toContain('TripJournalAssetListResponseDto');
+      expect(
+        publicJournalListOperation.responses['200'].content['application/json']
+          .schema.properties.data.type,
+      ).toBe('array');
+      expect(
+        publicJournalListOperation.responses['200'].content['application/json']
+          .schema.properties.data.items?.$ref,
+      ).toContain('TripJournalResponseDto');
+      expect(
+        publicJournalDetailOperation.responses['200'].content[
+          'application/json'
+        ].schema.properties.data.$ref,
+      ).toContain('TripJournalResponseDto');
+      expect(journalAssetReadOperation.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: 'expiresAt',
+          }),
+          expect.objectContaining({
+            name: 'signature',
+          }),
+        ]),
+      );
       expect(createPostOperation.responses).toHaveProperty('201');
       expect(
         createPostOperation.responses['201'].content['application/json']

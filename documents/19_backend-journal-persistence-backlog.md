@@ -127,3 +127,17 @@ Dong cac journal asset URL dang public/unlisted bang signed URL co TTL, de anh t
 - cloud/object storage provider production-ready
 - cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
 - cleanup file vat ly khi trip bi xoa qua `DELETE /trips/:tripId`
+
+## Rollback note
+
+- Journal persistence va asset flows chu yeu la additive quanh `trip_journals` va `trip_journal_assets`; neu rollout journal/public asset bi loi, uu tien rollback o muc controller/service wiring truoc khi tac dong vao du lieu da luu.
+- Neu signed asset delivery gay regression render, rollback phai di theo cap:
+  - response URL rewrite cho owner/public journal payload
+  - guard signature cua `GET /api/v1/journal-assets/:publicId`
+- Khong rollback mot nua duong dan signed URL trong khi giu nua con lai, vi frontend se nhan URL khong doc duoc hoac endpoint bi ho ra ngoai.
+- Cac migration journal hien tai gom:
+  - `20260503100000_add_trip_journals`
+  - `20260503143000_add_trip_journal_visibility`
+  - `20260503170000_limit_visibility_to_private_public`
+  - `20260506103000_add_trip_journal_assets`
+- Truoc khi rollback destructive bat ky migration nao o tren, can co backup va uu tien rollback bang source/runtime config vi cac bang nay da la contract active cua frontend.

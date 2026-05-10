@@ -93,19 +93,14 @@ class TripJournalDto {
   }
 }
 
-class TripJournalPayloadDto {
+export class TripJournalResponseDto {
   @ApiProperty({ type: TripResponseDto })
   trip!: TripResponseDto;
 
   @ApiProperty({ type: TripJournalDto })
   journal!: TripJournalDto;
-}
 
-export class TripJournalResponseDto {
-  @ApiProperty({ type: TripJournalPayloadDto })
-  data!: TripJournalPayloadDto;
-
-  static from(result: TripJournalResult): TripJournalPayloadDto {
+  static from(result: TripJournalResult): TripJournalResponseDto {
     return {
       trip: TripResponseDto.from(result.trip),
       journal: TripJournalDto.from(result.journal),
@@ -114,10 +109,7 @@ export class TripJournalResponseDto {
 }
 
 export class TripJournalListResponseDto {
-  @ApiProperty({ type: [TripJournalPayloadDto] })
-  data!: TripJournalPayloadDto[];
-
-  static from(results: TripJournalResult[]): TripJournalPayloadDto[] {
+  static from(results: TripJournalResult[]): TripJournalResponseDto[] {
     return results.map((result) => TripJournalResponseDto.from(result));
   }
 }

@@ -364,6 +364,17 @@ Thu gọn contract chia sẻ trip/planner về đúng hai trạng thái `private
 - slug URL theo `name`
 - public posts/comments bridge
 
+## Rollback note
+
+- Public trip/planner read và `copy` là lớp route/service additive; nếu rollout public flow bị lỗi, ưu tiên gỡ controller wiring của namespace `/api/v1/public/trips*` trước thay vì sửa nóng owner CRUD.
+- Không rollback bằng cách đổi dữ liệu `Trip.visibility` hàng loạt nếu chưa có incident cụ thể ở data layer; phần lớn lỗi phase này nên rollback ở mức route exposure hoặc service binding.
+- Nếu cần tắt nhanh public sharing, phải disable đồng thời:
+  - `GET /api/v1/public/trips`
+  - `GET /api/v1/public/trips/:tripId`
+  - `GET /api/v1/public/trips/:tripId/planner`
+  - `POST /api/v1/public/trips/:tripId/copy`
+- Sau rollback route exposure, owner-only trip/planner CRUD phải tiếp tục giữ nguyên contract và permission boundary hiện tại.
+
 ## Definition of done cho Phase 06
 
 Phase này chỉ được gọi là done khi:

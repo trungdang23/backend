@@ -1,21 +1,38 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 import type { TripJournalAsset } from '../../domain/trip-journal-asset';
 
-export interface TripJournalAssetDto {
-  id: string | null;
-  tripId: string;
-  fileName: string;
-  contentType: string;
-  byteSize: number;
-  url: string;
-  createdAt: string;
+export class TripJournalAssetDto {
+  @ApiProperty({ nullable: true })
+  id!: string | null;
+
+  @ApiProperty()
+  tripId!: string;
+
+  @ApiProperty()
+  fileName!: string;
+
+  @ApiProperty()
+  contentType!: string;
+
+  @ApiProperty()
+  byteSize!: number;
+
+  @ApiProperty()
+  url!: string;
+
+  @ApiProperty()
+  createdAt!: string;
 }
 
-export interface TripJournalAssetUploadResponseDto {
-  asset: TripJournalAssetDto;
+export class TripJournalAssetUploadResponseDto {
+  @ApiProperty({ type: TripJournalAssetDto })
+  asset!: TripJournalAssetDto;
 }
 
-export interface TripJournalAssetListResponseDto {
-  assets: TripJournalAssetDto[];
+export class TripJournalAssetListResponseDto {
+  @ApiProperty({ type: [TripJournalAssetDto] })
+  assets!: TripJournalAssetDto[];
 }
 
 export class TripJournalAssetResponseDto {

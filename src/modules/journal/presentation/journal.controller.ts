@@ -9,8 +9,17 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
+import {
+  ApiErrorEnvelopeResponse,
+  ApiSuccessEnvelopeResponse,
+} from '../../../app/http/swagger-response.decorators';
 import type { AuthenticatedUser } from '../../auth/application/authenticated-user';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
@@ -43,6 +52,18 @@ export class JournalController {
   ) {}
 
   @Get('journals/mine')
+  @ApiOperation({
+    summary: 'List journals owned by the authenticated user.',
+  })
+  @ApiSuccessEnvelopeResponse(TripJournalResponseDto, {
+    description:
+      'Returns the authenticated user journal list with trip metadata.',
+    isArray: true,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
   async listMine(@CurrentUser() authenticatedUser: AuthenticatedUser) {
     const results = await this.listUserJournals.execute({
       userId: authenticatedUser.userId,
@@ -54,6 +75,19 @@ export class JournalController {
   }
 
   @Get('trips/:tripId/journal')
+  @ApiOperation({ summary: 'Get the journal scene for an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripJournalResponseDto, {
+    description:
+      'Returns the owned trip and its current journal scene snapshot.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async getJournal(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -69,6 +103,22 @@ export class JournalController {
   }
 
   @Put('trips/:tripId/journal')
+  @ApiOperation({ summary: 'Create or replace the journal scene for an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripJournalResponseDto, {
+    description: 'Returns the saved journal scene snapshot.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the journal scene payload.',
+    status: 400,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async saveJournal(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -88,6 +138,22 @@ export class JournalController {
   }
 
   @Patch('trips/:tripId/journal')
+  @ApiOperation({ summary: 'Update journal visibility for an owned trip.' })
+  @ApiSuccessEnvelopeResponse(TripJournalResponseDto, {
+    description: 'Returns the owned trip journal after the visibility update.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Validation failed for the journal visibility payload.',
+    status: 400,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async updateJournal(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,
@@ -106,6 +172,18 @@ export class JournalController {
 
   @Delete('trips/:tripId/journal')
   @HttpCode(204)
+  @ApiOperation({ summary: 'Delete the journal scene for an owned trip.' })
+  @ApiNoContentResponse({
+    description: 'Deletes the owned trip journal scene.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
   async deleteJournal(
     @CurrentUser() authenticatedUser: AuthenticatedUser,
     @Param('tripId') tripId: string,

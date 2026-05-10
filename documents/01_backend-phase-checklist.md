@@ -314,6 +314,28 @@ Status: `In progress`
   - journal/budgets/public journal/public trips Swagger sweep sâu hơn
   - production smoke thật sau deploy
 
+### Focused hardening slice 08-E - journal, budgets, and public contract sweep
+
+- Scope của lượt này:
+  - [x] rà Swagger/envelope/DTO docs cho `journal`, `journal assets`, `budgets`, `public trips`, và `public journals`
+  - [x] rà validation DTO chính còn lại trong các module trên
+  - [x] bổ sung rollback notes cho các migration/runtime contract đã chạm trong phase 05-07 khi cần
+  - [x] không đổi endpoint path hoặc success payload runtime hiện tại, trừ khi fix drift rõ ràng giữa source và docs/test
+- Target cases trong lượt này:
+  - [x] owner/public journal endpoints có Swagger docs đúng auth requirement và response envelope
+  - [x] budget/public trip/public journal list-detail endpoints có DTO/query docs đủ dùng trong Swagger UI
+  - [x] swagger integration test khóa lại schema chính của `journal`, `budgets`, `public trips`
+  - [x] docs phase/checklist/rollback notes không còn thiếu chỗ dựa vận hành cho các slice đã release
+- Verification:
+  - [x] targeted `swagger-docs.integration.spec.ts`
+  - [x] targeted `journal.integration.spec.ts`
+  - [x] backend lint
+  - [x] backend build
+- Deferred rõ:
+  - production smoke thật sau deploy
+  - comment endpoints
+  - cloud/object storage production-ready cho journal assets
+
 - [ ] Rà lại tất cả response envelopes theo DRD
 - [x] Rà app error code:
   - [x] `AUTH_INVALID_CREDENTIALS`
@@ -322,9 +344,9 @@ Status: `In progress`
   - [x] `NODE_VALIDATION_ERROR`
   - [x] `PERMISSION_DENIED`
 - [x] Rà ownership và authorization cho auth/trips/planner/posts
-- [ ] Rà validation toàn bộ DTO chính
+- [x] Rà validation toàn bộ DTO chính
 - [x] Rà Swagger cho auth/trips/planner/posts
-- [ ] Rà migration rollback notes
+- [x] Rà migration rollback notes
 - [ ] Smoke test production sau deploy:
   - auth
   - trips
