@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../../shared/infrastructure/prisma/prisma.module';
 import { POST_REPOSITORY } from './application/ports/post-repository.port';
 import { CreatePostService } from './application/services/create-post.service';
+import { DeletePostService } from './application/services/delete-post.service';
 import { GetPostDetailService } from './application/services/get-post-detail.service';
 import { ListPublicPostsService } from './application/services/list-public-posts.service';
 import { ListUserPostsService } from './application/services/list-user-posts.service';
@@ -18,6 +19,7 @@ import { PostsController } from './presentation/posts.controller';
   controllers: [PostsController],
   providers: [
     CreatePostService,
+    DeletePostService,
     GetPostDetailService,
     ListPublicPostsService,
     ListUserPostsService,

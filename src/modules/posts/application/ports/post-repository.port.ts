@@ -37,6 +37,7 @@ export interface ListUserPostsResult {
 
 export interface PostRepositoryPort {
   create(input: CreatePostRecordInput): Promise<Post>;
+  deleteById(postId: string): Promise<Post | null>;
   findById(postId: string): Promise<Post | null>;
   listPublic(input: ListPublicPostsInput): Promise<ListPublicPostsResult>;
   listByUser(input: ListUserPostsInput): Promise<ListUserPostsResult>;

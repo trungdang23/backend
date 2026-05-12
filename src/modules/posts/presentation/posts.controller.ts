@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -20,6 +21,7 @@ import { Public } from '../../auth/presentation/decorators/public.decorator';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
 import { CreatePostService } from '../application/services/create-post.service';
+import { DeletePostService } from '../application/services/delete-post.service';
 import { GetPostDetailService } from '../application/services/get-post-detail.service';
 import { ListPublicPostsService } from '../application/services/list-public-posts.service';
 import { ListUserPostsService } from '../application/services/list-user-posts.service';
@@ -33,6 +35,7 @@ import { formatPostSort, parsePostSort } from './post-sort-query';
 export class PostsController {
   constructor(
     private readonly createPost: CreatePostService,
+    private readonly deletePost: DeletePostService,
     private readonly getPostDetail: GetPostDetailService,
     private readonly listPublicPosts: ListPublicPostsService,
     private readonly listUserPosts: ListUserPostsService,
@@ -146,6 +149,30 @@ export class PostsController {
         totalPages: Math.ceil(result.totalElements / size),
       },
     );
+  }
+
+  @Delete(':postId')
+  @ApiBearerAuth()
+  @UseGuards(AccessTokenAuthGuard)
+  @ApiOperation({ summary: 'Delete an owned post by id.' })
+  @ApiSuccessEnvelopeResponse(PostResponseDto, {
+    description: 'Returns the deleted post snapshot.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested post does not exist or is not owned by the authenticated user.',
+    status: 404,
+  })
+  async delete(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('postId') postId: string,
+  ) {
+    const post = await this.deletePost.execute({ postId });
+
+    return PostResponseDto.from(post);
   }
 
   @Get(':postId')

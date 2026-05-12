@@ -31,6 +31,22 @@ export class PrismaPostRepository implements PostRepositoryPort {
     return toPost(record);
   }
 
+  async deleteById(postId: string): Promise<Post | null> {
+    const record = await this.prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (record === null) {
+      return null;
+    }
+
+    await this.prisma.post.delete({
+      where: { id: postId },
+    });
+
+    return toPost(record);
+  }
+
   async findById(postId: string): Promise<Post | null> {
     const record = await this.prisma.post.findUnique({
       where: {
