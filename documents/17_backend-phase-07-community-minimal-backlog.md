@@ -102,6 +102,7 @@ Ví dụ:
 
 - `author.id`
 - `author.displayName`
+- `author.avatarUrl`
 - `trip.id`
 - `trip.name`
 - `trip.coverImageUrl`
@@ -110,6 +111,7 @@ Lý do:
 
 - frontend không cần gọi thêm `users` hoặc `trips` chỉ để render feed
 - community card/detail đủ dữ liệu để hiển thị ngay
+- public trip/journal discovery cũng cần owner summary để feed hiển thị người đăng nhất quán
 
 ## 5. Pagination giữ pattern hiện có của app
 

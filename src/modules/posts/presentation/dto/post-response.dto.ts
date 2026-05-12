@@ -9,6 +9,9 @@ class PostAuthorSummaryDto {
 
   @ApiPropertyOptional({ nullable: true })
   displayName!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  avatarUrl!: string | null;
 }
 
 class PostTripSummaryDto {
@@ -70,6 +73,7 @@ export class PostResponseDto {
       author: {
         id: post.author.id,
         displayName: post.author.displayName,
+        avatarUrl: post.author.avatarUrl,
       },
       trip:
         post.trip === null

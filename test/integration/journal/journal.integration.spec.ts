@@ -770,6 +770,11 @@ describe('Journal integration', () => {
       success: boolean;
       data: {
         trip: {
+          author: {
+            avatarUrl: string | null;
+            displayName: string | null;
+            id: string;
+          };
           id: string;
           visibility: string;
         };
@@ -786,6 +791,8 @@ describe('Journal integration', () => {
     expect(sharedResponse.statusCode).toBe(200);
     expect(sharedBody.success).toBe(true);
     expect(sharedBody.data.trip.id).toBe(sharedTripId);
+    expect(sharedBody.data.trip.author.displayName).toBe('Journal Traveler');
+    expect(sharedBody.data.trip.author.avatarUrl).toBeNull();
     expect(sharedBody.data.trip.visibility).toBe('private');
     expect(sharedBody.data.journal.id).toBe('journal-1');
     expect(sharedBody.data.journal.visibility).toBe('public');
@@ -800,6 +807,11 @@ describe('Journal integration', () => {
     const publicJournalsBody = publicJournalsResponse.body as {
       data: Array<{
         trip: {
+          author: {
+            avatarUrl: string | null;
+            displayName: string | null;
+            id: string;
+          };
           id: string;
         };
         journal: {
@@ -811,6 +823,9 @@ describe('Journal integration', () => {
     expect(publicJournalsResponse.statusCode).toBe(200);
     expect(publicJournalsBody.data).toHaveLength(1);
     expect(publicJournalsBody.data[0]?.trip.id).toBe(sharedTripId);
+    expect(publicJournalsBody.data[0]?.trip.author.displayName).toBe(
+      'Journal Traveler',
+    );
     expect(publicJournalsBody.data[0]?.journal.visibility).toBe('public');
 
     const privateResponse = await dispatchRequest(expressApp, {

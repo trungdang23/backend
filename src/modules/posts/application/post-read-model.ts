@@ -1,6 +1,7 @@
 export interface PostAuthorSummary {
   id: string;
   displayName: string | null;
+  avatarUrl: string | null;
 }
 
 export interface PostTripSummary {

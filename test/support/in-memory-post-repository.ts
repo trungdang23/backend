@@ -35,6 +35,16 @@ export class InMemoryPostRepository implements PostRepositoryPort {
     return Promise.resolve(this.posts.get(postId) ?? null);
   }
 
+  deleteById(postId: string): Promise<Post | null> {
+    const post = this.posts.get(postId) ?? null;
+
+    if (post !== null) {
+      this.posts.delete(postId);
+    }
+
+    return Promise.resolve(post);
+  }
+
   listPublic(input: ListPublicPostsInput): Promise<ListPublicPostsResult> {
     const filteredPosts = Array.from(this.posts.values())
       .filter((post) => post.visibility === 'public')

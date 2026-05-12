@@ -6,6 +6,7 @@ import {
   ApiSuccessEnvelopeResponse,
 } from '../../../app/http/swagger-response.decorators';
 import { Public } from '../../auth/presentation/decorators/public.decorator';
+import { TripAuthorPresenterService } from '../../trips/application/services/trip-author-presenter.service';
 import { GetPublicTripJournalService } from '../application/services/get-public-trip-journal.service';
 import { ListPublicJournalsService } from '../application/services/list-public-journals.service';
 import { PresentTripJournalService } from '../application/services/present-trip-journal.service';
@@ -22,6 +23,7 @@ export class PublicJournalController {
     private readonly getPublicTripJournal: GetPublicTripJournalService,
     private readonly listPublicJournals: ListPublicJournalsService,
     private readonly presentTripJournal: PresentTripJournalService,
+    private readonly tripAuthorPresenter: TripAuthorPresenterService,
   ) {}
 
   @Get('public/journals')
@@ -31,11 +33,14 @@ export class PublicJournalController {
     isArray: true,
   })
   async listJournals() {
-    const results = await this.listPublicJournals.execute();
-
-    return TripJournalListResponseDto.from(
-      await this.presentTripJournal.presentMany(results),
+    const results = await this.presentTripJournal.presentMany(
+      await this.listPublicJournals.execute(),
     );
+    const authorsByTripId = await this.tripAuthorPresenter.presentMany(
+      results.map((result) => result.trip),
+    );
+
+    return TripJournalListResponseDto.from(results, authorsByTripId);
   }
 
   @Get('public/trips/:tripId/journal')
@@ -55,7 +60,8 @@ export class PublicJournalController {
     const result = await this.presentTripJournal.present(
       await this.getPublicTripJournal.execute(tripId),
     );
+    const author = await this.tripAuthorPresenter.present(result.trip);
 
-    return TripJournalResponseDto.from(result);
+    return TripJournalResponseDto.from(result, author);
   }
 }

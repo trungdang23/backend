@@ -481,6 +481,11 @@ describe('Trips integration', () => {
     const detailBody = detailResponse.body as {
       success: boolean;
       data: {
+        author: {
+          avatarUrl: string | null;
+          displayName: string | null;
+          id: string;
+        };
         id: string;
         visibility: string;
       };
@@ -490,6 +495,11 @@ describe('Trips integration', () => {
     expect(detailBody.success).toBe(true);
     expect(detailBody.data.id).toBe(publicTripBody.data.id);
     expect(detailBody.data.visibility).toBe('public');
+    expect(detailBody.data.author).toEqual({
+      avatarUrl: null,
+      displayName: 'Traveler',
+      id: traveler.userId,
+    });
 
     const privateDetailResponse = await dispatchRequest(expressApp, {
       method: 'GET',
@@ -595,6 +605,11 @@ describe('Trips integration', () => {
     const listBody = listResponse.body as {
       success: boolean;
       data: Array<{
+        author: {
+          avatarUrl: string | null;
+          displayName: string | null;
+          id: string;
+        };
         name: string;
         visibility: string;
       }>;
@@ -612,6 +627,10 @@ describe('Trips integration', () => {
     expect(listBody.data.every((trip) => trip.visibility === 'public')).toBe(
       true,
     );
+    expect(listBody.data.map((trip) => trip.author.displayName)).toEqual([
+      'Traveler',
+      'Traveler',
+    ]);
     expect(listBody.meta.totalElements).toBe(2);
   });
 

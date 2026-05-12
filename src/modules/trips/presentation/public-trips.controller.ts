@@ -10,6 +10,7 @@ import {
 import { Public } from '../../auth/presentation/decorators/public.decorator';
 import { GetPublicTripDetailService } from '../application/services/get-public-trip-detail.service';
 import { ListPublicTripsService } from '../application/services/list-public-trips.service';
+import { TripAuthorPresenterService } from '../application/services/trip-author-presenter.service';
 import { ListTripsQueryDto } from './dto/list-trips-query.dto';
 import { TripResponseDto } from './dto/trip-response.dto';
 import { formatTripSort, parseTripSort } from './trip-sort-query';
@@ -21,6 +22,7 @@ export class PublicTripsController {
   constructor(
     private readonly getPublicTripDetail: GetPublicTripDetailService,
     private readonly listPublicTrips: ListPublicTripsService,
+    private readonly tripAuthorPresenter: TripAuthorPresenterService,
   ) {}
 
   @Get()
@@ -42,9 +44,14 @@ export class PublicTripsController {
       size,
       sort,
     });
+    const authorsByTripId = await this.tripAuthorPresenter.presentMany(
+      result.trips,
+    );
 
     return buildSuccessResponse(
-      result.trips.map((trip) => TripResponseDto.from(trip)),
+      result.trips.map((trip) =>
+        TripResponseDto.from(trip, authorsByTripId.get(trip.id)),
+      ),
       {
         page,
         size,
@@ -70,7 +77,8 @@ export class PublicTripsController {
   })
   async detail(@Param('tripId') tripId: string) {
     const trip = await this.getPublicTripDetail.execute(tripId);
+    const author = await this.tripAuthorPresenter.present(trip);
 
-    return TripResponseDto.from(trip);
+    return TripResponseDto.from(trip, author);
   }
 }

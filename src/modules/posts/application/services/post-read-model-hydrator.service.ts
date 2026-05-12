@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import type { UserRepositoryPort } from '../../../users/application/ports/user-repository.port';
 import { USER_REPOSITORY } from '../../../users/application/ports/user-repository.port';
+import { buildUserAvatarPath } from '../../../users/application/user-profile';
 import type { TripRepositoryPort } from '../../../trips/application/ports/trip-repository.port';
 import { TRIP_REPOSITORY } from '../../../trips/application/ports/trip-repository.port';
 import { Post } from '../../domain/post';
@@ -35,6 +36,7 @@ export class PostReadModelHydratorService {
       author: {
         id: post.userId,
         displayName: author?.displayName ?? null,
+        avatarUrl: toAvatarUrl(author?.avatarPublicId),
       },
       trip:
         trip !== null && trip.visibility === 'public'
@@ -90,6 +92,7 @@ export class PostReadModelHydratorService {
         author: {
           id: post.userId,
           displayName: author?.displayName ?? null,
+          avatarUrl: toAvatarUrl(author?.avatarPublicId),
         },
         trip:
           trip !== null && trip.visibility === 'public'
@@ -102,4 +105,10 @@ export class PostReadModelHydratorService {
       };
     });
   }
+}
+
+function toAvatarUrl(publicId: string | null | undefined): string | null {
+  return publicId === undefined || publicId === null
+    ? null
+    : buildUserAvatarPath(publicId);
 }

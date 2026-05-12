@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import type { TripJournalResult } from '../../application/services/get-trip-journal.service';
 import { TripResponseDto } from '../../../trips/presentation/dto/trip-response.dto';
+import type { TripAuthorSummary } from '../../../trips/application/services/trip-author-presenter.service';
 import type { JournalPage, JournalSceneObject } from '../../domain/trip-journal';
 import { TripJournal } from '../../domain/trip-journal';
 import { JOURNAL_VISIBILITIES } from '../../domain/journal-visibility';
@@ -100,16 +101,27 @@ export class TripJournalResponseDto {
   @ApiProperty({ type: TripJournalDto })
   journal!: TripJournalDto;
 
-  static from(result: TripJournalResult): TripJournalResponseDto {
+  static from(
+    result: TripJournalResult,
+    author?: TripAuthorSummary,
+  ): TripJournalResponseDto {
     return {
-      trip: TripResponseDto.from(result.trip),
+      trip: TripResponseDto.from(result.trip, author),
       journal: TripJournalDto.from(result.journal),
     };
   }
 }
 
 export class TripJournalListResponseDto {
-  static from(results: TripJournalResult[]): TripJournalResponseDto[] {
-    return results.map((result) => TripJournalResponseDto.from(result));
+  static from(
+    results: TripJournalResult[],
+    authorsByTripId = new Map<string, TripAuthorSummary>(),
+  ): TripJournalResponseDto[] {
+    return results.map((result) =>
+      TripJournalResponseDto.from(
+        result,
+        authorsByTripId.get(result.trip.id),
+      ),
+    );
   }
 }

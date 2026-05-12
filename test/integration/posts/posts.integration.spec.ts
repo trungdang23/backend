@@ -97,6 +97,7 @@ describe('Posts integration', () => {
         title: string;
         visibility: string;
         author: {
+          avatarUrl: string | null;
           displayName: string | null;
         };
         trip: {
@@ -112,6 +113,7 @@ describe('Posts integration', () => {
     expect(createBody.data.title).toBe('Ba ngày đi chậm lại ở Hoi An');
     expect(createBody.data.visibility).toBe('public');
     expect(createBody.data.author.displayName).toBe('posts.one');
+    expect(createBody.data.author.avatarUrl).toBeNull();
     expect(createBody.data.trip).toEqual({
       id: tripBody.data.id,
       name: 'Hoi An Slow Days',
@@ -128,6 +130,7 @@ describe('Posts integration', () => {
         id: string;
         title: string;
         author: {
+          avatarUrl: string | null;
           displayName: string | null;
         };
       }>;
@@ -145,6 +148,7 @@ describe('Posts integration', () => {
     expect(listBody.data).toHaveLength(1);
     expect(listBody.data[0]?.id).toBe(createBody.data.id);
     expect(listBody.data[0]?.author.displayName).toBe('posts.one');
+    expect(listBody.data[0]?.author.avatarUrl).toBeNull();
     expect(listBody.meta).toEqual({
       page: 0,
       size: 12,
@@ -163,6 +167,7 @@ describe('Posts integration', () => {
         id: string;
         content: string;
         author: {
+          avatarUrl: string | null;
           displayName: string | null;
         };
         trip: {
@@ -176,6 +181,7 @@ describe('Posts integration', () => {
     expect(detailBody.data.id).toBe(createBody.data.id);
     expect(detailBody.data.content).toContain('cafe và đi bộ');
     expect(detailBody.data.author.displayName).toBe('posts.one');
+    expect(detailBody.data.author.avatarUrl).toBeNull();
     expect(detailBody.data.trip?.id).toBe(tripBody.data.id);
   });
 
