@@ -77,10 +77,8 @@ Primary product contract:
 - `Trip.visibility = public` mở read-only public trip/planner và xuất hiện trong public trip discovery list; `private` bị chặn ở public route.
 - `TripJournal.visibility` là chế độ chia sẻ riêng của journal; public journal read không phụ thuộc `Trip.visibility`, và `GET /public/journals` chỉ discovery journal public.
 - Legacy itinerary support đã bị gỡ khỏi backend source sau khi runtime DB check `2026-05-08` xác nhận không còn row ở `trip_itinerary_days` và `trip_itinerary_activities`.
-- Khi triển khai tiếp, ưu tiên:
-  1. hoàn tất hardening và release safety cho public/community flows
-  2. rà Swagger/DTO/response envelope theo checklist phase 08
-  3. production smoke thật sau deploy cho auth/trips/planner/journal/public/posts
+- Phase 08 hardening đã hoàn tất: app error codes, ownership/authorization coverage, legacy sticker cleanup, Swagger envelope/DTO docs cho toàn bộ module, và response envelope sweep.
+- Production smoke test đã pass toàn bộ flow: auth, trips, planner, budget, journal, public trips/journals, posts.
 
 ## Run Local
 

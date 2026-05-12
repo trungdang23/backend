@@ -21,7 +21,12 @@ export class ApiResponseInterceptor implements NestInterceptor {
   ): Observable<unknown> {
     return next.handle().pipe(
       map((value: unknown) => {
-        if (isApiSuccessResponse(value) || isApiErrorResponse(value)) {
+        if (
+          value === undefined ||
+          value === null ||
+          isApiSuccessResponse(value) ||
+          isApiErrorResponse(value)
+        ) {
           return value;
         }
 

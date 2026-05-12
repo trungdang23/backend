@@ -22,6 +22,26 @@ describe('ApiResponseInterceptor', () => {
     });
   });
 
+  it('preserves undefined return values for 204 responses', async () => {
+    const next = {
+      handle: () => of(undefined),
+    } as CallHandler;
+
+    await expect(
+      lastValueFrom(interceptor.intercept(executionContext, next)),
+    ).resolves.toBeUndefined();
+  });
+
+  it('preserves null return values for 204 responses', async () => {
+    const next = {
+      handle: () => of(null),
+    } as CallHandler;
+
+    await expect(
+      lastValueFrom(interceptor.intercept(executionContext, next)),
+    ).resolves.toBeNull();
+  });
+
   it('preserves values that are already wrapped', async () => {
     const next = {
       handle: () =>
