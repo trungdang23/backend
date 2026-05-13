@@ -94,6 +94,11 @@ jobs:
         with:
           ref: ${{ env.DEPLOY_REF }}
 
+      - name: Capture deploy revision metadata
+        run: |
+          echo "DEPLOY_COMMIT_SHA=$(git rev-parse HEAD)" >> "${GITHUB_ENV}"
+          echo "DEPLOY_COMMIT_SHORT_SHA=$(git rev-parse --short HEAD)" >> "${GITHUB_ENV}"
+
       - name: Validate deploy configuration
         env:
           RUNTIME_DATABASE_URL: ${{ secrets.RUNTIME_DATABASE_URL }}
@@ -202,6 +207,7 @@ jobs:
           RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS: ${{ vars.RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS }}
           DEPLOY_COMMIT_SHA: ${{ env.DEPLOY_COMMIT_SHA }}
         run: |
+          test -n "${DEPLOY_COMMIT_SHA}"
           {
             printf 'NODE_ENV=production\n'
             printf 'APP_NAME=%s\n' "${RUNTIME_APP_NAME}"

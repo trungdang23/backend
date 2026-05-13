@@ -26,6 +26,18 @@
 - [x] thêm smoke `POST /api/v1/auth/me/avatar` không token phải trả `401` để chặn route mới bị thiếu mà health vẫn xanh
 - [x] ghi metadata release đã verify vào `${DEPLOY_PATH}/.deploy-release.json`
 
+## Current pass - 2026-05-13 - Cross-job deploy SHA propagation fix
+
+### Trigger
+
+- `Verify deployed runtime release` fail ngay với usage của `verify-production-release.sh` vì `DEPLOY_COMMIT_SHA` rỗng trong job `deploy-backend`, dù đã được set ở job `verify-backend`.
+
+### Scope của lượt này
+
+- [x] capture lại commit SHA sau `actions/checkout` ngay trong job `deploy-backend`
+- [x] fail sớm nếu `DEPLOY_COMMIT_SHA` rỗng trước khi render `APP_RELEASE_SHA`
+- [x] cập nhật runbook để ghi rõ mỗi job GitHub Actions phải tự resolve metadata của commit đã checkout
+
 ## Checklist hardening deploy `localhost`
 
 - [x] Xác định runtime database hiện tại có trỏ về `localhost` hay không từ chính `DATABASE_URL` đã render.
@@ -58,17 +70,18 @@
 
 1. Verify repo bằng `lint`, `test`, `build`, `prisma:validate` trên GitHub-hosted runner.
 2. Checkout đúng `ref` lên self-hosted runner.
-3. Sync source từ workspace checkout vào `DEPLOY_PATH`.
-4. Render file env tạm từ GitHub configuration.
-5. Ghi file env đó vào `RUNTIME_ENV_PATH`.
-6. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ fallback sang `docker compose up -d postgres` khi container đó chưa tồn tại.
-7. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
-8. Source runtime env vừa ghi, trong đó có cả `APP_RELEASE_SHA` của commit đang deploy.
-9. Chạy `pnpm prisma:migrate:deploy`.
-10. Chạy `SERVICE_RESTART_COMMAND`.
-11. Verify `/api/v1/health` phải trả đúng `data.releaseSha` của commit vừa deploy.
-12. Smoke `POST /api/v1/auth/me/avatar` không token phải trả `401`.
-13. Ghi metadata release đã verify vào `${DEPLOY_PATH}/.deploy-release.json`.
+3. Resolve lại `DEPLOY_COMMIT_SHA` từ chính checkout của từng job; không dựa vào `GITHUB_ENV` của job khác.
+4. Sync source từ workspace checkout vào `DEPLOY_PATH`.
+5. Render file env tạm từ GitHub configuration.
+6. Ghi file env đó vào `RUNTIME_ENV_PATH`.
+7. Chạy `bash ./scripts/ensure-runtime-database.sh` trong `DEPLOY_PATH` để preflight `DATABASE_URL`; nếu đang trỏ về `localhost` nhưng chưa reachable, workflow sẽ ưu tiên reuse container `journey-backend-postgres` đã có và chỉ fallback sang `docker compose up -d postgres` khi container đó chưa tồn tại.
+8. `pnpm install`, `pnpm prisma:generate`, `pnpm build` trong `DEPLOY_PATH`.
+9. Source runtime env vừa ghi, trong đó có cả `APP_RELEASE_SHA` của commit đang deploy.
+10. Chạy `pnpm prisma:migrate:deploy`.
+11. Chạy `SERVICE_RESTART_COMMAND`.
+12. Verify `/api/v1/health` phải trả đúng `data.releaseSha` của commit vừa deploy.
+13. Smoke `POST /api/v1/auth/me/avatar` không token phải trả `401`.
+14. Ghi metadata release đã verify vào `${DEPLOY_PATH}/.deploy-release.json`.
 
 ## Runtime script hiện có trong repo
 
