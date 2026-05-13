@@ -11,6 +11,10 @@ import { Trip } from '../../src/modules/trips/domain/trip';
 
 export class InMemoryTripRepository implements TripRepositoryPort {
   private readonly trips = new Map<string, Trip>();
+  private readonly journalAssetStorageKeysByTripId = new Map<string, string[]>();
+  private readonly deleteListeners: Array<
+    (trip: Trip) => void | Promise<void>
+  > = [];
 
   create(input: CreateTripRecordInput): Promise<Trip> {
     const createdAt = new Date();
@@ -53,6 +57,20 @@ export class InMemoryTripRepository implements TripRepositoryPort {
     return Promise.resolve(this.trips.get(tripId) ?? null);
   }
 
+  listJournalAssetStorageKeysByTripIdForUser(
+    input: FindTripForUserInput,
+  ): Promise<string[]> {
+    const trip = this.trips.get(input.tripId);
+
+    if (trip === undefined || trip.userId !== input.userId) {
+      return Promise.resolve([]);
+    }
+
+    return Promise.resolve(
+      this.journalAssetStorageKeysByTripId.get(input.tripId) ?? [],
+    );
+  }
+
   listPublic(input: ListPublicTripsInput): Promise<ListTripsForUserResult> {
     const filteredTrips = Array.from(this.trips.values())
       .filter((trip) => trip.visibility === 'public')
@@ -85,7 +103,7 @@ export class InMemoryTripRepository implements TripRepositoryPort {
     return Promise.resolve(trip);
   }
 
-  delete(input: FindTripForUserInput): Promise<Trip | null> {
+  async delete(input: FindTripForUserInput): Promise<Trip | null> {
     const trip = this.trips.get(input.tripId);
 
     if (trip === undefined || trip.userId !== input.userId) {
@@ -93,12 +111,26 @@ export class InMemoryTripRepository implements TripRepositoryPort {
     }
 
     this.trips.delete(trip.id);
+    this.journalAssetStorageKeysByTripId.delete(trip.id);
 
-    return Promise.resolve(trip);
+    for (const listener of this.deleteListeners) {
+      await listener(trip);
+    }
+
+    return trip;
+  }
+
+  registerDeleteListener(listener: (trip: Trip) => void | Promise<void>): void {
+    this.deleteListeners.push(listener);
+  }
+
+  setJournalAssetStorageKeys(tripId: string, storageKeys: string[]): void {
+    this.journalAssetStorageKeysByTripId.set(tripId, [...storageKeys]);
   }
 
   clear(): void {
     this.trips.clear();
+    this.journalAssetStorageKeysByTripId.clear();
   }
 }
 

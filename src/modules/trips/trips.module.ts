@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AppConfigService } from '../../app/config/app-config.service';
 import { PrismaModule } from '../../shared/infrastructure/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
@@ -20,6 +21,7 @@ import { TripsController } from './presentation/trips.controller';
   imports: [AuthModule, PrismaModule, UsersModule],
   controllers: [PublicTripsController, TripsController],
   providers: [
+    AppConfigService,
     CreateTripService,
     DeleteTripService,
     GetPublicTripDetailService,

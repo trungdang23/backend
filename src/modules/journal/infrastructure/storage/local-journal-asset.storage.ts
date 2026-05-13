@@ -1,6 +1,5 @@
 import { createReadStream } from 'node:fs';
 import { mkdir, stat, unlink, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import path from 'node:path';
 
 import { Injectable } from '@nestjs/common';
@@ -12,6 +11,7 @@ import type {
   SaveJournalAssetFileInput,
   SavedJournalAssetFile,
 } from '../../application/ports/journal-asset-storage.port';
+import { resolveJournalAssetFilePath, resolveJournalAssetRootDir } from './journal-asset-storage-path';
 
 @Injectable()
 export class LocalJournalAssetStorage implements JournalAssetStoragePort {
@@ -69,25 +69,12 @@ export class LocalJournalAssetStorage implements JournalAssetStoragePort {
   }
 
   private resolveFilePath(storageKey: string) {
-    const safeStorageKey = path.basename(storageKey);
-
-    return path.join(this.resolveRootDir(), safeStorageKey);
+    return resolveJournalAssetFilePath(this.config, storageKey);
   }
 
   private resolveRootDir() {
-    if (this.config.journalAssetStorageDir !== null) {
-      return this.config.journalAssetStorageDir;
-    }
-
-    return path.join(resolveStateHome(), this.config.appName, 'journal-assets');
+    return resolveJournalAssetRootDir(this.config);
   }
-}
-
-function resolveStateHome() {
-  return (
-    process.env.XDG_STATE_HOME?.trim() ||
-    path.join(homedir(), '.local', 'state')
-  );
 }
 
 function resolveFileExtension(contentType: string) {

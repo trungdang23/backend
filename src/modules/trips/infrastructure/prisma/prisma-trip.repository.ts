@@ -60,6 +60,33 @@ export class PrismaTripRepository implements TripRepositoryPort {
     return record === null ? null : toTrip(record);
   }
 
+  async listJournalAssetStorageKeysByTripIdForUser(
+    input: FindTripForUserInput,
+  ): Promise<string[]> {
+    const trip = await this.prisma.trip.findFirst({
+      where: {
+        id: input.tripId,
+        userId: input.userId,
+      },
+      select: {
+        journalAssets: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          select: {
+            storageKey: true,
+          },
+        },
+      },
+    });
+
+    if (trip === null) {
+      return [];
+    }
+
+    return trip.journalAssets.map((asset) => asset.storageKey);
+  }
+
   async listPublic(
     input: ListPublicTripsInput,
   ): Promise<ListTripsForUserResult> {

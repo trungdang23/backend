@@ -47,6 +47,9 @@ export interface TripRepositoryPort {
   create(input: CreateTripRecordInput): Promise<Trip>;
   findById(tripId: string): Promise<Trip | null>;
   findByIdForUser(input: FindTripForUserInput): Promise<Trip | null>;
+  listJournalAssetStorageKeysByTripIdForUser(
+    input: FindTripForUserInput,
+  ): Promise<string[]>;
   listPublic(input: ListPublicTripsInput): Promise<ListTripsForUserResult>;
   listByUser(input: ListTripsForUserInput): Promise<ListTripsForUserResult>;
   update(trip: Trip): Promise<Trip>;

@@ -86,6 +86,18 @@ export class InMemoryTripJournalAssetRepository implements TripJournalAssetRepos
     return Promise.resolve(this.assetsByPublicId.delete(asset.publicId));
   }
 
+  deleteByTripId(tripId: string): TripJournalAsset[] {
+    const deletedAssets = Array.from(this.assetsByPublicId.values()).filter(
+      (asset) => asset.tripId === tripId,
+    );
+
+    for (const asset of deletedAssets) {
+      this.assetsByPublicId.delete(asset.publicId);
+    }
+
+    return deletedAssets;
+  }
+
   clear(): void {
     this.assetsByPublicId.clear();
   }

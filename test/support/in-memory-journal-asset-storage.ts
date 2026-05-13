@@ -39,6 +39,10 @@ export class InMemoryJournalAssetStorage implements JournalAssetStoragePort {
     return Promise.resolve();
   }
 
+  has(storageKey: string): boolean {
+    return this.filesByStorageKey.has(storageKey);
+  }
+
   clear(): void {
     this.filesByStorageKey.clear();
   }

@@ -128,6 +128,32 @@ Dong cac journal asset URL dang public/unlisted bang signed URL co TTL, de anh t
 - cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
 - cleanup file vat ly khi trip bi xoa qua `DELETE /trips/:tripId`
 
+## Follow-up trip delete asset cleanup
+
+Status: `Implemented in source`
+
+### Muc tieu
+
+Dong bo flow `DELETE /api/v1/trips/:tripId` voi journal asset lifecycle hien co, de xoa trip khong lam file journal asset vat ly bi bo lai trong local storage sau khi DB cascade da xoa record.
+
+### Scope
+
+- [x] snapshot journal asset `storageKey` theo trip truoc khi DB cascade xoa record
+- [x] noi `DeleteTripService` qua cleanup nay ma khong doi contract HTTP cua `DELETE /api/v1/trips/:tripId`
+- [x] missing file trong local storage khong duoc chan xoa trip
+- [x] them integration coverage trong source cho xoa trip sau khi da upload journal asset
+
+### Deferred
+
+- cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
+- cloud/object storage provider production-ready
+
+### Verification
+
+- [x] backend lint
+- [x] backend build
+- [x] targeted `journal.integration.spec.ts`
+
 ## Rollback note
 
 - Journal persistence va asset flows chu yeu la additive quanh `trip_journals` va `trip_journal_assets`; neu rollout journal/public asset bi loi, uu tien rollback o muc controller/service wiring truoc khi tac dong vao du lieu da luu.

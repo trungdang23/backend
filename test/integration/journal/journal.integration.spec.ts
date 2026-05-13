@@ -58,6 +58,13 @@ describe('Journal integration', () => {
     journalRepository = app.get<InMemoryTripJournalRepository>(
       TRIP_JOURNAL_REPOSITORY,
     );
+    tripRepository.registerDeleteListener(async (trip) => {
+      await journalRepository.deleteByTripId(trip.id);
+
+      for (const asset of assetRepository.deleteByTripId(trip.id)) {
+        await assetStorage.delete(asset.storageKey);
+      }
+    });
   });
 
   afterAll(async () => {
@@ -402,6 +409,70 @@ describe('Journal integration', () => {
 
     expect(listAfterDeleteResponse.statusCode).toBe(200);
     expect(listAfterDeleteBody.data.assets).toEqual([]);
+
+    const deletedAssetResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1${uploadBody.data.asset.url}`,
+    });
+    const deletedAssetBody = deletedAssetResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(deletedAssetResponse.statusCode).toBe(404);
+    expect(deletedAssetBody.success).toBe(false);
+    expect(deletedAssetBody.error.code).toBe('JOURNAL_ASSET_NOT_FOUND');
+  });
+
+  it('cleans up stored journal asset files when deleting the trip', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'journal.asset.trip-delete@example.com',
+    );
+    const tripId = await createTrip(expressApp, traveler.accessToken);
+    const fileBuffer = Buffer.from('trip-delete-asset-content');
+
+    const uploadResponse = await request(httpServer)
+      .post(`/api/v1/trips/${tripId}/journal/assets`)
+      .set('Authorization', `Bearer ${traveler.accessToken}`)
+      .attach('file', fileBuffer, {
+        contentType: 'image/png',
+        filename: 'trip-delete-memory.png',
+      });
+    const uploadBody = uploadResponse.body as {
+      data: {
+        asset: {
+          id: string;
+          url: string;
+        };
+      };
+    };
+    const [storedAsset] = await assetRepository.listByTripId(tripId);
+    const storedStorageKey = storedAsset?.storageKey;
+
+    expect(uploadResponse.statusCode).toBe(201);
+    expect(storedStorageKey).toBeDefined();
+
+    if (storedStorageKey === undefined) {
+      throw new Error('Expected uploaded journal asset storage key to exist.');
+    }
+
+    tripRepository.setJournalAssetStorageKeys(tripId, [storedStorageKey]);
+
+    expect(assetStorage.has(storedStorageKey)).toBe(true);
+
+    const deleteTripResponse = await dispatchRequest(expressApp, {
+      method: 'DELETE',
+      path: `/api/v1/trips/${tripId}`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+
+    expect(deleteTripResponse.statusCode).toBe(200);
+    expect(assetStorage.has(storedStorageKey)).toBe(false);
 
     const deletedAssetResponse = await dispatchRequest(expressApp, {
       method: 'GET',
