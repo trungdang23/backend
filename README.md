@@ -188,6 +188,7 @@ pnpm prisma:validate
   - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
   - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
   - `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`
+- `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` là biến override tùy chọn; nếu để trống, backend sẽ dùng mặc định `900` giây.
 - `RUNTIME_ENV_PATH` là path đích của file env production sẽ được workflow tạo ra trên máy deploy, ví dụ `/var/www/journey-backend/.env.production`.
 - Self-hosted runner phải chạy dưới user có quyền ghi vào `DEPLOY_PATH`, `RUNTIME_ENV_PATH`, và chạy được `SERVICE_RESTART_COMMAND`.
 - Với hướng Docker Compose trên VPS, `SERVICE_RESTART_COMMAND` thường sẽ là dạng `docker compose -f docker-compose.prod.yml up -d --build`, sau khi file production đã được chuẩn hóa trong các phase deploy.

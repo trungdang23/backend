@@ -6,6 +6,14 @@
 - Status: `Accepted`
 - Scope: quản lý secret và runtime config cho repo `backend`
 
+## Hotfix deploy validation alignment
+
+### Scope của lượt cập nhật này
+
+- [x] bỏ validate bắt buộc cho `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` trong workflow deploy
+- [x] giữ `RUNTIME_JOURNAL_ASSET_SIGNING_SECRET` là secret bắt buộc
+- [x] cập nhật README và runbook để ghi rõ TTL là biến override tùy chọn, trống sẽ mặc định `900`
+
 ## Mục tiêu
 
 - Không commit secret thật vào repo backend.
@@ -45,6 +53,8 @@
 - `RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS`
 - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`
+
+`RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` là biến override tùy chọn. Có thể để trống và runtime sẽ fallback về `900`.
 
 ### Runtime env workflow sẽ render ra máy đích
 
@@ -139,6 +149,8 @@
 - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS=60`
 - `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS=900`
 
+Nếu không cần override TTL signed URL, có thể để trống `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`; backend sẽ dùng mặc định `900`.
+
 ## Thiết lập trên máy đích
 
 1. Đảm bảo self-hosted runner Linux/X64 của GitHub đang online trên chính máy deploy.
@@ -180,3 +192,4 @@
 - Merge `main` hiện tại không làm lộ secret production nếu bạn chỉ commit source hiện có.
 - GitHub giữ cả deploy secrets lẫn runtime secrets/variables của app.
 - Deploy không còn phụ thuộc vào `cloudflared access ssh`; độ ổn định giờ nằm ở self-hosted runner, runtime stack local, và quyền file trên máy đích.
+- `RUNTIME_JOURNAL_ASSET_SIGNING_SECRET` vẫn là secret bắt buộc; chỉ `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` mới là biến có thể để trống.

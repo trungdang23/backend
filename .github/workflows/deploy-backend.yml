@@ -134,7 +134,6 @@ jobs:
           test -n "${RUNTIME_JWT_REFRESH_TOKEN_TTL}"
           test -n "${RUNTIME_AUTH_RATE_LIMIT_MAX_REQUESTS}"
           test -n "${RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS}"
-          test -n "${RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS}"
           case "${RUNTIME_DATABASE_URL}" in
             postgresql://*|postgres://*) ;;
             *)

@@ -128,6 +128,8 @@ Các script này:
 - `RUNTIME_AUTH_RATE_LIMIT_WINDOW_SECONDS`
 - `RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS`
 
+`RUNTIME_JOURNAL_ASSET_SIGNED_URL_TTL_SECONDS` có thể bỏ trống nếu muốn dùng mặc định runtime `900` giây; `RUNTIME_JOURNAL_ASSET_SIGNING_SECRET` vẫn bắt buộc.
+
 ## Giá trị path và command đã chốt cho máy hiện tại
 
 ### Variables
