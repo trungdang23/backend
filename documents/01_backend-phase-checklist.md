@@ -237,7 +237,7 @@ Status: `Completed`
 
 ## Phase 08 - Hardening, test, release readiness
 
-Status: `In progress`
+Status: `Completed`
 
 ### Focused hardening slice 08-A - application error codes
 
@@ -336,7 +336,7 @@ Status: `In progress`
   - comment endpoints
   - cloud/object storage production-ready cho journal assets
 
-- [ ] Rà lại tất cả response envelopes theo DRD
+- [x] Rà lại tất cả response envelopes theo DRD
 - [x] Rà app error code:
   - [x] `AUTH_INVALID_CREDENTIALS`
   - [x] `AUTH_TOKEN_EXPIRED`
@@ -347,7 +347,7 @@ Status: `In progress`
 - [x] Rà validation toàn bộ DTO chính
 - [x] Rà Swagger cho auth/trips/planner/posts
 - [x] Rà migration rollback notes
-- [ ] Smoke test production sau deploy:
+- [x] Smoke test production sau deploy:
   - auth
   - trips
   - planner

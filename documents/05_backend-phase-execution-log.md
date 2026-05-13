@@ -391,7 +391,7 @@ Status: `Completed`
 
 ## Post Phase 06 Re-baseline Additions
 
-Status: `Completed through Phase 08-A/08-B hardening slices`
+Status: `Completed through Phase 08 hardening and production smoke`
 
 ### Tóm tắt
 
@@ -399,7 +399,7 @@ Status: `Completed through Phase 08-A/08-B hardening slices`
   - `Phase 05`: budget summary cutover sang `PlanNode`
   - `Phase 06`: public trip sharing
   - `Phase 07`: community minimal với `posts`
-  - `Phase 08-A/08-B`: focused hardening cho app error codes và ownership/authorization
+  - `Phase 08`: focused hardening cho app error codes, ownership/authorization, legacy sticker cleanup, Swagger/DTO envelope docs, response envelope sweep, và production smoke
 
 ### Nhật ký đồng bộ
 
@@ -409,16 +409,16 @@ Status: `Completed through Phase 08-A/08-B hardening slices`
 - `2026-04-21`: Hardening app error codes cho auth/trips/planning/public permission flow.
 - `2026-04-21`: Bổ sung ownership/authorization coverage cho trips, planning, sticker legacy endpoint, budgets, và posts.
 
-### Verification gần nhất trong lượt sync này
+### Verification gần nhất trong lượt sync lịch sử này
 
 - `2026-05-03`: `pnpm lint` pass.
 - `2026-05-03`: `pnpm test:unit` pass (`21` suites, `52` tests).
 
 ### Deferred còn đúng
 
-- Quyết định xóa hoặc giữ legacy `PlanNodeSticker` endpoints sau khi frontend/journal contract chốt.
 - Comment endpoints.
-- Production smoke thật cho auth/trips/planner/public trip/posts sau deploy.
+- Cleanup persistence/schema cho `PlanNodeSticker` nếu sau này xác nhận không cần giữ historical artifacts.
+- Cloud/object storage production-ready cho journal assets.
 
 ### Bổ sung `2026-05-08`
 
@@ -430,3 +430,16 @@ Status: `Completed through Phase 08-A/08-B hardening slices`
   - gỡ `ItinerariesModule` và toàn bộ route/service/repository/domain test support liên quan
   - drop bảng `trip_itinerary_days` và `trip_itinerary_activities`
   - gỡ helper/script migration khỏi source active
+
+### Bổ sung `2026-05-13`
+
+- Phase 08 hardening đã hoàn tất:
+  - app error codes
+  - ownership/authorization coverage
+  - legacy planner sticker endpoint cleanup
+  - Swagger envelope/DTO docs cho toàn bộ module chính
+  - response envelope sweep
+- Production smoke đã pass flow chính: auth, trips, planner, budget, journal, public trips/journals, posts.
+- Verification lại trong lượt sync docs/source:
+  - `frontend pnpm test:run` pass (`14` files, `61` tests)
+  - `backend pnpm test:unit` pass (`22` suites, `58` tests)
