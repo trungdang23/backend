@@ -16,6 +16,33 @@ export interface DispatchRequestResult {
   statusCode: number;
 }
 
+function parseResponseBody(
+  rawBody: string,
+  headers: DispatchRequestResult['headers'],
+): unknown {
+  if (rawBody.length === 0) {
+    return undefined;
+  }
+
+  const contentTypeHeader =
+    headers['content-type'] ??
+    headers['Content-Type'] ??
+    headers['CONTENT-TYPE'];
+  const contentType = Array.isArray(contentTypeHeader)
+    ? contentTypeHeader[0]
+    : contentTypeHeader;
+
+  if (typeof contentType === 'string' && contentType.includes('application/json')) {
+    return JSON.parse(rawBody);
+  }
+
+  try {
+    return JSON.parse(rawBody);
+  } catch {
+    return rawBody;
+  }
+}
+
 function resolveDispatchErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -55,9 +82,13 @@ export async function dispatchRequest(
     });
 
     response.on('end', () => {
+      const responseHeaders =
+        response._getHeaders() as DispatchRequestResult['headers'];
+      const rawBody = response._getData() as string;
+
       resolve({
-        body: response._getJSONData() as unknown,
-        headers: response._getHeaders() as DispatchRequestResult['headers'],
+        body: parseResponseBody(rawBody, responseHeaders),
+        headers: responseHeaders,
         statusCode: response.statusCode,
       });
     });

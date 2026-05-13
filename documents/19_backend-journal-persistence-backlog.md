@@ -141,3 +141,17 @@ Dong cac journal asset URL dang public/unlisted bang signed URL co TTL, de anh t
   - `20260503170000_limit_visibility_to_private_public`
   - `20260506103000_add_trip_journal_assets`
 - Truoc khi rollback destructive bat ky migration nao o tren, can co backup va uu tien rollback bang source/runtime config vi cac bang nay da la contract active cua frontend.
+
+## Follow-up test harness 204 response handling
+
+Status: `Completed in source`
+
+### Muc tieu
+
+Chot lai helper integration test de cac endpoint `DELETE` tra `204 No Content` khong bi test harness parse JSON tren body rong va lam do CI sai nguyen nhan.
+
+### Scope
+
+- [x] cap nhat `test/support/dispatch-request.ts` de tra `undefined` khi response body rong
+- [x] chi parse JSON khi body thuc su co du lieu; fallback string neu response khong phai JSON
+- [x] verify lai luong journal delete va cac suite khac co `204` su dung chung helper nay
