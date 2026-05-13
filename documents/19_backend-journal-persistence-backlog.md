@@ -148,6 +148,36 @@ Dong bo flow `DELETE /api/v1/trips/:tripId` voi journal asset lifecycle hien co,
 - cleanup orphan asset da upload nhung chua duoc gan vao journal scene da save
 - cloud/object storage provider production-ready
 
+## Follow-up journal revision history v1
+
+Status: `Implemented in source`
+
+### Muc tieu
+
+Them revision history toi thieu cho owner journal theo huong immutable snapshot, de frontend co the list cac lan luu gan day va restore mot snapshot cu ma chua can patch sync hay page-level publish model.
+
+### Scope
+
+- [x] them entity `trip_journal_revisions` luu snapshot `sceneVersion/page/objects` theo `trip_id`
+- [x] moi lan `PUT /api/v1/trips/:tripId/journal` save thanh cong thi ghi them mot revision moi
+- [x] them `GET /api/v1/trips/:tripId/journal/revisions` owner-only de list revision gan day
+- [x] them `POST /api/v1/trips/:tripId/journal/revisions/:revisionId/restore` owner-only de dua snapshot cu ve journal hien tai
+- [x] giu `PATCH /trips/:tripId/journal` chi lo visibility; khong tron revision restore vao endpoint nay
+- [x] them integration coverage cho list revision, restore revision, va non-owner denial
+
+### Deferred
+
+- diff metadata giua hai revision
+- note/label thu cong cho revision
+- retention policy tu dong hoac compact revision
+- multi-tab conflict detection optimistic locking
+- page-level revisions rieng
+
+### Verification
+
+- [x] backend build
+- [x] targeted `journal.integration.spec.ts`
+
 ### Verification
 
 - [x] backend lint

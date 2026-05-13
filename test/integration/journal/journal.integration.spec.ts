@@ -9,12 +9,14 @@ import { setupApp } from '../../../src/app/bootstrap/setup-app';
 import { JOURNAL_ASSET_STORAGE } from '../../../src/modules/journal/application/ports/journal-asset-storage.port';
 import { TRIP_JOURNAL_ASSET_REPOSITORY } from '../../../src/modules/journal/application/ports/trip-journal-asset-repository.port';
 import { TRIP_JOURNAL_REPOSITORY } from '../../../src/modules/journal/application/ports/trip-journal-repository.port';
+import { TRIP_JOURNAL_REVISION_REPOSITORY } from '../../../src/modules/journal/application/ports/trip-journal-revision-repository.port';
 import { TRIP_REPOSITORY } from '../../../src/modules/trips/application/ports/trip-repository.port';
 import { USER_REPOSITORY } from '../../../src/modules/users/application/ports/user-repository.port';
 import { dispatchRequest } from '../../support/dispatch-request';
 import { InMemoryJournalAssetStorage } from '../../support/in-memory-journal-asset-storage';
 import { InMemoryTripJournalAssetRepository } from '../../support/in-memory-trip-journal-asset-repository';
 import { InMemoryTripJournalRepository } from '../../support/in-memory-trip-journal-repository';
+import { InMemoryTripJournalRevisionRepository } from '../../support/in-memory-trip-journal-revision-repository';
 import { InMemoryTripRepository } from '../../support/in-memory-trip-repository';
 import { InMemoryUserRepository } from '../../support/in-memory-user-repository';
 
@@ -26,6 +28,7 @@ describe('Journal integration', () => {
   let assetStorage: InMemoryJournalAssetStorage;
   let tripRepository: InMemoryTripRepository;
   let journalRepository: InMemoryTripJournalRepository;
+  let revisionRepository: InMemoryTripJournalRevisionRepository;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,6 +44,8 @@ describe('Journal integration', () => {
       .useClass(InMemoryJournalAssetStorage)
       .overrideProvider(TRIP_JOURNAL_REPOSITORY)
       .useClass(InMemoryTripJournalRepository)
+      .overrideProvider(TRIP_JOURNAL_REVISION_REPOSITORY)
+      .useClass(InMemoryTripJournalRevisionRepository)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -58,8 +63,12 @@ describe('Journal integration', () => {
     journalRepository = app.get<InMemoryTripJournalRepository>(
       TRIP_JOURNAL_REPOSITORY,
     );
+    revisionRepository = app.get<InMemoryTripJournalRevisionRepository>(
+      TRIP_JOURNAL_REVISION_REPOSITORY,
+    );
     tripRepository.registerDeleteListener(async (trip) => {
       await journalRepository.deleteByTripId(trip.id);
+      await revisionRepository.deleteByTripId(trip.id);
 
       for (const asset of assetRepository.deleteByTripId(trip.id)) {
         await assetStorage.delete(asset.storageKey);
@@ -76,6 +85,7 @@ describe('Journal integration', () => {
     assetStorage.clear();
     tripRepository.clear();
     journalRepository.clear();
+    revisionRepository.clear();
   });
 
   it('returns an empty journal scene, then saves and reloads owner journal data', async () => {
@@ -230,6 +240,36 @@ describe('Journal integration', () => {
     expect(listJournalBody.data[0]?.trip.id).toBe(tripId);
     expect(listJournalBody.data[0]?.journal.id).toBe('journal-1');
 
+    const listRevisionResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/revisions`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listRevisionBody = listRevisionResponse.body as {
+      success: boolean;
+      data: {
+        revisions: Array<{
+          id: string;
+          objectCount: number;
+          sceneVersion: number;
+          tripId: string;
+        }>;
+      };
+    };
+
+    expect(listRevisionResponse.statusCode).toBe(200);
+    expect(listRevisionBody.success).toBe(true);
+    expect(listRevisionBody.data.revisions).toHaveLength(1);
+    expect(listRevisionBody.data.revisions[0]).toEqual(
+      expect.objectContaining({
+        objectCount: 1,
+        sceneVersion: 1,
+        tripId,
+      }),
+    );
+
     const deleteJournalResponse = await dispatchRequest(expressApp, {
       method: 'DELETE',
       path: `/api/v1/trips/${tripId}/journal`,
@@ -253,6 +293,213 @@ describe('Journal integration', () => {
 
     expect(listAfterDeleteResponse.statusCode).toBe(200);
     expect(listAfterDeleteBody.data).toEqual([]);
+
+    const revisionsAfterDeleteResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/revisions`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const revisionsAfterDeleteBody = revisionsAfterDeleteResponse.body as {
+      data: {
+        revisions: unknown[];
+      };
+    };
+
+    expect(revisionsAfterDeleteResponse.statusCode).toBe(200);
+    expect(revisionsAfterDeleteBody.data.revisions).toEqual([]);
+  });
+
+  it('lists recent journal revisions and restores an older snapshot for the owner', async () => {
+    const traveler = await registerUser(
+      expressApp,
+      'journal.revisions@example.com',
+    );
+    const tripId = await createTrip(expressApp, traveler.accessToken);
+
+    await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        sceneVersion: 1,
+        page: {
+          width: 1200,
+          height: 1600,
+          background: {
+            style: 'paper-cream',
+          },
+        },
+        objects: [
+          {
+            id: 'obj-note-original',
+            type: 'note',
+            x: 120,
+            y: 180,
+            width: 320,
+            height: 220,
+            rotation: 0,
+            zIndex: 1,
+            props: {
+              text: 'Original snapshot',
+            },
+          },
+        ],
+      },
+    });
+
+    const secondSaveResponse = await dispatchRequest(expressApp, {
+      method: 'PUT',
+      path: `/api/v1/trips/${tripId}/journal`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+      body: {
+        sceneVersion: 1,
+        page: {
+          width: 1200,
+          height: 1600,
+          background: {
+            style: 'paper-cream',
+          },
+        },
+        objects: [
+          {
+            id: 'obj-note-updated',
+            type: 'note',
+            x: 180,
+            y: 240,
+            width: 320,
+            height: 220,
+            rotation: -6,
+            zIndex: 1,
+            props: {
+              text: 'Updated snapshot',
+            },
+          },
+        ],
+      },
+    });
+    const secondSaveBody = secondSaveResponse.body as {
+      data: {
+        journal: {
+          objects: Array<{
+            id: string;
+          }>;
+        };
+      };
+    };
+
+    expect(secondSaveResponse.statusCode).toBe(200);
+    expect(secondSaveBody.data.journal.objects[0]?.id).toBe(
+      'obj-note-updated',
+    );
+
+    const missingRestoreResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: `/api/v1/trips/${tripId}/journal/revisions/revision-missing/restore`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const missingRestoreBody = missingRestoreResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(missingRestoreResponse.statusCode).toBe(404);
+    expect(missingRestoreBody.success).toBe(false);
+    expect(missingRestoreBody.error.code).toBe('JOURNAL_REVISION_NOT_FOUND');
+
+    const listRevisionResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/revisions`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listRevisionBody = listRevisionResponse.body as {
+      success: boolean;
+      data: {
+        revisions: Array<{
+          id: string;
+          objectCount: number;
+        }>;
+      };
+    };
+
+    expect(listRevisionResponse.statusCode).toBe(200);
+    expect(listRevisionBody.success).toBe(true);
+    expect(listRevisionBody.data.revisions).toHaveLength(2);
+    expect(listRevisionBody.data.revisions[0]?.objectCount).toBe(1);
+    expect(listRevisionBody.data.revisions[1]?.objectCount).toBe(1);
+
+    const originalRevisionId = listRevisionBody.data.revisions[1]?.id;
+
+    expect(originalRevisionId).toBeDefined();
+
+    if (originalRevisionId === undefined) {
+      throw new Error('Expected the original revision id to exist.');
+    }
+
+    const restoreResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: `/api/v1/trips/${tripId}/journal/revisions/${originalRevisionId}/restore`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const restoreBody = restoreResponse.body as {
+      success: boolean;
+      data: {
+        journal: {
+          objects: Array<{
+            id: string;
+            props: {
+              text: string;
+            };
+          }>;
+        };
+      };
+    };
+
+    expect(restoreResponse.statusCode).toBe(200);
+    expect(restoreBody.success).toBe(true);
+    expect(restoreBody.data.journal.objects[0]).toEqual(
+      expect.objectContaining({
+        id: 'obj-note-original',
+        props: {
+          text: 'Original snapshot',
+        },
+      }),
+    );
+
+    const listRevisionAfterRestoreResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/revisions`,
+      headers: {
+        authorization: `Bearer ${traveler.accessToken}`,
+      },
+    });
+    const listRevisionAfterRestoreBody =
+      listRevisionAfterRestoreResponse.body as {
+        data: {
+          revisions: Array<{
+            id: string;
+          }>;
+        };
+      };
+
+    expect(listRevisionAfterRestoreResponse.statusCode).toBe(200);
+    expect(listRevisionAfterRestoreBody.data.revisions).toHaveLength(3);
+    expect(listRevisionAfterRestoreBody.data.revisions[0]?.id).not.toBe(
+      originalRevisionId,
+    );
   });
 
   it('does not expose another user trip journal', async () => {
@@ -280,6 +527,42 @@ describe('Journal integration', () => {
     expect(response.statusCode).toBe(404);
     expect(body.success).toBe(false);
     expect(body.error.code).toBe('TRIP_NOT_FOUND');
+
+    const revisionsResponse = await dispatchRequest(expressApp, {
+      method: 'GET',
+      path: `/api/v1/trips/${tripId}/journal/revisions`,
+      headers: {
+        authorization: `Bearer ${stranger.accessToken}`,
+      },
+    });
+    const revisionsBody = revisionsResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(revisionsResponse.statusCode).toBe(404);
+    expect(revisionsBody.success).toBe(false);
+    expect(revisionsBody.error.code).toBe('TRIP_NOT_FOUND');
+
+    const restoreResponse = await dispatchRequest(expressApp, {
+      method: 'POST',
+      path: `/api/v1/trips/${tripId}/journal/revisions/revision-missing/restore`,
+      headers: {
+        authorization: `Bearer ${stranger.accessToken}`,
+      },
+    });
+    const restoreBody = restoreResponse.body as {
+      success: boolean;
+      error: {
+        code: string;
+      };
+    };
+
+    expect(restoreResponse.statusCode).toBe(404);
+    expect(restoreBody.success).toBe(false);
+    expect(restoreBody.error.code).toBe('TRIP_NOT_FOUND');
   });
 
   it('uploads a journal image asset for the owner and serves the stored file', async () => {

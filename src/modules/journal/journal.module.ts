@@ -7,6 +7,7 @@ import { TripsModule } from '../trips/trips.module';
 import { JOURNAL_ASSET_STORAGE } from './application/ports/journal-asset-storage.port';
 import { TRIP_JOURNAL_ASSET_REPOSITORY } from './application/ports/trip-journal-asset-repository.port';
 import { TRIP_JOURNAL_REPOSITORY } from './application/ports/trip-journal-repository.port';
+import { TRIP_JOURNAL_REVISION_REPOSITORY } from './application/ports/trip-journal-revision-repository.port';
 import { DeleteTripJournalAssetService } from './application/services/delete-trip-journal-asset.service';
 import { DeleteTripJournalService } from './application/services/delete-trip-journal.service';
 import { GetTripJournalAssetFileService } from './application/services/get-trip-journal-asset-file.service';
@@ -15,13 +16,16 @@ import { GetTripJournalService } from './application/services/get-trip-journal.s
 import { JournalAssetUrlSigningService } from './application/services/journal-asset-url-signing.service';
 import { ListPublicJournalsService } from './application/services/list-public-journals.service';
 import { ListTripJournalAssetsService } from './application/services/list-trip-journal-assets.service';
+import { ListTripJournalRevisionsService } from './application/services/list-trip-journal-revisions.service';
 import { ListUserJournalsService } from './application/services/list-user-journals.service';
 import { PresentTripJournalService } from './application/services/present-trip-journal.service';
+import { RestoreTripJournalRevisionService } from './application/services/restore-trip-journal-revision.service';
 import { SaveTripJournalService } from './application/services/save-trip-journal.service';
 import { UpdateTripJournalVisibilityService } from './application/services/update-trip-journal-visibility.service';
 import { UploadTripJournalAssetService } from './application/services/upload-trip-journal-asset.service';
 import { PrismaTripJournalAssetRepository } from './infrastructure/prisma/prisma-trip-journal-asset.repository';
 import { PrismaTripJournalRepository } from './infrastructure/prisma/prisma-trip-journal.repository';
+import { PrismaTripJournalRevisionRepository } from './infrastructure/prisma/prisma-trip-journal-revision.repository';
 import { LocalJournalAssetStorage } from './infrastructure/storage/local-journal-asset.storage';
 import { JournalAssetController } from './presentation/journal-asset.controller';
 import { JournalController } from './presentation/journal.controller';
@@ -44,8 +48,10 @@ import { PublicJournalController } from './presentation/public-journal.controlle
     JournalAssetUrlSigningService,
     ListPublicJournalsService,
     ListTripJournalAssetsService,
+    ListTripJournalRevisionsService,
     ListUserJournalsService,
     PresentTripJournalService,
+    RestoreTripJournalRevisionService,
     SaveTripJournalService,
     UpdateTripJournalVisibilityService,
     UploadTripJournalAssetService,
@@ -61,11 +67,16 @@ import { PublicJournalController } from './presentation/public-journal.controlle
       provide: TRIP_JOURNAL_REPOSITORY,
       useClass: PrismaTripJournalRepository,
     },
+    {
+      provide: TRIP_JOURNAL_REVISION_REPOSITORY,
+      useClass: PrismaTripJournalRevisionRepository,
+    },
   ],
   exports: [
     JOURNAL_ASSET_STORAGE,
     TRIP_JOURNAL_ASSET_REPOSITORY,
     TRIP_JOURNAL_REPOSITORY,
+    TRIP_JOURNAL_REVISION_REPOSITORY,
   ],
 })
 export class JournalModule {}

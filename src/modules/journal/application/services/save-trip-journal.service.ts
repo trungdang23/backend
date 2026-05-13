@@ -9,10 +9,15 @@ import {
 import { Trip } from '../../../trips/domain/trip';
 import type { JournalPage, JournalSceneObject } from '../../domain/trip-journal';
 import { TripJournal } from '../../domain/trip-journal';
+import { TripJournalRevision } from '../../domain/trip-journal-revision';
 import {
   TRIP_JOURNAL_REPOSITORY,
   type TripJournalRepositoryPort,
 } from '../ports/trip-journal-repository.port';
+import {
+  TRIP_JOURNAL_REVISION_REPOSITORY,
+  type TripJournalRevisionRepositoryPort,
+} from '../ports/trip-journal-revision-repository.port';
 import { rethrowJournalDomainError } from './map-journal-domain-error';
 
 export interface SaveTripJournalInput {
@@ -37,6 +42,8 @@ export class SaveTripJournalService
     private readonly tripRepository: TripRepositoryPort,
     @Inject(TRIP_JOURNAL_REPOSITORY)
     private readonly journalRepository: TripJournalRepositoryPort,
+    @Inject(TRIP_JOURNAL_REVISION_REPOSITORY)
+    private readonly revisionRepository: TripJournalRevisionRepositoryPort,
   ) {}
 
   async execute(input: SaveTripJournalInput): Promise<SaveTripJournalResult> {
@@ -57,9 +64,15 @@ export class SaveTripJournalService
         objects: input.objects,
       });
 
+      const savedJournal = await this.journalRepository.upsert(journal);
+
+      await this.revisionRepository.create(
+        TripJournalRevision.fromJournal(savedJournal),
+      );
+
       return {
         trip,
-        journal: await this.journalRepository.upsert(journal),
+        journal: savedJournal,
       };
     } catch (error) {
       rethrowJournalDomainError(error);

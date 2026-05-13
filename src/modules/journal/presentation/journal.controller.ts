@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Patch,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -25,10 +26,13 @@ import { CurrentUser } from '../../auth/presentation/decorators/current-user.dec
 import { AccessTokenAuthGuard } from '../../auth/presentation/guards/access-token-auth.guard';
 import { DeleteTripJournalService } from '../application/services/delete-trip-journal.service';
 import { GetTripJournalService } from '../application/services/get-trip-journal.service';
+import { ListTripJournalRevisionsService } from '../application/services/list-trip-journal-revisions.service';
 import { ListUserJournalsService } from '../application/services/list-user-journals.service';
 import { PresentTripJournalService } from '../application/services/present-trip-journal.service';
+import { RestoreTripJournalRevisionService } from '../application/services/restore-trip-journal-revision.service';
 import { SaveTripJournalService } from '../application/services/save-trip-journal.service';
 import { UpdateTripJournalVisibilityService } from '../application/services/update-trip-journal-visibility.service';
+import { TripJournalRevisionListResponseDto, TripJournalRevisionResponseDto } from './dto/trip-journal-revision-response.dto';
 import type { JournalPage, JournalSceneObject } from '../domain/trip-journal';
 import { SaveTripJournalRequestDto } from './dto/save-trip-journal-request.dto';
 import {
@@ -45,8 +49,10 @@ export class JournalController {
   constructor(
     private readonly deleteTripJournal: DeleteTripJournalService,
     private readonly getTripJournal: GetTripJournalService,
+    private readonly listTripJournalRevisions: ListTripJournalRevisionsService,
     private readonly listUserJournals: ListUserJournalsService,
     private readonly presentTripJournal: PresentTripJournalService,
+    private readonly restoreTripJournalRevision: RestoreTripJournalRevisionService,
     private readonly saveTripJournal: SaveTripJournalService,
     private readonly updateTripJournalVisibility: UpdateTripJournalVisibilityService,
   ) {}
@@ -100,6 +106,33 @@ export class JournalController {
     );
 
     return TripJournalResponseDto.from(result);
+  }
+
+  @Get('trips/:tripId/journal/revisions')
+  @ApiOperation({
+    summary: 'List recent journal revisions for an owned trip.',
+  })
+  @ApiSuccessEnvelopeResponse(TripJournalRevisionListResponseDto, {
+    description: 'Returns recent immutable journal revisions for the owned trip.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'The requested trip does not exist for the authenticated user.',
+    status: 404,
+  })
+  async listJournalRevisions(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('tripId') tripId: string,
+  ) {
+    return TripJournalRevisionResponseDto.list(
+      await this.listTripJournalRevisions.execute({
+        userId: authenticatedUser.userId,
+        tripId,
+      }),
+    );
   }
 
   @Put('trips/:tripId/journal')
@@ -164,6 +197,40 @@ export class JournalController {
         userId: authenticatedUser.userId,
         tripId,
         visibility: input.visibility,
+      }),
+    );
+
+    return TripJournalResponseDto.from(result);
+  }
+
+  @Post('trips/:tripId/journal/revisions/:revisionId/restore')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Restore an owned trip journal from a saved revision snapshot.',
+  })
+  @ApiSuccessEnvelopeResponse(TripJournalResponseDto, {
+    description:
+      'Restores the selected journal revision and returns the current journal snapshot.',
+  })
+  @ApiErrorEnvelopeResponse({
+    description: 'Authentication is required.',
+    status: 401,
+  })
+  @ApiErrorEnvelopeResponse({
+    description:
+      'The requested trip does not exist for the authenticated user, or the revision does not exist for that trip.',
+    status: 404,
+  })
+  async restoreJournalRevision(
+    @CurrentUser() authenticatedUser: AuthenticatedUser,
+    @Param('tripId') tripId: string,
+    @Param('revisionId') revisionId: string,
+  ) {
+    const result = await this.presentTripJournal.present(
+      await this.restoreTripJournalRevision.execute({
+        userId: authenticatedUser.userId,
+        tripId,
+        revisionId,
       }),
     );
 

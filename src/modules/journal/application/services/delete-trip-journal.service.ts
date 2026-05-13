@@ -10,6 +10,10 @@ import {
   TRIP_JOURNAL_REPOSITORY,
   type TripJournalRepositoryPort,
 } from '../ports/trip-journal-repository.port';
+import {
+  TRIP_JOURNAL_REVISION_REPOSITORY,
+  type TripJournalRevisionRepositoryPort,
+} from '../ports/trip-journal-revision-repository.port';
 
 export interface DeleteTripJournalInput {
   userId: string;
@@ -25,6 +29,8 @@ export class DeleteTripJournalService
     private readonly tripRepository: TripRepositoryPort,
     @Inject(TRIP_JOURNAL_REPOSITORY)
     private readonly journalRepository: TripJournalRepositoryPort,
+    @Inject(TRIP_JOURNAL_REVISION_REPOSITORY)
+    private readonly revisionRepository: TripJournalRevisionRepositoryPort,
   ) {}
 
   async execute(input: DeleteTripJournalInput): Promise<void> {
@@ -38,5 +44,6 @@ export class DeleteTripJournalService
     }
 
     await this.journalRepository.deleteByTripId(trip.id);
+    await this.revisionRepository.deleteByTripId(trip.id);
   }
 }
