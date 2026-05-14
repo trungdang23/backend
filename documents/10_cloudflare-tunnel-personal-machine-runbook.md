@@ -132,6 +132,14 @@ Status script hiện nên được hiểu là kiểm tra tunnel/public ingress, 
 
 Nếu domain public trả `1033` hoặc `The origin has been unregistered from Argo Tunnel`, hãy hiểu đây là lỗi `cloudflared` không còn active connection với tunnel, không phải backend runtime tại `localhost:3001`.
 
+## Checklist sự cố `cloudflared` warning làm hỏng startup
+
+- [x] Không để warning version cũ từ `cloudflared tunnel info` trên stderr làm PowerShell abort script.
+- [x] Giữ `pnpm status` idempotent: backend local, tunnel, deploy SSH route, và public health phải được report độc lập.
+- [x] Giữ `pnpm up` tự phục hồi tunnel khi `cloudflared tunnel info journey-backend` báo không có active connection.
+- [x] Chỉ coi tunnel là đủ khỏe khi có cả active connection và local process đúng tunnel trên Windows.
+- [x] Verify lại bằng `pnpm run status`, `pnpm run up`, và public health cho backend/frontend.
+
 ## Ý nghĩa của `reboot`
 
 `Reboot` ở đây nghĩa là:

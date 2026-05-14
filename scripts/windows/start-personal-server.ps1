@@ -12,6 +12,43 @@ $wslDistro = 'Ubuntu-20.04'
 $deployDirWsl = '/home/trungdang/apps/journey-backend'
 $backendHealthUrl = 'https://api.buicojourney.com/api/v1/health'
 
+function Invoke-CloudflaredTunnelInfo {
+    $stdoutPath = [System.IO.Path]::GetTempFileName()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
+
+    try {
+        # cloudflared writes non-fatal update warnings to stderr. Redirect both
+        # streams through files so PowerShell does not raise NativeCommandError.
+        $process = Start-Process `
+            -FilePath $cloudflaredExe `
+            -ArgumentList @('tunnel', 'info', $cloudflaredTunnelName) `
+            -NoNewWindow `
+            -Wait `
+            -PassThru `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+
+        $stdout = Get-Content -Path $stdoutPath -Raw -ErrorAction SilentlyContinue
+        $stderr = Get-Content -Path $stderrPath -Raw -ErrorAction SilentlyContinue
+        $outputParts = @()
+
+        if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+            $outputParts += $stdout.Trim()
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+            $outputParts += $stderr.Trim()
+        }
+
+        return @{
+            ExitCode = $process.ExitCode
+            Output = ($outputParts -join [Environment]::NewLine)
+        }
+    } finally {
+        Remove-Item -Path $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Test-CloudflaredTunnelProcess {
     $processes = Get-CimInstance Win32_Process -Filter "Name = 'cloudflared.exe'" -ErrorAction SilentlyContinue
 
@@ -36,12 +73,7 @@ function Get-CloudflaredTunnelInfo {
         }
     }
 
-    $output = & $cloudflaredExe tunnel info $cloudflaredTunnelName 2>&1 | Out-String
-
-    return @{
-        ExitCode = $LASTEXITCODE
-        Output = $output.Trim()
-    }
+    return Invoke-CloudflaredTunnelInfo
 }
 
 function Test-CloudflaredTunnelActiveConnection {
@@ -108,24 +140,24 @@ function Start-CloudflaredTunnelIfNeeded {
         throw "cloudflared config was not found at $cloudflaredConfig"
     }
 
-    if (Test-CloudflaredTunnelActiveConnection) {
+    $hasActiveConnection = Test-CloudflaredTunnelActiveConnection
+    $hasLocalTunnelProcess = Test-CloudflaredTunnelProcess
+
+    if ($hasActiveConnection -and $hasLocalTunnelProcess) {
         return
     }
 
-    if (Test-CloudflaredTunnelProcess) {
+    if ($hasLocalTunnelProcess) {
         Stop-CloudflaredTunnelProcess
         Start-Sleep -Seconds 1
     }
 
-    $stdoutLog = 'C:\Users\dangv\.cloudflared\cloudflared.out.log'
-    $stderrLog = 'C:\Users\dangv\.cloudflared\cloudflared.err.log'
+    $logFile = 'C:\Users\dangv\.cloudflared\cloudflared.log'
 
     Start-Process `
         -FilePath $cloudflaredExe `
-        -ArgumentList @('tunnel', '--config', $cloudflaredConfig, 'run', $cloudflaredTunnelName) `
-        -WindowStyle Hidden `
-        -RedirectStandardOutput $stdoutLog `
-        -RedirectStandardError $stderrLog | Out-Null
+        -ArgumentList @('tunnel', '--config', $cloudflaredConfig, '--logfile', $logFile, 'run', $cloudflaredTunnelName) `
+        -WindowStyle Hidden | Out-Null
 }
 
 function Wait-ForPublicHealth {

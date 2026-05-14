@@ -15,6 +15,43 @@ function Write-Section([string]$title) {
     Write-Host ('=' * 8 + " $title " + '=' * 8)
 }
 
+function Invoke-CloudflaredTunnelInfo {
+    $stdoutPath = [System.IO.Path]::GetTempFileName()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
+
+    try {
+        # cloudflared writes non-fatal update warnings to stderr. Redirect both
+        # streams through files so PowerShell does not raise NativeCommandError.
+        $process = Start-Process `
+            -FilePath $cloudflaredExe `
+            -ArgumentList @('tunnel', 'info', $cloudflaredTunnelName) `
+            -NoNewWindow `
+            -Wait `
+            -PassThru `
+            -RedirectStandardOutput $stdoutPath `
+            -RedirectStandardError $stderrPath
+
+        $stdout = Get-Content -Path $stdoutPath -Raw -ErrorAction SilentlyContinue
+        $stderr = Get-Content -Path $stderrPath -Raw -ErrorAction SilentlyContinue
+        $outputParts = @()
+
+        if (-not [string]::IsNullOrWhiteSpace($stdout)) {
+            $outputParts += $stdout.Trim()
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+            $outputParts += $stderr.Trim()
+        }
+
+        return @{
+            ExitCode = $process.ExitCode
+            Output = ($outputParts -join [Environment]::NewLine)
+        }
+    } finally {
+        Remove-Item -Path $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-CloudflaredTunnelInfo {
     if (-not (Test-Path $cloudflaredExe)) {
         return @{
@@ -23,12 +60,7 @@ function Get-CloudflaredTunnelInfo {
         }
     }
 
-    $output = & $cloudflaredExe tunnel info $cloudflaredTunnelName 2>&1 | Out-String
-
-    return @{
-        ExitCode = $LASTEXITCODE
-        Output = $output.Trim()
-    }
+    return Invoke-CloudflaredTunnelInfo
 }
 
 Write-Section 'Docker'
